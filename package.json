@@ -1,0 +1,36 @@
+{
+  "name": "satisfactory-docs-parser",
+  "description": "Parser for Satisfactory's Docs.json file",
+  "version": "0.0.0",
+  "author": "LydianLights",
+  "license": "MIT",
+  "scripts": {
+    "build": "ttsc",
+    "dev": "ttsc --watch",
+    "lint": "eslint .",
+    "prepare": "npm run build"
+  },
+  "bin": {
+    "parse-docs": "./build/cli.js"
+  },
+  "devDependencies": {
+    "@types/node": "^15.0.3",
+    "@types/yargs": "^16.0.1",
+    "@typescript-eslint/eslint-plugin": "^4.23.0",
+    "@typescript-eslint/parser": "^4.23.0",
+    "@zerollup/ts-transform-paths": "^1.7.18",
+    "eslint": "^7.26.0",
+    "eslint-config-semistandard": "^15.0.1",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.23.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "eslint-plugin-standard": "^5.0.0",
+    "tsconfig-paths": "^3.9.0",
+    "ttypescript": "^1.5.12",
+    "typescript": "^4.2.4"
+  },
+  "dependencies": {
+    "yargs": "^17.0.1"
+  }
+}
