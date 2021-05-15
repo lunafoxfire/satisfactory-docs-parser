@@ -39,9 +39,11 @@ function parseDocsString(input: string) {
   const { itemRecipes, buildRecipes } = parseRecipes(categoryClassnames.recipes.flatMap((entry) => classlistMap[entry]), { items });
 
   return {
-    originalDocs: docs,
-    classlistMap,
-    topLevelClassList: classList,
+    meta: {
+      originalDocs: docs,
+      classlistMap,
+      topLevelClassList: classList,
+    },
     data: {
       items,
       resources,
