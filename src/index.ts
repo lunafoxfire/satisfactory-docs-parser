@@ -36,8 +36,8 @@ function parseDocsString(input: string) {
   const classList = Object.keys(classlistMap).sort();
   const categoryClasses = getCategoryClasses(classlistMap);
 
-  // const items = parseItems(categoryClassnames.itemDescriptors.flatMap((entry) => classlistMap[entry]));
-  // const resources = parseResources(categoryClassnames.resources.flatMap((entry) => classlistMap[entry]));
+  const { items, resources, equipment } = parseItems(categoryClasses);
+
   // const { itemRecipes, buildRecipes } = parseRecipes(categoryClassnames.recipes.flatMap((entry) => classlistMap[entry]), { items });
 
   return {
@@ -48,8 +48,9 @@ function parseDocsString(input: string) {
       categories: categoryClasses,
     },
     data: {
-      // items,
-      // resources,
+      items,
+      resources,
+      equipment,
       // itemRecipes,
       // buildRecipes,
     }

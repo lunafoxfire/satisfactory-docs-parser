@@ -19,6 +19,7 @@ module.exports = {
     'comma-dangle': OFF,
     'space-before-function-paren': OFF,
     'no-console': ERROR,
+    'no-multiple-empty-lines': [ERROR, { max: 2 }],
     'import/no-duplicates': OFF,
 
     // Handled by typescript

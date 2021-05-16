@@ -21,8 +21,8 @@ export function cleanDescription(desc: string) {
   return desc.replace(/\r\n/g, '\n');
 }
 
-export function parseStackSize(stackSize: string) {
-  switch (stackSize) {
+export function parseStackSize(data: string) {
+  switch (data) {
     case 'SS_ONE':
       return 1;
     case 'SS_SMALL':
@@ -36,16 +36,16 @@ export function parseStackSize(stackSize: string) {
     case 'SS_FLUID':
       return -1;
     default:
-      throw new Error(`Invalid stack size: [${stackSize}]`);
+      throw new Error(`Invalid stack size: [${data}]`);
   }
 }
 
-export function parseColor(color: any, scaleTo255 = false): Color {
+export function parseColor(data: any, scaleTo255 = false): Color {
   const scaleFactor = scaleTo255 ? 255 : 1;
   return {
-    r: Math.round(scaleFactor * color.R),
-    g: Math.round(scaleFactor * color.G),
-    b: Math.round(scaleFactor * color.B),
+    r: Math.round(scaleFactor * data.R),
+    g: Math.round(scaleFactor * data.G),
+    b: Math.round(scaleFactor * data.B),
   };
 }
 
@@ -63,10 +63,21 @@ export function parseItemQuantity(data: any, itemData: ClassInfoMap<ItemInfo>, e
 }
 
 const classnameRegex = /\.(.+?)(?:"')?$/;
-export function parseClassname(str: string) {
-  const match = classnameRegex.exec(str);
+export function parseClassname(data: string) {
+  const match = classnameRegex.exec(data);
   if (match && match[1]) {
     return match[1];
   }
-  throw new Error(`Failed to parse blueprint class: [${str}]`);
+  throw new Error(`Failed to parse blueprint class: [${data}]`);
+}
+
+export function parseEquipmentSlot(data: string) {
+  switch (data) {
+    case 'ES_ARMS':
+      return 'HAND';
+    case 'ES_BACK':
+      return 'BODY';
+    default:
+      throw new Error(`Invalid equipment slot: [${data}]`);
+  }
 }

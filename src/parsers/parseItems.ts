@@ -1,5 +1,12 @@
-import { createSlug, cleanDescription, parseStackSize, parseColor, parseCollection, Color } from 'utilities';
-import { DocsClass, ClassInfoMap } from 'types';
+import { createSlug, cleanDescription, parseStackSize, parseColor, parseCollection, parseEquipmentSlot, Color } from 'utilities';
+import { ClassInfoMap } from 'types';
+import { CategoryClasses } from 'class-categories/types';
+
+export type ItemMeta = {
+  energyValue?: number,
+  radioactiveDecay?: number,
+  fluidColor?: Color,
+};
 
 export type ItemInfo = {
   slug: string,
@@ -7,13 +14,42 @@ export type ItemInfo = {
   description: string,
   stackSize: number,
   sinkPoints: number,
-  energyValue: number,
-  radioactiveDecay: number,
   isFluid: boolean,
-  fluidColor: Color,
+  isFuel: boolean,
+  isRadioactive: boolean,
+  meta: ItemMeta,
 };
 
-const christmas = [
+export type ResourceInfo = {
+  itemClass: string,
+  pingColor: Color,
+  collectionSpeed: number,
+};
+
+export type EquipmentMeta = {
+  healthGain?: number,
+  energyConsumption?: number,
+  sawDownTreeTime?: number,
+  damage?: number,
+  magSize?: number,
+  reloadTime?: number,
+  fireRate?: number,
+  attackDistance?: number,
+  filterDuration?: number,
+  sprintSpeedFactor?: number,
+  jumpSpeedFactor?: number,
+  explosionDamage?: number,
+  explosionRadius?: number,
+  detectionRange?: number,
+};
+
+export type EquipmentInfo = {
+  itemClass: string,
+  slot: string,
+  meta: EquipmentMeta,
+};
+
+const christmasItems = [
   'BP_EquipmentDescriptorCandyCane_C',
   'BP_EquipmentDescriptorSnowballMittens_C',
   'Desc_CandyCane_C',
@@ -35,29 +71,173 @@ const christmas = [
   'Desc_XmassTree_C',
 ];
 
-const exclude = [
-  ...christmas,
+const christmasEquip = [
+  'Equip_SnowballWeaponMittens_C',
+  'Equip_CandyCaneBasher_C',
 ];
 
-export function parseItems(entries: DocsClass[]) {
+const excludeItems = [
+  ...christmasItems,
+];
+
+const excludeEquip = [
+  ...christmasEquip,
+  'Equip_MedKit_C',
+];
+
+export function parseItems(categoryClasses: CategoryClasses) {
+  return {
+    items: getItems(categoryClasses),
+    resources: getResources(categoryClasses),
+    equipment: getEquipment(categoryClasses),
+  };
+}
+
+
+function getItems(categoryClasses: CategoryClasses) {
   const items: ClassInfoMap<ItemInfo> = {};
 
-  entries.forEach((entry) => {
-    if (exclude.includes(entry.ClassName)) {
+  categoryClasses.itemDescriptors.forEach((entry) => {
+    if (excludeItems.includes(entry.ClassName)) {
       return;
     }
-    items[entry.ClassName] = {
+    const key = entry.ClassName.replace(/(?:BP_EquipmentDescriptor)|(?:BP_ItemDescriptor)|(?:BP_EqDesc)/, 'Desc_');
+    const energyValue = parseFloat(entry.mEnergyValue);
+    const radioactiveDecay = parseFloat(entry.mRadioactiveDecay);
+
+    const isFluid = entry.mForm === 'RF_LIQUID' || entry.mForm === 'RF_GAS';
+    const isFuel = energyValue > 0;
+    const isRadioactive = radioactiveDecay > 0;
+
+    const meta: ItemMeta = {};
+    if (isFluid) {
+      meta.fluidColor = parseColor(parseCollection(entry.mFluidColor));
+    }
+    if (isFuel) {
+      meta.energyValue = energyValue;
+    }
+    if (isRadioactive) {
+      meta.radioactiveDecay = radioactiveDecay;
+    }
+
+    items[key] = {
       slug: createSlug(entry.mDisplayName),
       name: entry.mDisplayName,
       description: cleanDescription(entry.mDescription),
       stackSize: parseStackSize(entry.mStackSize),
       sinkPoints: parseInt(entry.mResourceSinkPoints, 10),
-      energyValue: parseFloat(entry.mEnergyValue),
-      radioactiveDecay: parseFloat(entry.mRadioactiveDecay),
-      isFluid: entry.mForm === 'RF_LIQUID' || entry.mForm === 'RF_GAS',
-      fluidColor: parseColor(parseCollection(entry.mFluidColor)),
+      isFluid,
+      isFuel,
+      isRadioactive,
+      meta,
     };
   });
 
   return items;
+}
+
+
+function getResources(categoryClasses: CategoryClasses) {
+  const resources: ClassInfoMap<ResourceInfo> = {};
+
+  categoryClasses.resources.forEach((entry) => {
+    resources[entry.ClassName] = {
+      itemClass: entry.ClassName,
+      pingColor: parseColor(parseCollection(entry.mPingColor), true),
+      collectionSpeed: parseFloat(entry.mCollectSpeedMultiplier),
+    };
+  });
+
+  return resources;
+}
+
+
+function getEquipment(categoryClasses: CategoryClasses) {
+  const equipment: ClassInfoMap<EquipmentInfo> = {};
+
+  categoryClasses.equipment.forEach((entry) => {
+    if (excludeEquip.includes(entry.ClassName)) {
+      return;
+    }
+    if (entry.ClassName === 'BP_ConsumeableEquipment_C') {
+      categoryClasses.consumables.forEach((consumableInfo) => {
+        if (consumableInfo.mHealthGain) {
+          const key = consumableInfo.ClassName.replace('Desc_', 'Equip_');
+          equipment[key] = {
+            itemClass: consumableInfo.ClassName,
+            slot: parseEquipmentSlot(entry.mEquipmentSlot),
+            meta: {
+              healthGain: parseFloat(consumableInfo.mHealthGain),
+            }
+          };
+        }
+      });
+      return;
+    }
+
+    const meta: EquipmentMeta = {};
+    if (entry.mEnergyConsumption) {
+      meta.energyConsumption = parseFloat(entry.mEnergyConsumption);
+    }
+    if (entry.mSawDownTreeTime) {
+      meta.sawDownTreeTime = parseFloat(entry.mSawDownTreeTime);
+    }
+    if (entry.mInstantHitDamage) {
+      meta.damage = parseFloat(entry.mInstantHitDamage);
+    }
+    if (entry.mMagSize) {
+      meta.magSize = parseInt(entry.mMagSize, 10);
+    }
+    if (entry.mReloadTime) {
+      meta.reloadTime = parseFloat(entry.mReloadTime);
+    }
+    if (entry.mFireRate) {
+      meta.fireRate = parseFloat(entry.mFireRate);
+    }
+    if (entry.mDamage) {
+      meta.damage = parseFloat(entry.mDamage);
+    }
+    if (entry.mAttackDistance) {
+      meta.attackDistance = parseFloat(entry.mAttackDistance);
+    }
+    if (entry.mFilterDuration) {
+      meta.filterDuration = parseFloat(entry.mFilterDuration);
+    }
+    if (entry.mSprintSpeedFactor) {
+      meta.sprintSpeedFactor = parseFloat(entry.mSprintSpeedFactor);
+    }
+    if (entry.mJumpSpeedFactor) {
+      meta.jumpSpeedFactor = parseFloat(entry.mJumpSpeedFactor);
+    }
+    if (entry.mExplosiveData) {
+      const explosiveData = parseCollection(entry.mExplosiveData);
+      meta.explosionDamage = parseFloat(explosiveData.ExplosionDamage);
+      meta.explosionRadius = parseFloat(explosiveData.ExplosionRadius);
+    }
+    if (entry.mDetectionRange) {
+      meta.detectionRange = parseFloat(entry.mDetectionRange);
+    }
+    if (entry.mProjectileData) {
+      const projectileData = parseCollection(entry.mProjectileData);
+      meta.damage = parseFloat(projectileData.ImpactDamage);
+    }
+
+    let itemClass;
+    if (entry.ClassName === 'Equip_GolfCartDispenser_C') {
+      itemClass = 'Desc_GolfCart_C';
+    } else if (entry.ClassName === 'Equip_PortableMinerDispenser_C') {
+      itemClass = 'Desc_PortableMiner_C';
+    } else if (entry.ClassName === 'Equip_RebarGun_Projectile_C') {
+      itemClass = 'Desc_RebarGunProjectile_C';
+    } else {
+      itemClass = entry.ClassName.replace('Equip_', 'Desc_');
+    }
+    equipment[entry.ClassName] = {
+      itemClass,
+      slot: parseEquipmentSlot(entry.mEquipmentSlot),
+      meta,
+    };
+  });
+
+  return equipment;
 }
