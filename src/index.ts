@@ -1,5 +1,5 @@
 import { DocsClasslist, DocsClasslistMap } from 'types';
-import { parseItems, parseResources, parseRecipes } from 'parsers';
+import { parseItems, parseRecipes } from 'parsers';
 import { getCategoryClasses } from 'class-categories';
 
 const nativeClassRegex = /FactoryGame\.(.+)'$/;
@@ -37,8 +37,7 @@ function parseDocsString(input: string) {
   const categoryClasses = getCategoryClasses(classlistMap);
 
   const { items, resources, equipment } = parseItems(categoryClasses);
-
-  // const { itemRecipes, buildRecipes } = parseRecipes(categoryClassnames.recipes.flatMap((entry) => classlistMap[entry]), { items });
+  const { itemRecipes, buildRecipes } = parseRecipes(categoryClasses, { items });
 
   return {
     meta: {
@@ -51,8 +50,8 @@ function parseDocsString(input: string) {
       items,
       resources,
       equipment,
-      // itemRecipes,
-      // buildRecipes,
+      itemRecipes,
+      buildRecipes,
     }
   };
 }

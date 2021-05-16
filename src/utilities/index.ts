@@ -21,6 +21,28 @@ export function cleanDescription(desc: string) {
   return desc.replace(/\r\n/g, '\n');
 }
 
+export function standardizeItemDescriptor(className: string) {
+  return className.replace(/(?:BP_EquipmentDescriptor)|(?:BP_ItemDescriptor)|(?:BP_EqDesc)/, 'Desc_');
+}
+
+const classnameRegex = /\.(.+)$/;
+export function getShortClassname(fullName: string) {
+  const match = classnameRegex.exec(fullName);
+  if (match && match[1]) {
+    return match[1];
+  }
+  throw new Error(`Failed to parse class name: [${fullName}]`);
+}
+
+const blueprintClassRegex = /^BlueprintGeneratedClass'"(.+)"'$/;
+export function parseBlueprintClassname(classStr: string) {
+  const match = blueprintClassRegex.exec(classStr);
+  if (match && match[1]) {
+    return getShortClassname(match[1]);
+  }
+  throw new Error(`Failed to parse blueprint class name: [${classStr}]`);
+}
+
 export function parseStackSize(data: string) {
   switch (data) {
     case 'SS_ONE':
@@ -40,6 +62,17 @@ export function parseStackSize(data: string) {
   }
 }
 
+export function parseEquipmentSlot(data: string) {
+  switch (data) {
+    case 'ES_ARMS':
+      return 'HAND';
+    case 'ES_BACK':
+      return 'BODY';
+    default:
+      throw new Error(`Invalid equipment slot: [${data}]`);
+  }
+}
+
 export function parseColor(data: any, scaleTo255 = false): Color {
   const scaleFactor = scaleTo255 ? 255 : 1;
   return {
@@ -50,7 +83,7 @@ export function parseColor(data: any, scaleTo255 = false): Color {
 }
 
 export function parseItemQuantity(data: any, itemData: ClassInfoMap<ItemInfo>, errorIfMissing = false): ItemQuantity {
-  const itemClass = parseClassname(data.ItemClass);
+  const itemClass = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
   const itemInfo = itemData[itemClass];
   if (!itemInfo && errorIfMissing) {
     throw new Error(`Missing item info for ${itemClass}`);
@@ -60,24 +93,4 @@ export function parseItemQuantity(data: any, itemData: ClassInfoMap<ItemInfo>, e
     itemClass,
     quantity: data.Amount / scaleFactor,
   };
-}
-
-const classnameRegex = /\.(.+?)(?:"')?$/;
-export function parseClassname(data: string) {
-  const match = classnameRegex.exec(data);
-  if (match && match[1]) {
-    return match[1];
-  }
-  throw new Error(`Failed to parse blueprint class: [${data}]`);
-}
-
-export function parseEquipmentSlot(data: string) {
-  switch (data) {
-    case 'ES_ARMS':
-      return 'HAND';
-    case 'ES_BACK':
-      return 'BODY';
-    default:
-      throw new Error(`Invalid equipment slot: [${data}]`);
-  }
 }

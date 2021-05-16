@@ -1,5 +1,6 @@
-import { createSlug, parseCollection, parseItemQuantity, parseClassname, ItemQuantity } from 'utilities';
-import { DocsClass, ClassInfoMap } from 'types';
+import { createSlug, parseCollection, parseItemQuantity, getShortClassname, ItemQuantity } from 'utilities';
+import { ClassInfoMap } from 'types';
+import { CategoryClasses } from 'class-categories/types';
 import { ItemInfo } from './parseItems';
 
 export type ItemRecipeInfo = {
@@ -27,7 +28,7 @@ interface RecipeDependencies {
   items: ClassInfoMap<ItemInfo>,
 }
 
-const christmas = [
+const christmasRecipes = [
   'Recipe_XMassTree_C',
   'Recipe_XmasBranch_C',
   'Recipe_CandyCane_C',
@@ -51,21 +52,21 @@ const christmas = [
   'Recipe_SnowballWeapon_C',
 ];
 
-const exclude = [
-  ...christmas,
+const excludeRecipes = [
+  ...christmasRecipes,
 ];
 
-export function parseRecipes(entries: DocsClass[], { items }: RecipeDependencies) {
+export function parseRecipes(categoryClasses: CategoryClasses, { items }: RecipeDependencies) {
   const itemRecipes: ClassInfoMap<ItemRecipeInfo> = {};
   const buildRecipes: ClassInfoMap<BuildRecipeInfo> = {};
 
-  entries.forEach((entry) => {
-    if (!entry.mProducedIn || exclude.includes(entry.ClassName)) {
+  categoryClasses.recipes.forEach((entry) => {
+    if (!entry.mProducedIn || excludeRecipes.includes(entry.ClassName)) {
       return;
     }
 
     const producedIn = parseCollection<any[]>(entry.mProducedIn)
-      .map((data) => parseClassname(data));
+      .map((data) => getShortClassname(data));
 
     let isBuildRecipe = false;
     let handCraftable = false;

@@ -1,4 +1,4 @@
-import { createSlug, cleanDescription, parseStackSize, parseColor, parseCollection, parseEquipmentSlot, Color } from 'utilities';
+import { createSlug, cleanDescription, standardizeItemDescriptor, parseStackSize, parseEquipmentSlot, parseCollection, parseColor, Color } from 'utilities';
 import { ClassInfoMap } from 'types';
 import { CategoryClasses } from 'class-categories/types';
 
@@ -101,7 +101,7 @@ function getItems(categoryClasses: CategoryClasses) {
     if (excludeItems.includes(entry.ClassName)) {
       return;
     }
-    const key = entry.ClassName.replace(/(?:BP_EquipmentDescriptor)|(?:BP_ItemDescriptor)|(?:BP_EqDesc)/, 'Desc_');
+    const key = standardizeItemDescriptor(entry.ClassName);
     const energyValue = parseFloat(entry.mEnergyValue);
     const radioactiveDecay = parseFloat(entry.mRadioactiveDecay);
 
