@@ -23,5 +23,7 @@ module.exports = {
 
     // Handled by typescript
     'no-redeclare': OFF,
+    'no-unused-vars': OFF,
+    'no-undef': OFF,
   },
 };

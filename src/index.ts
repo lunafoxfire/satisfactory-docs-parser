@@ -1,6 +1,6 @@
 import { DocsClasslist, DocsClasslistMap } from 'types';
-import { categoryClassnames } from 'utilities';
 import { parseItems, parseResources, parseRecipes } from 'parsers';
+import { getCategoryClasses } from 'class-categories';
 
 const nativeClassRegex = /FactoryGame\.(.+)'$/;
 
@@ -27,28 +27,31 @@ function parseDocsString(input: string) {
     }
     const match = nativeClassRegex.exec(entry.NativeClass);
     if (!match || !match[1]) {
-      throw new Error(`Could not parse NativeClass ${entry.NativeClass}`);
+      throw new Error(`Could not parse top-level class ${entry.NativeClass}`);
     }
     const nativeClassName = match[1];
     classlistMap[nativeClassName] = entry.Classes;
   }
 
   const classList = Object.keys(classlistMap).sort();
-  const items = parseItems(categoryClassnames.itemDescriptors.flatMap((entry) => classlistMap[entry]));
-  const resources = parseResources(categoryClassnames.resources.flatMap((entry) => classlistMap[entry]));
-  const { itemRecipes, buildRecipes } = parseRecipes(categoryClassnames.recipes.flatMap((entry) => classlistMap[entry]), { items });
+  const categoryClasses = getCategoryClasses(classlistMap);
+
+  // const items = parseItems(categoryClassnames.itemDescriptors.flatMap((entry) => classlistMap[entry]));
+  // const resources = parseResources(categoryClassnames.resources.flatMap((entry) => classlistMap[entry]));
+  // const { itemRecipes, buildRecipes } = parseRecipes(categoryClassnames.recipes.flatMap((entry) => classlistMap[entry]), { items });
 
   return {
     meta: {
       originalDocs: docs,
-      classlistMap,
       topLevelClassList: classList,
+      classlistMap,
+      categories: categoryClasses,
     },
     data: {
-      items,
-      resources,
-      itemRecipes,
-      buildRecipes,
+      // items,
+      // resources,
+      // itemRecipes,
+      // buildRecipes,
     }
   };
 }

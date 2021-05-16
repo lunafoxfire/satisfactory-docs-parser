@@ -79,8 +79,13 @@ if (userMetaPath) {
   }
 
   writeFileSafe(path.join(metaPath, '_classNames.json'), results.meta.topLevelClassList);
+
   Object.entries(results.meta.classlistMap).forEach(([key, data]) => {
-    writeFileSafe(path.join(metaPath, `${key}.json`), data);
+    writeFileSafe(path.join(metaPath, `classes/${key}.json`), data);
+  });
+
+  Object.entries(results.meta.categories).forEach(([key, data]) => {
+    writeFileSafe(path.join(metaPath, `categories/${key}.json`), data);
   });
 }
 

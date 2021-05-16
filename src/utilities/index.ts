@@ -1,8 +1,6 @@
 import { ClassInfoMap } from 'types';
 import { ItemInfo } from 'parsers/parseItems';
-
-import categoryClassnames from './categoryClassnames';
-import { parseCollection } from './deserialization';
+export { parseCollection } from './deserialization';
 
 export type Color = {
   r: number,
@@ -14,8 +12,6 @@ export type ItemQuantity = {
   itemClass: string,
   quantity: number,
 }
-
-export { parseCollection, categoryClassnames };
 
 export function createSlug(name: string) {
   return name.replace(/[\s|.]+/g, '-').replace(/[™:]/g, '').toLowerCase();
