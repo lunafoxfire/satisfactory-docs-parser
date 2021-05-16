@@ -31,7 +31,9 @@ export function getShortClassname(fullName: string) {
   if (match && match[1]) {
     return match[1];
   }
-  throw new Error(`Failed to parse class name: [${fullName}]`);
+  // eslint-disable-next-line no-console
+  console.warn(`WARNING: Failed to parse class name: [${fullName}]`);
+  return 'UNDEFINED';
 }
 
 const blueprintClassRegex = /^BlueprintGeneratedClass'"(.+)"'$/;
@@ -40,7 +42,9 @@ export function parseBlueprintClassname(classStr: string) {
   if (match && match[1]) {
     return getShortClassname(match[1]);
   }
-  throw new Error(`Failed to parse blueprint class name: [${classStr}]`);
+  // eslint-disable-next-line no-console
+  console.warn(`WARNING: Failed to parse blueprint class name: [${classStr}]`);
+  return 'UNDEFINED';
 }
 
 export function parseStackSize(data: string) {
@@ -56,9 +60,11 @@ export function parseStackSize(data: string) {
     case 'SS_HUGE':
       return 500;
     case 'SS_FLUID':
-      return -1;
+      return 0;
     default:
-      throw new Error(`Invalid stack size: [${data}]`);
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Invalid stack size: [${data}]`);
+      return NaN;
   }
 }
 
@@ -69,7 +75,9 @@ export function parseEquipmentSlot(data: string) {
     case 'ES_BACK':
       return 'BODY';
     default:
-      throw new Error(`Invalid equipment slot: [${data}]`);
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Invalid equipment slot: [${data}]`);
+      return 'UNDEFINED';
   }
 }
 
@@ -86,7 +94,8 @@ export function parseItemQuantity(data: any, itemData: ClassInfoMap<ItemInfo>, e
   const itemClass = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
   const itemInfo = itemData[itemClass];
   if (!itemInfo && errorIfMissing) {
-    throw new Error(`Missing item info for ${itemClass}`);
+    // eslint-disable-next-line no-console
+    console.warn(`WARNING: Missing item info for ${itemClass}`);
   }
   const scaleFactor = itemInfo?.isFluid ? 1000 : 1;
   return {
