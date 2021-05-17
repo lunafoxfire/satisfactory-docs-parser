@@ -117,10 +117,23 @@ export function parseColor(data: any, scaleTo255 = false): Color {
   };
 }
 
+const SUPRESS_ITEM_WARNINGS = [
+  'Desc_HardDrive_C',
+  'Desc_ResourceSinkCoupon_C',
+  'Desc_CupGold_C',
+  'Desc_CharacterRunStatue_C',
+  'Desc_CharacterSpin_Statue_C',
+  'Desc_CharacterClap_Statue_C',
+  'Desc_DoggoStatue_C',
+  'Desc_Hog_Statue_C',
+  'Desc_SpaceGiraffeStatue_C',
+  'Desc_GoldenNut_Statue_C',
+  'Desc_Cup_C',
+];
 export function parseItemQuantity(data: any, itemData: ClassInfoMap<ItemInfo>): ItemQuantity {
   const className = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
   const itemInfo = itemData[className];
-  if (!itemInfo) {
+  if (!itemInfo && !SUPRESS_ITEM_WARNINGS.includes(className)) {
     // eslint-disable-next-line no-console
     console.warn(`WARNING: Missing item info for ${className}`);
   }

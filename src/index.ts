@@ -39,7 +39,7 @@ function parseDocsString(input: string) {
   const { items, resources, equipment } = parseItems(categoryClasses);
   const buildings = parseBuildings(categoryClasses, { resources });
   const { itemRecipes, buildRecipes } = parseRecipes(categoryClasses, { items, buildings });
-  // const schematics = parseSchematics(categoryClasses);
+  const schematics = parseSchematics(categoryClasses, { items, resources, itemRecipes, buildRecipes });
 
   return {
     meta: {
@@ -55,7 +55,7 @@ function parseDocsString(input: string) {
       buildings,
       itemRecipes,
       buildRecipes,
-      // schematics,
+      schematics,
     }
   };
 }

@@ -59,6 +59,8 @@ const docsFile = fs.readFileSync(inputPath);
 const results = parseDocs(docsFile);
 
 if (!metaOnly) {
+  // eslint-disable-next-line no-console
+  console.log(`Writing data to ${outputPath}`);
   if (singleFile) {
     const dataFilename = isString(singleFile) ? singleFile : 'data.json';
     writeFileSafe(path.join(outputPath, dataFilename), results.data);
@@ -77,6 +79,9 @@ if (userMetaPath) {
   } else {
     metaPath = path.join(outputPath, './meta');
   }
+
+  // eslint-disable-next-line no-console
+  console.log(`Writing meta data to ${metaPath}`);
 
   writeFileSafe(path.join(metaPath, '_classNames.json'), results.meta.topLevelClassList);
 
