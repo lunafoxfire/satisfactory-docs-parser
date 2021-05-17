@@ -1,5 +1,6 @@
 import { ClassInfoMap } from 'types';
 import { ItemInfo } from 'parsers/parseItems';
+import { BuildingInfo } from 'parsers/parseBuildings';
 export { parseCollection } from './deserialization';
 
 export type Color = {
@@ -22,7 +23,33 @@ export function cleanDescription(desc: string) {
 }
 
 export function standardizeItemDescriptor(className: string) {
-  return className.replace(/(?:BP_EquipmentDescriptor)|(?:BP_ItemDescriptor)|(?:BP_EqDesc)/, 'Desc_');
+  return className.replace(/^(?:BP_EquipmentDescriptor)|(?:BP_ItemDescriptor)|(?:BP_EqDesc)/, 'Desc_');
+}
+
+const EQUIP_DESC_MANUAL_MAP: any = {
+  'Equip_GolfCartDispenser_C': 'Desc_GolfCart_C',
+  'Equip_PortableMinerDispenser_C': 'Desc_PortableMiner_C',
+  'Equip_RebarGun_Projectile_C': 'Desc_RebarGunProjectile_C'
+};
+export function equipmentNameToDescriptorName(equipName: string) {
+  if (EQUIP_DESC_MANUAL_MAP[equipName]) {
+    return EQUIP_DESC_MANUAL_MAP[equipName];
+  }
+  return equipName.replace(/^Equip_/, 'Desc_');
+}
+
+const BUILDING_DESC_MANUAL_MAP: any = {
+  'Build_PowerPoleWallDouble_Mk2_C': 'Desc_PowerPoleWallDoubleMk2_C',
+  'Build_PowerPoleWall_Mk2_C': 'Desc_PowerPoleWallMk2_C',
+  'Build_PowerPoleWallDouble_Mk3_C': 'Desc_PowerPoleWallDoubleMk3_C',
+  'Build_PowerPoleWall_Mk3_C': 'Desc_PowerPoleWallMk3_C',
+  'Build_WalkwayTrun_C': 'Desc_WalkwayTurn_C',
+};
+export function buildingNameToDescriptorName(buildingName: string) {
+  if (BUILDING_DESC_MANUAL_MAP[buildingName]) {
+    return BUILDING_DESC_MANUAL_MAP[buildingName];
+  }
+  return buildingName.replace(/^Build_/, 'Desc_');
 }
 
 const classnameRegex = /\.(.+)$/;
@@ -90,16 +117,26 @@ export function parseColor(data: any, scaleTo255 = false): Color {
   };
 }
 
-export function parseItemQuantity(data: any, itemData: ClassInfoMap<ItemInfo>, errorIfMissing = false): ItemQuantity {
-  const itemClass = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
-  const itemInfo = itemData[itemClass];
-  if (!itemInfo && errorIfMissing) {
+export function parseItemQuantity(data: any, itemData: ClassInfoMap<ItemInfo>): ItemQuantity {
+  const className = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
+  const itemInfo = itemData[className];
+  if (!itemInfo) {
     // eslint-disable-next-line no-console
-    console.warn(`WARNING: Missing item info for ${itemClass}`);
+    console.warn(`WARNING: Missing item info for ${className}`);
   }
   const scaleFactor = itemInfo?.isFluid ? 1000 : 1;
   return {
-    itemClass,
+    itemClass: className,
     quantity: data.Amount / scaleFactor,
   };
+}
+
+export function parseBuildingQuantity(data: any, buildingData: ClassInfoMap<BuildingInfo>): string {
+  const className = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
+  const buildingInfo = buildingData[className];
+  if (!buildingInfo) {
+    // eslint-disable-next-line no-console
+    console.warn(`WARNING: Missing building info for ${className}`);
+  }
+  return className;
 }

@@ -8,6 +8,7 @@ export type CategoryKey =
 
   | 'buildingDescriptors'
   | 'buildings'
+  | 'vehicles'
 
   | 'recipes'
 

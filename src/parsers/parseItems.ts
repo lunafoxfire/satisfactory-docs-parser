@@ -1,4 +1,7 @@
-import { createSlug, cleanDescription, standardizeItemDescriptor, parseStackSize, parseEquipmentSlot, parseCollection, parseColor, Color } from 'utilities';
+import {
+  createSlug, cleanDescription, standardizeItemDescriptor, equipmentNameToDescriptorName,
+  parseStackSize, parseEquipmentSlot, parseCollection, parseColor, Color
+} from 'utilities';
 import { ClassInfoMap } from 'types';
 import { CategoryClasses } from 'class-categories/types';
 
@@ -22,6 +25,7 @@ export type ItemInfo = {
 
 export type ResourceInfo = {
   itemClass: string,
+  form: string,
   pingColor: Color,
   collectionSpeed: number,
 };
@@ -82,7 +86,7 @@ const excludeItems = [
 
 const excludeEquip = [
   ...christmasEquip,
-  'Equip_MedKit_C',
+  'Equip_MedKit_C', // Handled as consumable equipment
 ];
 
 export function parseItems(categoryClasses: CategoryClasses) {
@@ -143,6 +147,7 @@ function getResources(categoryClasses: CategoryClasses) {
   categoryClasses.resources.forEach((entry) => {
     resources[entry.ClassName] = {
       itemClass: entry.ClassName,
+      form: entry.mForm,
       pingColor: parseColor(parseCollection(entry.mPingColor), true),
       collectionSpeed: parseFloat(entry.mCollectSpeedMultiplier),
     };
@@ -222,18 +227,8 @@ function getEquipment(categoryClasses: CategoryClasses) {
       meta.damage = parseFloat(projectileData.ImpactDamage);
     }
 
-    let itemClass;
-    if (entry.ClassName === 'Equip_GolfCartDispenser_C') {
-      itemClass = 'Desc_GolfCart_C';
-    } else if (entry.ClassName === 'Equip_PortableMinerDispenser_C') {
-      itemClass = 'Desc_PortableMiner_C';
-    } else if (entry.ClassName === 'Equip_RebarGun_Projectile_C') {
-      itemClass = 'Desc_RebarGunProjectile_C';
-    } else {
-      itemClass = entry.ClassName.replace('Equip_', 'Desc_');
-    }
     equipment[entry.ClassName] = {
-      itemClass,
+      itemClass: equipmentNameToDescriptorName(entry.ClassName),
       slot: parseEquipmentSlot(entry.mEquipmentSlot),
       meta,
     };

@@ -1,7 +1,8 @@
-import { createSlug, parseCollection, parseItemQuantity, getShortClassname, ItemQuantity } from 'utilities';
+import { createSlug, getShortClassname, parseCollection, parseItemQuantity, parseBuildingQuantity, ItemQuantity } from 'utilities';
 import { ClassInfoMap } from 'types';
 import { CategoryClasses } from 'class-categories/types';
 import { ItemInfo } from './parseItems';
+import { BuildingInfo } from './parseBuildings';
 
 export type ItemRecipeInfo = {
   slug: string,
@@ -21,11 +22,12 @@ export type BuildRecipeInfo = {
   slug: string,
   name: string,
   ingredients: ItemQuantity[],
-  products: ItemQuantity[],
+  product: string,
 };
 
 interface RecipeDependencies {
   items: ClassInfoMap<ItemInfo>,
+  buildings: ClassInfoMap<BuildingInfo>,
 }
 
 const christmasRecipes = [
@@ -54,9 +56,10 @@ const christmasRecipes = [
 
 const excludeRecipes = [
   ...christmasRecipes,
+  'Recipe_Wall_Window_8x4_03_Steel_C' // Don't think this exists in game??
 ];
 
-export function parseRecipes(categoryClasses: CategoryClasses, { items }: RecipeDependencies) {
+export function parseRecipes(categoryClasses: CategoryClasses, { items, buildings }: RecipeDependencies) {
   const itemRecipes: ClassInfoMap<ItemRecipeInfo> = {};
   const buildRecipes: ClassInfoMap<BuildRecipeInfo> = {};
 
@@ -85,22 +88,23 @@ export function parseRecipes(categoryClasses: CategoryClasses, { items }: Recipe
         machines.push(producer);
       }
     }
-
-    const requireProductItemInfo = !isBuildRecipe;
     const ingredients = parseCollection<any[]>(entry.mIngredients)
-      .map((data) => parseItemQuantity(data, items, true));
-    const products = parseCollection<any[]>(entry.mProduct)
-      .map((data) => parseItemQuantity(data, items, requireProductItemInfo));
+      .map((data) => parseItemQuantity(data, items));
+
 
     if (isBuildRecipe) {
+      const product = parseBuildingQuantity(parseCollection<any[]>(entry.mProduct)[0], buildings);
       buildRecipes[entry.ClassName] = {
         slug: createSlug(entry.mDisplayName),
         name: entry.mDisplayName,
         ingredients,
-        products,
+        product,
       };
     } else {
       const isAlternate = entry.mDisplayName.startsWith('Alternate:') || entry.ClassName.startsWith('Recipe_Alternate');
+      const products = parseCollection<any[]>(entry.mProduct)
+        .map((data) => parseItemQuantity(data, items));
+
       itemRecipes[entry.ClassName] = {
         slug: createSlug(entry.mDisplayName),
         name: entry.mDisplayName,

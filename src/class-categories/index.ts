@@ -124,6 +124,10 @@ export const categoryClassnames: CategoryClassnames = {
 
   buildingDescriptors: [
     'FGBuildingDescriptor',
+    'FGPoleDescriptor',
+  ],
+  vehicles: [
+    'FGVehicleDescriptor',
   ],
   buildings: [
     'FGBuildable',
@@ -179,8 +183,6 @@ export const categoryClassnames: CategoryClassnames = {
     'FGBuildableWire',
     'FGConveyorPoleStackable',
     'FGPipeHyperStart',
-    'FGPoleDescriptor',
-    'FGVehicleDescriptor',
   ],
 
   recipes: [

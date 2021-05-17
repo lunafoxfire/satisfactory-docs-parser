@@ -21,6 +21,7 @@ module.exports = {
     'no-console': ERROR,
     'no-multiple-empty-lines': [ERROR, { max: 2 }],
     'import/no-duplicates': OFF,
+    'quote-props': OFF,
 
     // Handled by typescript
     'no-redeclare': OFF,
