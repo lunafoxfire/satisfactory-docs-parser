@@ -255,8 +255,8 @@ const VEHICLE_MAPPING: { [key: string]: VehicleInfo } = {
     description: '48 slot inventory. Has a built in Craft Bench. Can be automated to pick up and deliver resources at Truck Stations. Nicknamed the Unit by FICSIT pioneers because of its massive frame.',
   },
   'Desc_DroneTransport_C': {
-    name: 'xxx',
-    description: 'xxx',
+    name: 'Drone',
+    description: 'Has to be built on a Drone Port. Transports available input back an forth between its home and destination Port. Requires Batteries as fuel, based on travel distance.Refuels at any Port, if able. Drone Status and other details are shown on its home Drone Port.',
   },
   'Desc_Tractor_C': {
     name: 'Tractor',
