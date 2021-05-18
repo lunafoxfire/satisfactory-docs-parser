@@ -56,16 +56,16 @@ const inputPath = path.isAbsolute(userInputPath) ? userInputPath : path.join(cwd
 const outputPath = path.isAbsolute(userOutputPath) ? userOutputPath : path.join(cwd, userOutputPath);
 
 const docsFile = fs.readFileSync(inputPath);
-const results = parseDocs(docsFile);
+const { meta: metaData, ...data } = parseDocs(docsFile);
 
 if (!metaOnly) {
   // eslint-disable-next-line no-console
   console.log(`Writing data to ${outputPath}`);
   if (singleFile) {
     const dataFilename = isString(singleFile) ? singleFile : 'data.json';
-    writeFileSafe(path.join(outputPath, dataFilename), results.data);
+    writeFileSafe(path.join(outputPath, dataFilename), data);
   } else {
-    Object.entries(results.data).forEach(([key, data]) => {
+    Object.entries(data).forEach(([key, data]) => {
       writeFileSafe(path.join(outputPath, `${key}.json`), data);
     });
   }
@@ -83,13 +83,13 @@ if (userMetaPath) {
   // eslint-disable-next-line no-console
   console.log(`Writing meta data to ${metaPath}`);
 
-  writeFileSafe(path.join(metaPath, '_classNames.json'), results.meta.topLevelClassList);
+  writeFileSafe(path.join(metaPath, '_classNames.json'), metaData.topLevelClassList);
 
-  Object.entries(results.meta.classlistMap).forEach(([key, data]) => {
+  Object.entries(metaData.classlistMap).forEach(([key, data]) => {
     writeFileSafe(path.join(metaPath, `classes/${key}.json`), data);
   });
 
-  Object.entries(results.meta.categories).forEach(([key, data]) => {
+  Object.entries(metaData.categories).forEach(([key, data]) => {
     writeFileSafe(path.join(metaPath, `categories/${key}.json`), data);
   });
 }

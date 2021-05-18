@@ -60,7 +60,7 @@ function parseDocsString(input: string) {
       classlistMap,
       categories: categoryClasses,
     },
-    data,
+    ...data,
   };
 }
 
