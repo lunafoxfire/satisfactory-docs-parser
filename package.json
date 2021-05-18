@@ -1,7 +1,7 @@
 {
   "name": "satisfactory-docs-parser",
   "description": "Parser for Satisfactory's Docs.json file",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "LydianLights",
   "license": "MIT",
   "repository": {
