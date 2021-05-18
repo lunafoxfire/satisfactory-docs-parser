@@ -6,8 +6,13 @@ const nativeClassRegex = /FactoryGame\.(.+)'$/;
 
 function parseDocs(input: Buffer | string) {
   if (Buffer.isBuffer(input)) {
-    const asString = input.toString('utf16le', 2);
-    return parseDocsString(asString);
+    try {
+      // Try utf-16
+      return parseDocsString(input.toString('utf16le', 2));
+    } catch {
+      // if not try utf-8
+      return parseDocsString(input.toString('utf-8'));
+    }
   } else {
     return parseDocsString(input);
   }
