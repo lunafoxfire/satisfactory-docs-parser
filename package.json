@@ -1,9 +1,18 @@
 {
   "name": "satisfactory-docs-parser",
   "description": "Parser for Satisfactory's Docs.json file",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "author": "LydianLights",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lydianlights/satisfactory-docs-parser.git"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
   "scripts": {
     "build": "ttsc",
     "dev": "ttsc --watch",
@@ -11,7 +20,7 @@
     "prepare": "npm run build"
   },
   "bin": {
-    "parse-docs": "./build/cli.js"
+    "parse-docs": "./dist/cli.js"
   },
   "devDependencies": {
     "@types/node": "^15.0.3",

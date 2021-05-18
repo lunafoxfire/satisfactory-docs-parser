@@ -264,7 +264,7 @@ const VEHICLE_MAPPING: { [key: string]: VehicleInfo } = {
   },
   'Desc_FreightWagon_C': {
     name: 'Freight Car',
-    description: 'The Freight Car is used to transport large quantity of resources from one place to another. Resources are loaded or unloaded at Freight Platforms.\nMust be build on Railway.',
+    description: 'The Freight Car is used to transport large quantity of resources from one place to another. Resources are loaded or unloaded at Freight Platforms.\nMust be built on Railway.',
   },
   'Desc_Locomotive_C': {
     name: 'Electric Locomotive',

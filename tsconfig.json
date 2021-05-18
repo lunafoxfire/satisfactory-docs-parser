@@ -1,16 +1,15 @@
 {
   "compilerOptions": {
+    "target": "es5",
     "module": "commonjs",
-    "target": "es6",
-    "lib": [
-      "es2020"
-    ],
+    "lib": ["es2020"],
+    "declaration": true,
     "strict": true,
     "esModuleInterop": true,
+    "outDir": "dist/",
+    "baseUrl": "./src",
     "forceConsistentCasingInFileNames": true,
     "strictPropertyInitialization": false,
-    "baseUrl": "./src",
-    "outDir": "build/",
     "plugins": [
       {
         "transform": "@zerollup/ts-transform-paths"

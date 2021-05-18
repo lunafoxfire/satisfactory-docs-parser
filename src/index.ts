@@ -64,8 +64,6 @@ function parseDocsString(input: string) {
   };
 }
 
-export default parseDocs;
-
 function validateSlugs(data: any) {
   const slugs: any[] = [];
   Object.entries<any>(data).forEach(([category, entries]) => {
@@ -81,3 +79,5 @@ function validateSlugs(data: any) {
     });
   });
 }
+
+export = parseDocs;
