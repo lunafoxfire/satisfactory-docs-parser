@@ -23,9 +23,25 @@ export type ItemInfo = {
   meta: ItemMeta,
 };
 
+export type NodeCounts = {
+  impure: number,
+  normal: number,
+  pure: number,
+};
+
+export type WellCounts = {
+  impure: number,
+  normal: number,
+  pure: number,
+  wells: number,
+};
+
 export type ResourceInfo = {
   itemClass: string,
   form: string,
+  nodes?: NodeCounts,
+  resourceWells?: WellCounts,
+  maxExtraction: number,
   pingColor: Color,
   collectionSpeed: number,
 };
@@ -148,14 +164,70 @@ function getItems(categoryClasses: CategoryClasses) {
   return items;
 }
 
+const RESOURCE_NODE_DATA: { [key: string]: NodeCounts } = {
+  'Desc_OreIron_C': { impure: 33, normal: 41, pure: 46 },
+  'Desc_OreCopper_C': { impure: 9, normal: 28, pure: 12 },
+  'Desc_Stone_C': { impure: 12, normal: 47, pure: 27 },
+  'Desc_Coal_C': { impure: 6, normal: 29, pure: 15 },
+  'Desc_OreGold_C': { impure: 0, normal: 8, pure: 8 },
+  'Desc_RawQuartz_C': { impure: 0, normal: 11, pure: 5 },
+  'Desc_Sulfur_C': { impure: 1, normal: 7, pure: 3 },
+  'Desc_OreUranium_C': { impure: 1, normal: 3, pure: 0 },
+  'Desc_OreBauxite_C': { impure: 5, normal: 6, pure: 6 },
+  'Desc_LiquidOil_C': { impure: 10, normal: 12, pure: 8 },
+};
+
+const RESOURCE_WELL_DATA: { [key: string]: WellCounts } = {
+  'Desc_Water_C': { impure: 5, normal: 8, pure: 42, wells: 8 },
+  'Desc_LiquidOil_C': { impure: 6, normal: 3, pure: 3, wells: 2 },
+  'Desc_NitrogenGas_C': { impure: 2, normal: 7, pure: 36, wells: 6 },
+};
+
+const MAX_OVERCLOCK = 2.5;
 
 function getResources(categoryClasses: CategoryClasses) {
   const resources: ClassInfoMap<ResourceInfo> = {};
 
   categoryClasses.resources.forEach((entry) => {
+    const nodeData = RESOURCE_NODE_DATA[entry.ClassName];
+    const wellData = RESOURCE_WELL_DATA[entry.ClassName];
+    let maxExtraction = 0;
+
+    if (entry.ClassName === 'Desc_Water_C') {
+      maxExtraction = Infinity;
+    } else {
+      if (nodeData) {
+        let multiplier = 1;
+        let maxThroughput = Infinity;
+        if (entry.mForm === 'RF_SOLID') {
+          multiplier = 4;
+          maxThroughput = 780;
+        }
+        if (entry.ClassName === 'Desc_LiquidOil_C') {
+          multiplier = 2;
+          maxThroughput = 600;
+        }
+        maxExtraction +=
+          Math.min(30 * multiplier * MAX_OVERCLOCK, maxThroughput) * nodeData.impure
+          + Math.min(60 * multiplier * MAX_OVERCLOCK, maxThroughput) * nodeData.normal
+          + Math.min(120 * multiplier * MAX_OVERCLOCK, maxThroughput) * nodeData.pure;
+      }
+      if (wellData) {
+        const multiplier = 1;
+        const maxThroughput = 600;
+        maxExtraction +=
+          Math.min(30 * multiplier * MAX_OVERCLOCK, maxThroughput) * wellData.impure
+          + Math.min(60 * multiplier * MAX_OVERCLOCK, maxThroughput) * wellData.normal
+          + Math.min(120 * multiplier * MAX_OVERCLOCK, maxThroughput) * wellData.pure;
+      }
+    }
+
     resources[entry.ClassName] = {
       itemClass: entry.ClassName,
       form: entry.mForm,
+      nodes: nodeData,
+      resourceWells: wellData,
+      maxExtraction,
       pingColor: parseColor(parseCollection(entry.mPingColor), true),
       collectionSpeed: parseFloat(entry.mCollectSpeedMultiplier),
     };
