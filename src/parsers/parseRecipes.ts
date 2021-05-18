@@ -1,4 +1,7 @@
-import { createSlug, getShortClassname, parseCollection, parseItemQuantity, parseBuildingQuantity, ItemQuantity } from 'utilities';
+import {
+  createBasicSlug, createBuildingSlug, getShortClassname,
+  parseCollection, parseItemQuantity, parseBuildingQuantity, ItemQuantity,
+} from 'utilities';
 import { ClassInfoMap } from 'types';
 import { CategoryClasses } from 'class-categories/types';
 import { ItemInfo } from './parseItems';
@@ -95,7 +98,7 @@ export function parseRecipes(categoryClasses: CategoryClasses, { items, building
     if (isBuildRecipe) {
       const product = parseBuildingQuantity(parseCollection<any[]>(entry.mProduct)[0], buildings);
       buildRecipes[entry.ClassName] = {
-        slug: createSlug(entry.mDisplayName),
+        slug: `${createBuildingSlug(entry.ClassName, entry.mDisplayName)}-recipe`,
         name: entry.mDisplayName,
         ingredients,
         product,
@@ -106,7 +109,7 @@ export function parseRecipes(categoryClasses: CategoryClasses, { items, building
         .map((data) => parseItemQuantity(data, items));
 
       itemRecipes[entry.ClassName] = {
-        slug: createSlug(entry.mDisplayName),
+        slug: `${createBasicSlug(entry.mDisplayName)}-recipe`,
         name: entry.mDisplayName,
         craftTime: parseFloat(entry.mManufactoringDuration),
         maunalCraftMultiplier: parseFloat(entry.mManualManufacturingMultiplier),
@@ -121,5 +124,33 @@ export function parseRecipes(categoryClasses: CategoryClasses, { items, building
     }
   });
 
+  validateRecipes(itemRecipes, buildRecipes);
+
   return { itemRecipes, buildRecipes };
+}
+
+function validateRecipes(itemRecipes: ClassInfoMap<ItemRecipeInfo>, buildRecipes: ClassInfoMap<BuildRecipeInfo>) {
+  const slugs: string[] = [];
+  Object.entries(itemRecipes).forEach(([name, data]) => {
+    if (!data.slug) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Blank slug for recipe: [${name}]`);
+    } else if (slugs.includes(data.slug)) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Duplicate recipe slug: [${data.slug}] of [${name}]`);
+    } else {
+      slugs.push(data.slug);
+    }
+  });
+  Object.entries(buildRecipes).forEach(([name, data]) => {
+    if (!data.slug) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Blank slug for recipe: [${name}]`);
+    } else if (slugs.includes(data.slug)) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Duplicate recipe slug: [${data.slug}] of [${name}]`);
+    } else {
+      slugs.push(data.slug);
+    }
+  });
 }

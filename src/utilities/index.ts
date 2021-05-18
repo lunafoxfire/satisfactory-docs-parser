@@ -14,8 +14,31 @@ export type ItemQuantity = {
   quantity: number,
 }
 
-export function createSlug(name: string) {
-  return name.replace(/[\s|.]+/g, '-').replace(/[™:]/g, '').toLowerCase();
+export function createBasicSlug(displayName: string) {
+  return displayName
+    .replace(/[\s\-_.|]+/g, '-')
+    .replace(/[™:'"]/g, '')
+    .toLowerCase();
+}
+
+export function createSlugFromClassname(className: string) {
+  return createBasicSlug(className.replace(/_C$/, ''));
+}
+
+const wallSlugRegex = /^(?:Desc|Build|Recipe)_Wall_(?:(.+?)_)?8x4_(\d\d)_(?:(Steel)_)?C$/;
+export function createBuildingSlug(className: string, displayName: string) {
+  const match = wallSlugRegex.exec(className);
+  if (match) {
+    let slug = 'wall';
+    const [, ...captures] = match;
+    for (const capture of captures) {
+      if (capture) {
+        slug += `-${capture}`;
+      }
+    }
+    return createBasicSlug(slug);
+  }
+  return createBasicSlug(displayName);
 }
 
 export function cleanDescription(desc: string) {
@@ -29,7 +52,9 @@ export function standardizeItemDescriptor(className: string) {
 const EQUIP_DESC_MANUAL_MAP: any = {
   'Equip_GolfCartDispenser_C': 'Desc_GolfCart_C',
   'Equip_PortableMinerDispenser_C': 'Desc_PortableMiner_C',
-  'Equip_RebarGun_Projectile_C': 'Desc_RebarGunProjectile_C'
+  'Equip_RebarGun_Projectile_C': 'Desc_RebarGunProjectile_C',
+  'Equip_Zipline_C': 'Desc_ZipLine_C',
+  'Equip_GasMask_C': 'Desc_Gasmask_C',
 };
 export function equipmentNameToDescriptorName(equipName: string) {
   if (EQUIP_DESC_MANUAL_MAP[equipName]) {

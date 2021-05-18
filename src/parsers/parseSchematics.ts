@@ -1,4 +1,7 @@
-import { createSlug, cleanDescription, parseCollection, parseItemQuantity, ItemQuantity, parseBlueprintClassname } from 'utilities';
+import {
+  createSlugFromClassname, cleanDescription,
+  parseCollection, parseItemQuantity, ItemQuantity, parseBlueprintClassname
+} from 'utilities';
 import { ClassInfoMap, DocsClass } from 'types';
 import { CategoryClasses } from 'class-categories/types';
 import { ItemInfo, ResourceInfo } from './parseItems';
@@ -63,7 +66,7 @@ const excludeSchematics = [
 ];
 
 export function parseSchematics(categoryClasses: CategoryClasses, deps: SchematicDependencies) {
-  const { items, resources, itemRecipes, buildRecipes } = deps;
+  const { items } = deps;
   const schematics: ClassInfoMap<SchematicInfo> = {};
 
   categoryClasses.schematics.forEach((e) => {
@@ -76,7 +79,7 @@ export function parseSchematics(categoryClasses: CategoryClasses, deps: Schemati
       cost = parseCollection<any[]>(entry.mCost).map((data) => parseItemQuantity(data, items));
     }
     schematics[entry.ClassName] = {
-      slug: createSlug(entry.mDisplayName),
+      slug: createSlugFromClassname(entry.ClassName),
       name: entry.mDisplayName,
       description: cleanDescription(entry.mDescription),
       type: entry.mType,
@@ -92,7 +95,8 @@ export function parseSchematics(categoryClasses: CategoryClasses, deps: Schemati
   return schematics;
 }
 
-function parseUnlocks(data: UnlockData[], { items }: SchematicDependencies): SchematicUnlocks {
+function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): SchematicUnlocks {
+  const { items } = deps;
   const unlocks: SchematicUnlocks = {};
 
   data.forEach((unlockData) => {
@@ -151,11 +155,10 @@ function validateSchematics(schematics: ClassInfoMap<SchematicInfo>, deps: Schem
     if (!data.slug) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Blank slug for schematic: [${name}]`);
+    } else if (slugs.includes(data.slug)) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Duplicate schematic slug: [${data.slug}] of [${name}]`);
     } else {
-      if (slugs.includes(data.slug)) {
-        // eslint-disable-next-line no-console
-        console.warn(`WARNING: Duplicate schematic slug: [${data.slug}] from [${name}]`);
-      }
       slugs.push(data.slug);
     }
 

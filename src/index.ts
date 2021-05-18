@@ -41,6 +41,18 @@ function parseDocsString(input: string) {
   const { itemRecipes, buildRecipes } = parseRecipes(categoryClasses, { items, buildings });
   const schematics = parseSchematics(categoryClasses, { items, resources, itemRecipes, buildRecipes });
 
+  const data = {
+    items,
+    resources,
+    equipment,
+    buildings,
+    itemRecipes,
+    buildRecipes,
+    schematics,
+  };
+
+  validateSlugs(data);
+
   return {
     meta: {
       originalDocs: docs,
@@ -48,16 +60,24 @@ function parseDocsString(input: string) {
       classlistMap,
       categories: categoryClasses,
     },
-    data: {
-      items,
-      resources,
-      equipment,
-      buildings,
-      itemRecipes,
-      buildRecipes,
-      schematics,
-    }
+    data,
   };
 }
 
 export default parseDocs;
+
+function validateSlugs(data: any) {
+  const slugs: any[] = [];
+  Object.entries<any>(data).forEach(([category, entries]) => {
+    Object.entries<any>(entries).forEach(([className, classData]) => {
+      if (classData.slug) {
+        if (slugs.includes(classData.slug)) {
+          // eslint-disable-next-line no-console
+          console.warn(`WARNING: Duplicate global slug: [${classData.slug}] of [${className}] from [${category}]`);
+        } else {
+          slugs.push(classData.slug);
+        }
+      }
+    });
+  });
+}

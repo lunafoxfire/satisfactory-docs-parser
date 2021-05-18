@@ -1,5 +1,5 @@
 import {
-  createSlug, cleanDescription, standardizeItemDescriptor, equipmentNameToDescriptorName,
+  createBasicSlug, cleanDescription, standardizeItemDescriptor, equipmentNameToDescriptorName,
   parseStackSize, parseEquipmentSlot, parseCollection, parseColor, Color
 } from 'utilities';
 import { ClassInfoMap } from 'types';
@@ -90,10 +90,18 @@ const excludeEquip = [
 ];
 
 export function parseItems(categoryClasses: CategoryClasses) {
+  const items = getItems(categoryClasses);
+  const resources = getResources(categoryClasses);
+  const equipment = getEquipment(categoryClasses);
+
+  validateItems(items);
+  validateResources(resources, items);
+  validateEquipment(equipment, items);
+
   return {
-    items: getItems(categoryClasses),
-    resources: getResources(categoryClasses),
-    equipment: getEquipment(categoryClasses),
+    items,
+    resources,
+    equipment,
   };
 }
 
@@ -125,7 +133,7 @@ function getItems(categoryClasses: CategoryClasses) {
     }
 
     items[key] = {
-      slug: createSlug(entry.mDisplayName),
+      slug: createBasicSlug(entry.mDisplayName),
       name: entry.mDisplayName,
       description: cleanDescription(entry.mDescription),
       stackSize: parseStackSize(entry.mStackSize),
@@ -235,4 +243,37 @@ function getEquipment(categoryClasses: CategoryClasses) {
   });
 
   return equipment;
+}
+
+function validateItems(items: ClassInfoMap<ItemInfo>) {
+  const slugs: string[] = [];
+  Object.entries(items).forEach(([name, data]) => {
+    if (!data.slug) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Blank slug for item: [${name}]`);
+    } else if (slugs.includes(data.slug)) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Duplicate item slug: [${data.slug}] of [${name}]`);
+    } else {
+      slugs.push(data.slug);
+    }
+  });
+}
+
+function validateResources(resources: ClassInfoMap<ResourceInfo>, items: ClassInfoMap<ItemInfo>) {
+  Object.entries(resources).forEach(([name, data]) => {
+    if (!Object.keys(items).includes(data.itemClass)) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Resource missing item descriptor: [${name}]`);
+    }
+  });
+}
+
+function validateEquipment(equipment: ClassInfoMap<EquipmentInfo>, items: ClassInfoMap<ItemInfo>) {
+  Object.entries(equipment).forEach(([name, data]) => {
+    if (!Object.keys(items).includes(data.itemClass)) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Equipment missing item descriptor: [${name}]`);
+    }
+  });
 }

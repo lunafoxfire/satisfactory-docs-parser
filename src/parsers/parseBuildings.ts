@@ -1,4 +1,7 @@
-import { createSlug, cleanDescription, buildingNameToDescriptorName, parseBlueprintClassname, getShortClassname, parseCollection } from 'utilities';
+import {
+  createBasicSlug, createBuildingSlug, cleanDescription, buildingNameToDescriptorName,
+  parseBlueprintClassname, getShortClassname, parseCollection,
+} from 'utilities';
 import { ClassInfoMap } from 'types';
 import { CategoryClasses } from 'class-categories/types';
 import { ResourceInfo } from './parseItems';
@@ -219,7 +222,7 @@ export function parseBuildings(categoryClasses: CategoryClasses, { resources }: 
     }
 
     buildings[descriptorName] = {
-      slug: createSlug(buildingInfo.mDisplayName),
+      slug: createBuildingSlug(buildingInfo.ClassName, buildingInfo.mDisplayName),
       name: buildingInfo.mDisplayName,
       description: cleanDescription(buildingInfo.mDescription),
       categories,
@@ -234,6 +237,7 @@ export function parseBuildings(categoryClasses: CategoryClasses, { resources }: 
   });
 
   addVehicles(categoryClasses, buildings);
+  validateBuildings(buildings);
 
   return buildings;
 }
@@ -304,7 +308,7 @@ function addVehicles(categoryClasses: CategoryClasses, buildings: ClassInfoMap<B
     }
 
     buildings[entry.ClassName] = {
-      slug: createSlug(vehicleInfo.name),
+      slug: createBasicSlug(vehicleInfo.name),
       name: vehicleInfo.name,
       description: vehicleInfo.description,
       categories,
@@ -316,5 +320,20 @@ function addVehicles(categoryClasses: CategoryClasses, buildings: ClassInfoMap<B
       isVehicle: true,
       meta,
     };
+  });
+}
+
+function validateBuildings(buildings: ClassInfoMap<BuildingInfo>) {
+  const slugs: string[] = [];
+  Object.entries(buildings).forEach(([name, data]) => {
+    if (!data.slug) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Blank slug for building: [${name}]`);
+    } else if (slugs.includes(data.slug)) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Duplicate building slug: [${data.slug}] of [${name}]`);
+    } else {
+      slugs.push(data.slug);
+    }
   });
 }
