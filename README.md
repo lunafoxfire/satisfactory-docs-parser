@@ -105,3 +105,11 @@ To watch for file changes while coding use `npm run dev`
 To test the cli while developing use `node ./build/cli.js`
 
 There are no automated tests or anything since this is a small project. I may add more rigor later if this becomes widely used.
+
+# TODO
+
+Currently there's no parsing of image and icon paths but I plan on adding this very soon (tm)
+
+# Acknowledgements
+
+Huge huge huge thanks to greeny ([github](https://github.com/greeny)) for their project Satisfactory Tools ([repo](https://github.com/greeny/SatisfactoryTools)). The work they had already done in parsing out the data in the satisfactory docs made this project 100x easier.
