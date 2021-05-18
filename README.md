@@ -1,6 +1,6 @@
 # Satisfactory Docs Parser
 
-This is a package for parsing the `Docs.json` file provided by the developers of the game [Satisfactory](https://www.satisfactorygame.com/) into a format easily consumable by those interested in developing tools for the game. `Docs.json` can be found at `<root-game-directory>/CommunityResources/Docs/Docs.json` and contains metadata about the items, buildings, recipes, etc found in the game, but in a less-than-ideal format. This package aims to parse this file into a format both more human- and script- readable.
+This is a package for parsing the `Docs.json` file provided by the developers of the game [Satisfactory](https://www.satisfactorygame.com/) into a format easily consumable by those interested in developing tools for the game. This `Docs.json` file can be found at `<your-satisfactory-directory>/CommunityResources/Docs/Docs.json` and contains metadata about the items, buildings, recipes, etc found in the game. This package aims to parse this file into a format both more human- and script- readable.
 
 # Usage
   `npm install satisfactory-docs-parser`
@@ -19,7 +19,7 @@ const data = parseDocs(file); // parseDocs accepts either a Buffer or a string
 
 ### Output Format
 ```ts
-type data = {
+data = {
   items, // Includes anything that can go in the player's inventory
   resources, // List of raw resources found in the game
   equipment, // All equippable items
@@ -27,6 +27,8 @@ type data = {
   itemRecipes, // All recipes that produce items
   buildRecipes, // All recipes used by the build gun
   schematics, // All unlockables including milestones, MAM, AWESOME Shop, hard drive researches, and misc progression
+
+  // Extra metadata about the original docs file
   meta: {
     originalDocs: any[], // the original file
     topLevelClassList: string[], // list of the names of all top-level classes provided in Docs.json
@@ -36,7 +38,7 @@ type data = {
 }
 ```
 
-All data (items, resources, etc) is provided as an object that maps the item's class name to its info. For example, to get information about iron plates (with internal classname `Desc_IronPlate_C`), you might do the following:
+All data (items, resources, buildings, etc) is provided as an object that maps the item's class name to its info. For example, to get information about iron plates (with internal classname `Desc_IronPlate_C`), you might do the following:
 ```js
 const ironPlate = data.items['Desc_IronPlate_C'];
 console.log(ironPlate.name);
@@ -78,6 +80,10 @@ This package also provides a command line interface for parsing `Docs.json` via 
 |<nobr>`--single-file`</nobr><br>`-f`|Outputs a single `data.json` file instead of individual files. Optionally a filename may be provided.|flag or filename|
 |<nobr>`--meta`</nobr><br>`-m`|Outputs metadata to `<output-directory>/meta`. Optionally a path may be provided. Relative paths are relative to output directory.|flag or path|
 |<nobr>`--meta-only`|Same as meta, but only metadata is output.|flag or path|
+
+### Example
+
+`parse-docs --input data/Docs.json --output parsed-docs/`
 
 # Contributing
 
