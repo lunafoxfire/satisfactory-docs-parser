@@ -57,8 +57,24 @@ const christmasRecipes = [
   'Recipe_SnowballWeapon_C',
 ];
 
+// These are all made in a building marked as Build_Converter_C which doesn't exist afaik
+// They just take a raw resource and output the same resource
+export const converterRecipes = [
+  'Recipe_OreIron_C',
+  'Recipe_OreCopper_C',
+  'Recipe_OreBauxite_C',
+  'Recipe_OreCaterium_C',
+  'Recipe_OreUranium_C',
+  'Recipe_CrudeOil_C',
+  'Recipe_Sulfur_C',
+  'Recipe_Limestone_C',
+  'Recipe_Coal_C',
+  'Recipe_RawQuartz_C',
+];
+
 const excludeRecipes = [
   ...christmasRecipes,
+  ...converterRecipes,
   'Recipe_Wall_Window_8x4_03_Steel_C' // Don't think this exists in game??
 ];
 

@@ -5,7 +5,7 @@ import {
 import { ClassInfoMap, DocsClass } from 'types';
 import { CategoryClasses } from 'class-categories/types';
 import { ItemInfo, ResourceInfo } from './parseItems';
-import { ItemRecipeInfo, BuildRecipeInfo } from './parseRecipes';
+import { ItemRecipeInfo, BuildRecipeInfo, converterRecipes } from './parseRecipes';
 
 type SchematicsEntry = DocsClass & { mUnlocks: any[] }
 
@@ -102,7 +102,9 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
   data.forEach((unlockData) => {
     switch (unlockData.Class) {
       case 'BP_UnlockRecipe_C': {
-        unlocks.recipes = parseCollection<string[]>(unlockData.mRecipes).map((r) => parseBlueprintClassname(r));
+        unlocks.recipes = parseCollection<string[]>(unlockData.mRecipes)
+          .map((r) => parseBlueprintClassname(r))
+          .filter((r) => !converterRecipes.includes(r));
         break;
       }
       case 'BP_UnlockSchematic_C': {
