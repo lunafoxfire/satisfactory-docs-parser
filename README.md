@@ -102,7 +102,7 @@ To compile use `npm run build`
 
 To watch for file changes while coding use `npm run dev`
 
-To test the cli while developing use `node ./build/cli.js`
+To test the cli while developing use `node ./build/cli.js` (for custom options) or `npm run test-cli` (for default options and maximum laziness)
 
 There are no automated tests or anything since this is a small project. I may add more rigor later if this becomes widely used.
 
