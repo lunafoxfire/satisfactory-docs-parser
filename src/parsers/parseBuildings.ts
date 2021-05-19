@@ -138,6 +138,7 @@ export function parseBuildings(categoryClasses: CategoryClasses, { resources }: 
       }
     }
     if (buildingInfo.ClassName === 'Build_HadronCollider_C') {
+      isPowered = true;
       meta.powerConsumptionCycle = {
         cycleTime: parseFloat(buildingInfo.mSequenceDuration),
         minimumConsumption: parseFloat(buildingInfo.mEstimatedMininumPowerConsumption),
@@ -178,7 +179,7 @@ export function parseBuildings(categoryClasses: CategoryClasses, { resources }: 
         expansionInterval: parseFloat(buildingInfo.mRadarExpansionInterval),
       };
     }
-    if (buildingInfo.mAllowedResources && buildingInfo.mAllowedResourceForms) {
+    if (buildingInfo.mAllowedResourceForms) {
       isResourceExtractor = true;
       const allowedResourceForms = parseCollection<string[]>(buildingInfo.mAllowedResourceForms);
       meta.allowedResourceForms = allowedResourceForms;
@@ -288,6 +289,7 @@ function addVehicles(categoryClasses: CategoryClasses, buildings: ClassInfoMap<B
       console.warn(`WARNING: No vehicle mapping exists for vehicle: [${entry.className}]`);
       return;
     }
+    let isPowered = false;
     const categories = parseCollection<string[]>(entry.mSubCategories)
       .map((data) => parseBlueprintClassname(data));
     const buildMenuPriority = parseFloat(entry.mBuildMenuPriority);
@@ -300,6 +302,7 @@ function addVehicles(categoryClasses: CategoryClasses, buildings: ClassInfoMap<B
       meta.inventorySize = parseInt(entry.mInventorySize, 10);
     }
     if (entry.mPowerConsumption) {
+      isPowered = true;
       const powerConsumption = parseCollection(entry.mPowerConsumption);
       meta.powerConsumptionRange = {
         minimumConsumption: powerConsumption.Min,
@@ -313,7 +316,7 @@ function addVehicles(categoryClasses: CategoryClasses, buildings: ClassInfoMap<B
       description: vehicleInfo.description,
       categories,
       buildMenuPriority,
-      isPowered: false,
+      isPowered,
       isProduction: false,
       isResourceExtractor: false,
       isGenerator: false,
