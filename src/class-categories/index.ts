@@ -197,7 +197,7 @@ export const categoryClassnames: CategoryClassnames = {
 export function getCategoryClasses(classlistMap: DocsClasslistMap): CategoryClasses {
   const categoryClasses: any = {};
   Object.entries(categoryClassnames).forEach(([category, classnames]) => {
-    categoryClasses[category] = classnames.flatMap((classname) => classlistMap[classname]);
+    categoryClasses[category] = classnames.flatMap((classname) => classlistMap[classname]).filter((entry) => entry);
   });
   return (categoryClasses as CategoryClasses);
 }
