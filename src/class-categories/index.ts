@@ -1,7 +1,7 @@
-import { DocsClasslistMap } from 'types';
+import { DocsClass, DocsClasslistMap } from 'types';
 import { CategoryClassnames, CategoryClasses } from './types';
 
-export const classnames = [
+export const globalClassnameList = [
   'FGBuildable',
   'FGBuildableAttachmentMerger',
   'FGBuildableAttachmentSplitter',
@@ -194,10 +194,34 @@ export const categoryClassnames: CategoryClassnames = {
   ],
 };
 
+export function validateClassList(classListFromDocs: string[]) {
+  classListFromDocs.forEach((className) => {
+    if (!globalClassnameList.includes(className)) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: [${className}] is not in the list of predefined classes!`);
+    }
+  });
+  globalClassnameList.forEach((className) => {
+    if (!classListFromDocs.includes(className)) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: [${className}] was expected to be in the docs but does not exist!`);
+    }
+  });
+}
+
 export function getCategoryClasses(classlistMap: DocsClasslistMap): CategoryClasses {
   const categoryClasses: any = {};
   Object.entries(categoryClassnames).forEach(([category, classnames]) => {
-    categoryClasses[category] = classnames.flatMap((classname) => classlistMap[classname]).filter((entry) => entry);
+    const categoryDocsClasses: DocsClass[] = [];
+    classnames.forEach((className) => {
+      const docsClasses: DocsClass[] = classlistMap[className];
+      if (!docsClasses) {
+        // eslint-disable-next-line no-console
+        console.warn(`WARNING: Expected to find class [${className}] for category [${category}] in the docs but it does not exist!`);
+      }
+      categoryDocsClasses.push(...docsClasses);
+    });
+    categoryClasses[category] = categoryDocsClasses;
   });
   return (categoryClasses as CategoryClasses);
 }

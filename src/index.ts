@@ -1,7 +1,7 @@
 import util from 'util';
 import { DocsClasslist, DocsClasslistMap } from 'types';
 import { parseItems, parseBuildings, parseRecipes, parseSchematics } from 'parsers';
-import { getCategoryClasses } from 'class-categories';
+import { getCategoryClasses, validateClassList } from 'class-categories';
 
 const nativeClassRegex = /FactoryGame\.(.+)'$/;
 
@@ -42,6 +42,7 @@ function parseDocsString(input: string) {
   }
 
   const classList = Object.keys(classlistMap).sort();
+  validateClassList(classList);
   const categoryClasses = getCategoryClasses(classlistMap);
 
   const { items, resources, equipment } = parseItems(categoryClasses);
