@@ -1,6 +1,7 @@
+import util from 'util';
 import { DocsClasslist, DocsClasslistMap } from 'types';
 import { parseItems, parseBuildings, parseRecipes, parseSchematics } from 'parsers';
-import { getCategoryClasses } from 'class-categories';
+import { getCategoryClasses, validateClassList } from 'class-categories';
 
 const nativeClassRegex = /FactoryGame\.(.+)'$/;
 
@@ -8,10 +9,12 @@ function parseDocs(input: Buffer | string) {
   if (Buffer.isBuffer(input)) {
     try {
       // Try utf-16
-      return parseDocsString(input.toString('utf16le', 2));
+      const decoder = new util.TextDecoder('utf-16le');
+      return parseDocsString(decoder.decode(input));
     } catch {
       // if not try utf-8
-      return parseDocsString(input.toString('utf-8'));
+      const decoder = new util.TextDecoder('utf-8');
+      return parseDocsString(decoder.decode(input));
     }
   } else {
     return parseDocsString(input);
@@ -39,6 +42,7 @@ function parseDocsString(input: string) {
   }
 
   const classList = Object.keys(classlistMap).sort();
+  validateClassList(classList);
   const categoryClasses = getCategoryClasses(classlistMap);
 
   const { items, resources, equipment } = parseItems(categoryClasses);
