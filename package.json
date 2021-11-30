@@ -19,7 +19,7 @@
     "test-cli": "npm run build && node ./dist/cli.js -i data/Docs.json -o data/parsed -m",
     "lint": "eslint .",
     "prepare": "npm run build",
-    "np": "np"
+    "np": "np --no-tests"
   },
   "bin": {
     "parse-docs": "./dist/cli.js"
