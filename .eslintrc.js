@@ -23,6 +23,7 @@ module.exports = {
     'import/no-duplicates': OFF,
     'quote-props': OFF,
     'operator-linebreak': OFF,
+    'no-use-before-define': OFF,
 
     // Handled by typescript
     'no-redeclare': OFF,

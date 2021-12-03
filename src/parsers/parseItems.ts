@@ -2,14 +2,8 @@ import {
   createBasicSlug, cleanDescription, standardizeItemDescriptor, equipmentNameToDescriptorName,
   parseStackSize, parseEquipmentSlot, parseCollection, parseColor, Color
 } from 'utilities';
-import { ClassInfoMap } from 'types';
-import { CategoryClasses } from 'class-categories/types';
-
-export type ItemMeta = {
-  energyValue?: number,
-  radioactiveDecay?: number,
-  fluidColor?: Color,
-};
+import { ParsedClassInfoMap } from 'types';
+import { CategorizedDataClasses } from 'class-categorizer/types';
 
 export type ItemInfo = {
   slug: string,
@@ -21,6 +15,22 @@ export type ItemInfo = {
   isFuel: boolean,
   isRadioactive: boolean,
   meta: ItemMeta,
+};
+
+export type ItemMeta = {
+  energyValue?: number,
+  radioactiveDecay?: number,
+  fluidColor?: Color,
+};
+
+export type ResourceInfo = {
+  itemClass: string,
+  form: string,
+  nodes?: NodeCounts,
+  resourceWells?: WellCounts,
+  maxExtraction: number,
+  pingColor: Color,
+  collectionSpeed: number,
 };
 
 export type NodeCounts = {
@@ -36,14 +46,10 @@ export type WellCounts = {
   wells: number,
 };
 
-export type ResourceInfo = {
+export type EquipmentInfo = {
   itemClass: string,
-  form: string,
-  nodes?: NodeCounts,
-  resourceWells?: WellCounts,
-  maxExtraction: number,
-  pingColor: Color,
-  collectionSpeed: number,
+  slot: string,
+  meta: EquipmentMeta,
 };
 
 export type EquipmentMeta = {
@@ -61,12 +67,6 @@ export type EquipmentMeta = {
   explosionDamage?: number,
   explosionRadius?: number,
   detectionRange?: number,
-};
-
-export type EquipmentInfo = {
-  itemClass: string,
-  slot: string,
-  meta: EquipmentMeta,
 };
 
 const christmasItems = [
@@ -105,7 +105,7 @@ const excludeEquip = [
   'Equip_MedKit_C', // Handled as consumable equipment
 ];
 
-export function parseItems(categoryClasses: CategoryClasses) {
+export function parseItems(categoryClasses: CategorizedDataClasses) {
   const items = getItems(categoryClasses);
   const resources = getResources(categoryClasses);
   const equipment = getEquipment(categoryClasses);
@@ -122,8 +122,8 @@ export function parseItems(categoryClasses: CategoryClasses) {
 }
 
 
-function getItems(categoryClasses: CategoryClasses) {
-  const items: ClassInfoMap<ItemInfo> = {};
+function getItems(categoryClasses: CategorizedDataClasses) {
+  const items: ParsedClassInfoMap<ItemInfo> = {};
 
   categoryClasses.itemDescriptors.forEach((entry) => {
     if (excludeItems.includes(entry.ClassName)) {
@@ -185,8 +185,8 @@ const RESOURCE_WELL_DATA: { [key: string]: WellCounts } = {
 
 const MAX_OVERCLOCK = 2.5;
 
-function getResources(categoryClasses: CategoryClasses) {
-  const resources: ClassInfoMap<ResourceInfo> = {};
+function getResources(categoryClasses: CategorizedDataClasses) {
+  const resources: ParsedClassInfoMap<ResourceInfo> = {};
 
   categoryClasses.resources.forEach((entry) => {
     const nodeData = RESOURCE_NODE_DATA[entry.ClassName];
@@ -237,8 +237,8 @@ function getResources(categoryClasses: CategoryClasses) {
 }
 
 
-function getEquipment(categoryClasses: CategoryClasses) {
-  const equipment: ClassInfoMap<EquipmentInfo> = {};
+function getEquipment(categoryClasses: CategorizedDataClasses) {
+  const equipment: ParsedClassInfoMap<EquipmentInfo> = {};
 
   categoryClasses.equipment.forEach((entry) => {
     if (excludeEquip.includes(entry.ClassName)) {
@@ -317,7 +317,7 @@ function getEquipment(categoryClasses: CategoryClasses) {
   return equipment;
 }
 
-function validateItems(items: ClassInfoMap<ItemInfo>) {
+function validateItems(items: ParsedClassInfoMap<ItemInfo>) {
   const slugs: string[] = [];
   Object.entries(items).forEach(([name, data]) => {
     if (!data.slug) {
@@ -332,7 +332,7 @@ function validateItems(items: ClassInfoMap<ItemInfo>) {
   });
 }
 
-function validateResources(resources: ClassInfoMap<ResourceInfo>, items: ClassInfoMap<ItemInfo>) {
+function validateResources(resources: ParsedClassInfoMap<ResourceInfo>, items: ParsedClassInfoMap<ItemInfo>) {
   Object.entries(resources).forEach(([name, data]) => {
     if (!Object.keys(items).includes(data.itemClass)) {
       // eslint-disable-next-line no-console
@@ -341,7 +341,7 @@ function validateResources(resources: ClassInfoMap<ResourceInfo>, items: ClassIn
   });
 }
 
-function validateEquipment(equipment: ClassInfoMap<EquipmentInfo>, items: ClassInfoMap<ItemInfo>) {
+function validateEquipment(equipment: ParsedClassInfoMap<EquipmentInfo>, items: ParsedClassInfoMap<ItemInfo>) {
   Object.entries(equipment).forEach(([name, data]) => {
     if (!Object.keys(items).includes(data.itemClass)) {
       // eslint-disable-next-line no-console

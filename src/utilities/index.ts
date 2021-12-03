@@ -1,6 +1,6 @@
-import { ClassInfoMap } from 'types';
+import { ParsedClassInfoMap } from 'types';
 import { ItemInfo } from 'parsers/parseItems';
-import { BuildingInfo } from 'parsers/parseBuildings';
+import { BuildableInfo } from 'parsers/parseBuildables';
 export { parseCollection } from './deserialization';
 
 export type Color = {
@@ -26,7 +26,7 @@ export function createSlugFromClassname(className: string) {
 }
 
 const wallSlugRegex = /^(?:Desc|Build|Recipe)_Wall_(?:(.+?)_)?8x4_(\d\d)_(?:(Steel)_)?C$/;
-export function createBuildingSlug(className: string, displayName: string) {
+export function createBuildableSlug(className: string, displayName: string) {
   const match = wallSlugRegex.exec(className);
   if (match) {
     let slug = 'wall';
@@ -70,11 +70,11 @@ const BUILDING_DESC_MANUAL_MAP: any = {
   'Build_PowerPoleWall_Mk3_C': 'Desc_PowerPoleWallMk3_C',
   'Build_WalkwayTrun_C': 'Desc_WalkwayTurn_C',
 };
-export function buildingNameToDescriptorName(buildingName: string) {
-  if (BUILDING_DESC_MANUAL_MAP[buildingName]) {
-    return BUILDING_DESC_MANUAL_MAP[buildingName];
+export function buildableNameToDescriptorName(buildableName: string) {
+  if (BUILDING_DESC_MANUAL_MAP[buildableName]) {
+    return BUILDING_DESC_MANUAL_MAP[buildableName];
   }
-  return buildingName.replace(/^Build_/, 'Desc_');
+  return buildableName.replace(/^Build_/, 'Desc_');
 }
 
 const classnameRegex = /\.(.+)$/;
@@ -112,7 +112,7 @@ export function parseStackSize(data: string) {
     case 'SS_HUGE':
       return 500;
     case 'SS_FLUID':
-      return 0;
+      return 50;
     default:
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Invalid stack size: [${data}]`);
@@ -155,7 +155,7 @@ const SUPRESS_ITEM_WARNINGS = [
   'Desc_GoldenNut_Statue_C',
   'Desc_Cup_C',
 ];
-export function parseItemQuantity(data: any, itemData: ClassInfoMap<ItemInfo>): ItemQuantity {
+export function parseItemQuantity(data: any, itemData: ParsedClassInfoMap<ItemInfo>): ItemQuantity {
   const className = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
   const itemInfo = itemData[className];
   if (!itemInfo && !SUPRESS_ITEM_WARNINGS.includes(className)) {
@@ -169,12 +169,12 @@ export function parseItemQuantity(data: any, itemData: ClassInfoMap<ItemInfo>): 
   };
 }
 
-export function parseBuildingQuantity(data: any, buildingData: ClassInfoMap<BuildingInfo>): string {
+export function parseBuildableQuantity(data: any, buildableData: ParsedClassInfoMap<BuildableInfo>): string {
   const className = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
-  const buildingInfo = buildingData[className];
-  if (!buildingInfo) {
+  const buildableInfo = buildableData[className];
+  if (!buildableInfo) {
     // eslint-disable-next-line no-console
-    console.warn(`WARNING: Missing building info for ${className}`);
+    console.warn(`WARNING: Missing buildable info for ${className}`);
   }
   return className;
 }

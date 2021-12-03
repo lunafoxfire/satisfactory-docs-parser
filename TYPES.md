@@ -76,10 +76,10 @@ type EquipmentMeta = {
 };
 ```
 
-## `buildings`
+## `buildables`
 
 ```ts
-type BuildingInfo = {
+type BuildableInfo = {
   slug: string,
   name: string,
   description: string,
@@ -90,11 +90,11 @@ type BuildingInfo = {
   isResourceExtractor: boolean,
   isGenerator: boolean,
   isVehicle: boolean,
-  meta: BuildingMeta,
+  meta: BuildableMeta,
 };
 
-type BuildingMeta = {
-  size?: BuildingSize,
+type BuildableMeta = {
+  size?: BuildableSize,
   beltSpeed?: number,
   manufacturingSpeed?: number,
   inventorySize?: number,
@@ -118,7 +118,7 @@ type BuildingMeta = {
   vehicleFuelConsumption?: number,
 };
 
-type BuildingSize = {
+type BuildableSize = {
   width: number,
   height: number,
 };
@@ -142,10 +142,10 @@ type RadarTowerInfo = {
 };
 ```
 
-## `itemRecipes`
+## `productionRecipes`
 
 ```ts
-type ItemRecipeInfo = {
+type ProductionRecipeInfo = {
   slug: string,
   name: string,
   craftTime: number,
@@ -160,10 +160,10 @@ type ItemRecipeInfo = {
 };
 ```
 
-## `buildRecipes`
+## `buildableRecipes`
 
 ```ts
-type BuildRecipeInfo = {
+type BuildableRecipeInfo = {
   slug: string,
   name: string,
   ingredients: ItemQuantity[],

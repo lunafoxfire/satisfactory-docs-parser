@@ -85,12 +85,12 @@ if (userMetaPath) {
 
   writeFileSafe(path.join(metaPath, '_classNames.json'), metaData.topLevelClassList);
 
-  Object.entries(metaData.classlistMap).forEach(([key, data]) => {
-    writeFileSafe(path.join(metaPath, `classes/${key}.json`), data);
+  Object.entries(metaData.dataClassesByTopLevelClass).forEach(([key, data]) => {
+    writeFileSafe(path.join(metaPath, `dataByTopLevelClass/${key}.json`), data);
   });
 
-  Object.entries(metaData.categories).forEach(([key, data]) => {
-    writeFileSafe(path.join(metaPath, `categories/${key}.json`), data);
+  Object.entries(metaData.dataClassesByCategory).forEach(([key, data]) => {
+    writeFileSafe(path.join(metaPath, `dataByCategory/${key}.json`), data);
   });
 }
 

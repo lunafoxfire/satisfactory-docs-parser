@@ -1,17 +1,17 @@
-export type DocsClass = {
+export type DocsTopLevelClass = {
+  NativeClass: string,
+  Classes: DocsDataClass[],
+};
+
+export type DocsDataClass = {
   ClassName: string,
   [key: string]: string,
 };
 
-export type DocsClasslist = {
-  NativeClass: string,
-  Classes: DocsClass[],
+export type DocsDataClassMap = {
+  [NativeClass: string]: DocsDataClass[],
 };
 
-export type DocsClasslistMap = {
-  [NativeClass: string]: DocsClass[],
-};
-
-export type ClassInfoMap<T> = {
+export type ParsedClassInfoMap<T> = {
   [ClassName: string]: T
 }

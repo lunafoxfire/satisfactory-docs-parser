@@ -1,36 +1,27 @@
 import {
-  createBasicSlug, createBuildingSlug, cleanDescription, buildingNameToDescriptorName,
+  createBasicSlug, createBuildableSlug, cleanDescription, buildableNameToDescriptorName,
   parseBlueprintClassname, getShortClassname, parseCollection,
 } from 'utilities';
-import { ClassInfoMap } from 'types';
-import { CategoryClasses } from 'class-categories/types';
+import { ParsedClassInfoMap } from 'types';
+import { CategorizedDataClasses } from 'class-categorizer/types';
 import { ResourceInfo } from './parseItems';
 
-export type BuildingSize = {
-  width: number,
-  height: number,
+export type BuildableInfo = {
+  slug: string,
+  name: string,
+  description: string,
+  categories: string[],
+  buildMenuPriority: number,
+  isPowered: boolean,
+  isProduction: boolean,
+  isResourceExtractor: boolean,
+  isGenerator: boolean,
+  isVehicle: boolean,
+  meta: BuildableMeta,
 };
 
-export type PowerConsumptionCycle = {
-  cycleTime: number,
-  minimumConsumption: number,
-  maximumConsumption: number,
-};
-
-export type PowerConsumptionRange = {
-  minimumConsumption: number,
-  maximumConsumption: number,
-};
-
-export type RadarTowerInfo = {
-  minRevealRadius: number,
-  maxRevealRadius: number,
-  expansionSteps: number,
-  expansionInterval: number,
-};
-
-export type BuildingMeta = {
-  size?: BuildingSize,
+export type BuildableMeta = {
+  size?: BuildableSize,
   beltSpeed?: number,
   manufacturingSpeed?: number,
   inventorySize?: number,
@@ -54,25 +45,34 @@ export type BuildingMeta = {
   vehicleFuelConsumption?: number,
 };
 
-export type BuildingInfo = {
-  slug: string,
-  name: string,
-  description: string,
-  categories: string[],
-  buildMenuPriority: number,
-  isPowered: boolean,
-  isProduction: boolean,
-  isResourceExtractor: boolean,
-  isGenerator: boolean,
-  isVehicle: boolean,
-  meta: BuildingMeta,
+export type BuildableSize = {
+  width: number,
+  height: number,
 };
 
-interface BuildingDependencies {
-  resources: ClassInfoMap<ResourceInfo>,
+export type PowerConsumptionCycle = {
+  cycleTime: number,
+  minimumConsumption: number,
+  maximumConsumption: number,
+};
+
+export type PowerConsumptionRange = {
+  minimumConsumption: number,
+  maximumConsumption: number,
+};
+
+export type RadarTowerInfo = {
+  minRevealRadius: number,
+  maxRevealRadius: number,
+  expansionSteps: number,
+  expansionInterval: number,
+};
+
+interface BuildableDependencies {
+  resources: ParsedClassInfoMap<ResourceInfo>,
 }
 
-const christmasBuildings = [
+const christmasBuildables = [
   'Build_XmassTree_C',
   'Build_WreathDecor_C',
   'Build_CandyCaneDecor_C',
@@ -82,110 +82,110 @@ const christmasBuildings = [
   'Build_XmassLightsLine_C',
 ];
 
-const excludeBuildings = [
-  ...christmasBuildings,
+const excludeBuildables = [
+  ...christmasBuildables,
   'Build_JumpPad_C', // Old jump pads
   'Build_JumpPadTilted_C',
 ];
 
-export function parseBuildings(categoryClasses: CategoryClasses, { resources }: BuildingDependencies) {
-  const buildings: ClassInfoMap<BuildingInfo> = {};
+export function parseBuildables(categoryClasses: CategorizedDataClasses, { resources }: BuildableDependencies) {
+  const buildables: ParsedClassInfoMap<BuildableInfo> = {};
 
-  categoryClasses.buildings.forEach((buildingInfo) => {
-    if (excludeBuildings.includes(buildingInfo.ClassName)) {
+  categoryClasses.buildables.forEach((buildableInfo) => {
+    if (excludeBuildables.includes(buildableInfo.ClassName)) {
       return;
     }
-    const descriptorName = buildingNameToDescriptorName(buildingInfo.ClassName);
+    const descriptorName = buildableNameToDescriptorName(buildableInfo.ClassName);
 
     let categories: string[] = [];
     let buildMenuPriority = 0;
-    const descriptorInfo = categoryClasses.buildingDescriptors.find((desc) => desc.ClassName === descriptorName);
+    const descriptorInfo = categoryClasses.buildableDescriptors.find((desc) => desc.ClassName === descriptorName);
     if (descriptorInfo) {
       categories = parseCollection<string[]>(descriptorInfo.mSubCategories)
         .map((data) => parseBlueprintClassname(data));
       buildMenuPriority = parseFloat(descriptorInfo.mBuildMenuPriority);
     } else {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Building descriptor missing for building: [${buildingInfo.ClassName}]`);
+      console.warn(`WARNING: Buildable descriptor missing for buildable: [${buildableInfo.ClassName}]`);
     }
 
-    const meta: BuildingMeta = {};
+    const meta: BuildableMeta = {};
     let isPowered = false;
     let isProduction = false;
     let isResourceExtractor = false;
     let isGenerator = false;
 
-    if (buildingInfo.mSize || buildingInfo.mWidth || buildingInfo.mHeight) {
+    if (buildableInfo.mSize || buildableInfo.mWidth || buildableInfo.mHeight) {
       const size = { width: 0, height: 0 };
-      if (buildingInfo.mSize) {
-        size.width = parseFloat(buildingInfo.mSize);
-      } else if (buildingInfo.mWidth) {
-        size.width = parseFloat(buildingInfo.mWidth);
+      if (buildableInfo.mSize) {
+        size.width = parseFloat(buildableInfo.mSize);
+      } else if (buildableInfo.mWidth) {
+        size.width = parseFloat(buildableInfo.mWidth);
       }
-      if (buildingInfo.mHeight) {
-        size.height = parseFloat(buildingInfo.mHeight);
+      if (buildableInfo.mHeight) {
+        size.height = parseFloat(buildableInfo.mHeight);
       }
       meta.size = size;
     }
-    if (buildingInfo.mSpeed) {
-      meta.beltSpeed = parseFloat(buildingInfo.mSpeed) / 2;
+    if (buildableInfo.mSpeed) {
+      meta.beltSpeed = parseFloat(buildableInfo.mSpeed) / 2;
     }
-    if (buildingInfo.mPowerConsumption) {
-      if (parseFloat(buildingInfo.mPowerConsumption) > 0) {
+    if (buildableInfo.mPowerConsumption) {
+      if (parseFloat(buildableInfo.mPowerConsumption) > 0) {
         isPowered = true;
-        meta.powerConsumption = parseFloat(buildingInfo.mPowerConsumption);
-        meta.overclockPowerExponent = parseFloat(buildingInfo.mPowerConsumptionExponent);
+        meta.powerConsumption = parseFloat(buildableInfo.mPowerConsumption);
+        meta.overclockPowerExponent = parseFloat(buildableInfo.mPowerConsumptionExponent);
       }
     }
-    if (buildingInfo.ClassName === 'Build_HadronCollider_C') {
+    if (buildableInfo.ClassName === 'Build_HadronCollider_C') {
       isPowered = true;
       meta.powerConsumptionCycle = {
-        cycleTime: parseFloat(buildingInfo.mSequenceDuration),
-        minimumConsumption: parseFloat(buildingInfo.mEstimatedMininumPowerConsumption),
-        maximumConsumption: parseFloat(buildingInfo.mEstimatedMaximumPowerConsumption),
+        cycleTime: parseFloat(buildableInfo.mSequenceDuration),
+        minimumConsumption: parseFloat(buildableInfo.mEstimatedMininumPowerConsumption),
+        maximumConsumption: parseFloat(buildableInfo.mEstimatedMaximumPowerConsumption),
       };
-      meta.overclockPowerExponent = parseFloat(buildingInfo.mPowerConsumptionExponent);
+      meta.overclockPowerExponent = parseFloat(buildableInfo.mPowerConsumptionExponent);
     }
-    if (buildingInfo.mManufacturingSpeed) {
+    if (buildableInfo.mManufacturingSpeed) {
       isProduction = true;
-      meta.manufacturingSpeed = parseFloat(buildingInfo.mManufacturingSpeed);
+      meta.manufacturingSpeed = parseFloat(buildableInfo.mManufacturingSpeed);
     }
-    if (buildingInfo.mInventorySizeX && buildingInfo.mInventorySizeY) {
-      meta.inventorySize = parseInt(buildingInfo.mInventorySizeX, 10) * parseInt(buildingInfo.mInventorySizeY, 10);
+    if (buildableInfo.mInventorySizeX && buildableInfo.mInventorySizeY) {
+      meta.inventorySize = parseInt(buildableInfo.mInventorySizeX, 10) * parseInt(buildableInfo.mInventorySizeY, 10);
     }
-    if (buildingInfo.mStorageSizeX && buildingInfo.mStorageSizeY) {
-      meta.inventorySize = parseInt(buildingInfo.mStorageSizeX, 10) * parseInt(buildingInfo.mStorageSizeY, 10);
+    if (buildableInfo.mStorageSizeX && buildableInfo.mStorageSizeY) {
+      meta.inventorySize = parseInt(buildableInfo.mStorageSizeX, 10) * parseInt(buildableInfo.mStorageSizeY, 10);
     }
-    if (buildingInfo.mFlowLimit) {
-      meta.flowLimit = parseFloat(buildingInfo.mFlowLimit) * 60;
+    if (buildableInfo.mFlowLimit) {
+      meta.flowLimit = parseFloat(buildableInfo.mFlowLimit) * 60;
     }
-    if (buildingInfo.mDesignPressure) {
-      if (parseFloat(buildingInfo.mDesignPressure) > 0) {
-        meta.headLift = parseFloat(buildingInfo.mDesignPressure);
-        meta.headLiftMax = parseFloat(buildingInfo.mMaxPressure);
+    if (buildableInfo.mDesignPressure) {
+      if (parseFloat(buildableInfo.mDesignPressure) > 0) {
+        meta.headLift = parseFloat(buildableInfo.mDesignPressure);
+        meta.headLiftMax = parseFloat(buildableInfo.mMaxPressure);
       }
     }
-    if (buildingInfo.mStorageCapacity) {
-      meta.fluidStorageCapacity = parseFloat(buildingInfo.mStorageCapacity);
+    if (buildableInfo.mStorageCapacity) {
+      meta.fluidStorageCapacity = parseFloat(buildableInfo.mStorageCapacity);
     }
-    if (buildingInfo.mPowerStoreCapacity) {
-      meta.powerStorageCapacity = parseFloat(buildingInfo.mPowerStoreCapacity);
+    if (buildableInfo.mPowerStoreCapacity) {
+      meta.powerStorageCapacity = parseFloat(buildableInfo.mPowerStoreCapacity);
     }
-    if (buildingInfo.ClassName === 'Build_RadarTower_C') {
+    if (buildableInfo.ClassName === 'Build_RadarTower_C') {
       meta.radarInfo = {
-        minRevealRadius: parseFloat(buildingInfo.mMinRevealRadius),
-        maxRevealRadius: parseFloat(buildingInfo.mMaxRevealRadius),
-        expansionSteps: parseInt(buildingInfo.mNumRadarExpansionSteps, 10),
-        expansionInterval: parseFloat(buildingInfo.mRadarExpansionInterval),
+        minRevealRadius: parseFloat(buildableInfo.mMinRevealRadius),
+        maxRevealRadius: parseFloat(buildableInfo.mMaxRevealRadius),
+        expansionSteps: parseInt(buildableInfo.mNumRadarExpansionSteps, 10),
+        expansionInterval: parseFloat(buildableInfo.mRadarExpansionInterval),
       };
     }
-    if (buildingInfo.mAllowedResourceForms) {
+    if (buildableInfo.mAllowedResourceForms) {
       isResourceExtractor = true;
-      const allowedResourceForms = parseCollection<string[]>(buildingInfo.mAllowedResourceForms);
+      const allowedResourceForms = parseCollection<string[]>(buildableInfo.mAllowedResourceForms);
       meta.allowedResourceForms = allowedResourceForms;
 
       let allowedResources: string[];
-      if (buildingInfo.mAllowedResources === '') {
+      if (buildableInfo.mAllowedResources === '') {
         allowedResources = [];
         for (const [resourceName, resourceInfo] of Object.entries(resources)) {
           if (allowedResourceForms.includes(resourceInfo.form)) {
@@ -193,39 +193,39 @@ export function parseBuildings(categoryClasses: CategoryClasses, { resources }: 
           }
         }
       } else {
-        allowedResources = parseCollection<string[]>(buildingInfo.mAllowedResources)
+        allowedResources = parseCollection<string[]>(buildableInfo.mAllowedResources)
           .map((data) => parseBlueprintClassname(data));
       }
       meta.allowedResources = allowedResources;
 
       meta.resourceExtractSpeed = 0;
-      if (buildingInfo.mItemsPerCycle && buildingInfo.mExtractCycleTime) {
-        let itemsPerCycle = parseInt(buildingInfo.mItemsPerCycle, 10);
-        const extractCycleTime = parseFloat(buildingInfo.mExtractCycleTime);
+      if (buildableInfo.mItemsPerCycle && buildableInfo.mExtractCycleTime) {
+        let itemsPerCycle = parseInt(buildableInfo.mItemsPerCycle, 10);
+        const extractCycleTime = parseFloat(buildableInfo.mExtractCycleTime);
         if (allowedResourceForms.includes('RF_LIQUID') || allowedResourceForms.includes('RF_GAS')) {
           itemsPerCycle /= 1000;
         }
         meta.resourceExtractSpeed = 60 * itemsPerCycle / extractCycleTime;
       }
     }
-    if (buildingInfo.mDefaultFuelClasses) {
-      meta.allowedFuel = parseCollection<string[]>(buildingInfo.mDefaultFuelClasses).map((data) => getShortClassname(data));
+    if (buildableInfo.mDefaultFuelClasses) {
+      meta.allowedFuel = parseCollection<string[]>(buildableInfo.mDefaultFuelClasses).map((data) => getShortClassname(data));
     }
-    if (buildingInfo.mPowerProduction) {
+    if (buildableInfo.mPowerProduction) {
       isGenerator = true;
-      meta.powerProduction = parseFloat(buildingInfo.mPowerProduction);
+      meta.powerProduction = parseFloat(buildableInfo.mPowerProduction);
     }
-    if (buildingInfo.mPowerProductionExponent) {
-      meta.overclockProductionExponent = parseFloat(buildingInfo.mPowerProductionExponent);
+    if (buildableInfo.mPowerProductionExponent) {
+      meta.overclockProductionExponent = parseFloat(buildableInfo.mPowerProductionExponent);
     }
-    if (buildingInfo.mSupplementalToPowerRatio) {
-      meta.waterToPowerRatio = parseFloat(buildingInfo.mSupplementalToPowerRatio);
+    if (buildableInfo.mSupplementalToPowerRatio) {
+      meta.waterToPowerRatio = parseFloat(buildableInfo.mSupplementalToPowerRatio);
     }
 
-    buildings[descriptorName] = {
-      slug: createBuildingSlug(buildingInfo.ClassName, buildingInfo.mDisplayName),
-      name: buildingInfo.mDisplayName,
-      description: cleanDescription(buildingInfo.mDescription),
+    buildables[descriptorName] = {
+      slug: createBuildableSlug(buildableInfo.ClassName, buildableInfo.mDisplayName),
+      name: buildableInfo.mDisplayName,
+      description: cleanDescription(buildableInfo.mDescription),
       categories,
       buildMenuPriority,
       isPowered,
@@ -237,10 +237,10 @@ export function parseBuildings(categoryClasses: CategoryClasses, { resources }: 
     };
   });
 
-  addVehicles(categoryClasses, buildings);
-  validateBuildings(buildings);
+  addVehicles(categoryClasses, buildables);
+  validateBuildables(buildables);
 
-  return buildings;
+  return buildables;
 }
 
 
@@ -281,7 +281,7 @@ const VEHICLE_MAPPING: { [key: string]: VehicleInfo } = {
   }
 };
 
-function addVehicles(categoryClasses: CategoryClasses, buildings: ClassInfoMap<BuildingInfo>) {
+function addVehicles(categoryClasses: CategorizedDataClasses, buildables: ParsedClassInfoMap<BuildableInfo>) {
   categoryClasses.vehicles.forEach((entry) => {
     const vehicleInfo = VEHICLE_MAPPING[entry.ClassName];
     if (!vehicleInfo) {
@@ -294,7 +294,7 @@ function addVehicles(categoryClasses: CategoryClasses, buildings: ClassInfoMap<B
       .map((data) => parseBlueprintClassname(data));
     const buildMenuPriority = parseFloat(entry.mBuildMenuPriority);
 
-    const meta: BuildingMeta = {};
+    const meta: BuildableMeta = {};
     if (entry.mFuelConsumption) {
       meta.vehicleFuelConsumption = parseFloat(entry.mFuelConsumption);
     }
@@ -310,7 +310,7 @@ function addVehicles(categoryClasses: CategoryClasses, buildings: ClassInfoMap<B
       };
     }
 
-    buildings[entry.ClassName] = {
+    buildables[entry.ClassName] = {
       slug: createBasicSlug(vehicleInfo.name),
       name: vehicleInfo.name,
       description: vehicleInfo.description,
@@ -326,15 +326,15 @@ function addVehicles(categoryClasses: CategoryClasses, buildings: ClassInfoMap<B
   });
 }
 
-function validateBuildings(buildings: ClassInfoMap<BuildingInfo>) {
+function validateBuildables(buildables: ParsedClassInfoMap<BuildableInfo>) {
   const slugs: string[] = [];
-  Object.entries(buildings).forEach(([name, data]) => {
+  Object.entries(buildables).forEach(([name, data]) => {
     if (!data.slug) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Blank slug for building: [${name}]`);
+      console.warn(`WARNING: Blank slug for buildable: [${name}]`);
     } else if (slugs.includes(data.slug)) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Duplicate building slug: [${data.slug}] of [${name}]`);
+      console.warn(`WARNING: Duplicate buildable slug: [${data.slug}] of [${name}]`);
     } else {
       slugs.push(data.slug);
     }

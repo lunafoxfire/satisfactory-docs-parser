@@ -2,16 +2,27 @@ import {
   createSlugFromClassname, cleanDescription,
   parseCollection, parseItemQuantity, ItemQuantity, parseBlueprintClassname
 } from 'utilities';
-import { ClassInfoMap, DocsClass } from 'types';
-import { CategoryClasses } from 'class-categories/types';
+import { ParsedClassInfoMap, DocsDataClass } from 'types';
+import { CategorizedDataClasses } from 'class-categorizer/types';
 import { ItemInfo, ResourceInfo } from './parseItems';
-import { ItemRecipeInfo, BuildRecipeInfo, converterRecipes } from './parseRecipes';
+import { ProductionRecipeInfo, BuildableRecipeInfo, converterRecipes } from './parseRecipes';
 
-type SchematicsEntry = DocsClass & { mUnlocks: any[] }
+type SchematicsEntry = DocsDataClass & { mUnlocks: any[] }
 
 type UnlockData = {
   Class: string,
   [key: string]: string,
+};
+
+export type SchematicInfo = {
+  slug: string,
+  name: string,
+  description: string,
+  type: string,
+  techTier: number,
+  cost: ItemQuantity[],
+  timeToComplete: number,
+  unlocks: SchematicUnlocks,
 };
 
 export type SchematicUnlocks = {
@@ -26,22 +37,11 @@ export type SchematicUnlocks = {
   giveItems?: ItemQuantity[],
 };
 
-export type SchematicInfo = {
-  slug: string,
-  name: string,
-  description: string,
-  type: string,
-  techTier: number,
-  cost: ItemQuantity[],
-  timeToComplete: number,
-  unlocks: SchematicUnlocks,
-};
-
 interface SchematicDependencies {
-  items: ClassInfoMap<ItemInfo>,
-  resources: ClassInfoMap<ResourceInfo>,
-  itemRecipes: ClassInfoMap<ItemRecipeInfo>,
-  buildRecipes: ClassInfoMap<BuildRecipeInfo>,
+  items: ParsedClassInfoMap<ItemInfo>,
+  resources: ParsedClassInfoMap<ResourceInfo>,
+  productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo>,
+  buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo>,
 }
 
 const christmasSchematics = [
@@ -65,9 +65,9 @@ const excludeSchematics = [
   'Schematic_SaveCompatibility_C', // Some sort of compatibility schematic with removed items in it
 ];
 
-export function parseSchematics(categoryClasses: CategoryClasses, deps: SchematicDependencies) {
+export function parseSchematics(categoryClasses: CategorizedDataClasses, deps: SchematicDependencies) {
   const { items } = deps;
-  const schematics: ClassInfoMap<SchematicInfo> = {};
+  const schematics: ParsedClassInfoMap<SchematicInfo> = {};
 
   categoryClasses.schematics.forEach((e) => {
     const entry = e as SchematicsEntry;
@@ -150,8 +150,8 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
   return unlocks;
 }
 
-function validateSchematics(schematics: ClassInfoMap<SchematicInfo>, deps: SchematicDependencies) {
-  const { resources, itemRecipes, buildRecipes } = deps;
+function validateSchematics(schematics: ParsedClassInfoMap<SchematicInfo>, deps: SchematicDependencies) {
+  const { resources, productionRecipes, buildableRecipes } = deps;
   const slugs: string[] = [];
   Object.entries(schematics).forEach(([name, data]) => {
     if (!data.slug) {
@@ -166,7 +166,7 @@ function validateSchematics(schematics: ClassInfoMap<SchematicInfo>, deps: Schem
 
     if (data.unlocks.recipes) {
       data.unlocks.recipes.forEach((key) => {
-        if (!(Object.keys(itemRecipes).includes(key) || Object.keys(buildRecipes).includes(key))) {
+        if (!(Object.keys(productionRecipes).includes(key) || Object.keys(buildableRecipes).includes(key))) {
           // eslint-disable-next-line no-console
           console.warn(`WARNING: schematic unlocks unknown recipe [${key}]`);
         }

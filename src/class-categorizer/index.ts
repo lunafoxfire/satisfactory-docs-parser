@@ -1,5 +1,5 @@
-import { DocsClass, DocsClasslistMap } from 'types';
-import { CategoryClassnames, CategoryClasses } from './types';
+import { DocsDataClass, DocsDataClassMap } from 'types';
+import { CategorizedClassnames, CategorizedDataClasses } from './types';
 
 export const globalClassnameList = [
   'FGBuildable',
@@ -86,7 +86,7 @@ export const globalClassnameList = [
   'FGWeaponProjectileFire',
 ];
 
-export const categoryClassnames: CategoryClassnames = {
+export const categorizedClassnames: CategorizedClassnames = {
   itemDescriptors: [
     'FGConsumableDescriptor',
     'FGEquipmentDescriptor',
@@ -119,17 +119,17 @@ export const categoryClassnames: CategoryClassnames = {
     'FGSnowballWeapon',
     'FGSuitBase',
     'FGWeaponInstantFire',
-    'FGWeaponProjectileFire'
+    'FGWeaponProjectileFire',
   ],
 
-  buildingDescriptors: [
+  buildableDescriptors: [
     'FGBuildingDescriptor',
     'FGPoleDescriptor',
   ],
   vehicles: [
     'FGVehicleDescriptor',
   ],
-  buildings: [
+  buildables: [
     'FGBuildable',
     'FGBuildableAttachmentMerger',
     'FGBuildableAttachmentSplitter',
@@ -209,19 +209,19 @@ export function validateClassList(classListFromDocs: string[]) {
   });
 }
 
-export function getCategoryClasses(classlistMap: DocsClasslistMap): CategoryClasses {
-  const categoryClasses: any = {};
-  Object.entries(categoryClassnames).forEach(([category, classnames]) => {
-    const categoryDocsClasses: DocsClass[] = [];
+export function categorizeDataClasses(dataClassMap: DocsDataClassMap): CategorizedDataClasses {
+  const categorizedClasses: any = {};
+  Object.entries(categorizedClassnames).forEach(([category, classnames]) => {
+    const categoryDocsClasses: DocsDataClass[] = [];
     classnames.forEach((className) => {
-      const docsClasses: DocsClass[] = classlistMap[className];
+      const docsClasses: DocsDataClass[] = dataClassMap[className];
       if (!docsClasses) {
         // eslint-disable-next-line no-console
         console.warn(`WARNING: Expected to find class [${className}] for category [${category}] in the docs but it does not exist!`);
       }
       categoryDocsClasses.push(...docsClasses);
     });
-    categoryClasses[category] = categoryDocsClasses;
+    categorizedClasses[category] = categoryDocsClasses;
   });
-  return (categoryClasses as CategoryClasses);
+  return (categorizedClasses as CategorizedDataClasses);
 }

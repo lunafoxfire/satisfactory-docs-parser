@@ -1,7 +1,7 @@
 import util from 'util';
-import { DocsClasslist, DocsClasslistMap } from 'types';
-import { parseItems, parseBuildings, parseRecipes, parseSchematics } from 'parsers';
-import { getCategoryClasses, validateClassList } from 'class-categories';
+import { DocsTopLevelClass, DocsDataClassMap } from 'types';
+import { parseItems, parseBuildables, parseRecipes, parseSchematics } from 'parsers';
+import { categorizeDataClasses, validateClassList } from 'class-categorizer';
 
 const nativeClassRegex = /FactoryGame\.(.+)'$/;
 
@@ -22,13 +22,13 @@ function parseDocs(input: Buffer | string) {
 }
 
 function parseDocsString(input: string) {
-  const docs = (JSON.parse(input) as DocsClasslist[]);
+  const docs = (JSON.parse(input) as DocsTopLevelClass[]);
 
   if (!Array.isArray(docs)) {
     throw new Error('Invalid Docs.json file -- not an array');
   }
 
-  const classlistMap: DocsClasslistMap = {};
+  const dataClassMap: DocsDataClassMap = {};
   for (const entry of docs) {
     if (!Object.prototype.hasOwnProperty.call(entry, 'NativeClass') || !Object.prototype.hasOwnProperty.call(entry, 'Classes')) {
       throw new Error('Invalid Docs.json file -- missing required keys');
@@ -38,25 +38,25 @@ function parseDocsString(input: string) {
       throw new Error(`Could not parse top-level class ${entry.NativeClass}`);
     }
     const nativeClassName = match[1];
-    classlistMap[nativeClassName] = entry.Classes;
+    dataClassMap[nativeClassName] = entry.Classes;
   }
 
-  const classList = Object.keys(classlistMap).sort();
-  validateClassList(classList);
-  const categoryClasses = getCategoryClasses(classlistMap);
+  const topLevelClassList = Object.keys(dataClassMap).sort();
+  validateClassList(topLevelClassList);
+  const categorizedDataClasses = categorizeDataClasses(dataClassMap);
 
-  const { items, resources, equipment } = parseItems(categoryClasses);
-  const buildings = parseBuildings(categoryClasses, { resources });
-  const { itemRecipes, buildRecipes } = parseRecipes(categoryClasses, { items, buildings });
-  const schematics = parseSchematics(categoryClasses, { items, resources, itemRecipes, buildRecipes });
+  const { items, resources, equipment } = parseItems(categorizedDataClasses);
+  const buildables = parseBuildables(categorizedDataClasses, { resources });
+  const { productionRecipes, buildableRecipes } = parseRecipes(categorizedDataClasses, { items, buildables });
+  const schematics = parseSchematics(categorizedDataClasses, { items, resources, productionRecipes, buildableRecipes });
 
   const data = {
     items,
     resources,
     equipment,
-    buildings,
-    itemRecipes,
-    buildRecipes,
+    buildables,
+    productionRecipes,
+    buildableRecipes,
     schematics,
   };
 
@@ -65,9 +65,9 @@ function parseDocsString(input: string) {
   return {
     meta: {
       originalDocs: docs,
-      topLevelClassList: classList,
-      classlistMap,
-      categories: categoryClasses,
+      topLevelClassList,
+      dataClassesByTopLevelClass: dataClassMap,
+      dataClassesByCategory: categorizedDataClasses,
     },
     ...data,
   };

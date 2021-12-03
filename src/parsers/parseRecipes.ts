@@ -1,13 +1,13 @@
 import {
-  createBasicSlug, createBuildingSlug, getShortClassname,
-  parseCollection, parseItemQuantity, parseBuildingQuantity, ItemQuantity,
+  createBasicSlug, createBuildableSlug, getShortClassname,
+  parseCollection, parseItemQuantity, parseBuildableQuantity, ItemQuantity,
 } from 'utilities';
-import { ClassInfoMap } from 'types';
-import { CategoryClasses } from 'class-categories/types';
+import { ParsedClassInfoMap } from 'types';
+import { CategorizedDataClasses } from 'class-categorizer/types';
 import { ItemInfo } from './parseItems';
-import { BuildingInfo } from './parseBuildings';
+import { BuildableInfo } from './parseBuildables';
 
-export type ItemRecipeInfo = {
+export type ProductionRecipeInfo = {
   slug: string,
   name: string,
   craftTime: number,
@@ -21,7 +21,7 @@ export type ItemRecipeInfo = {
   producedIn: string[],
 };
 
-export type BuildRecipeInfo = {
+export type BuildableRecipeInfo = {
   slug: string,
   name: string,
   ingredients: ItemQuantity[],
@@ -29,8 +29,8 @@ export type BuildRecipeInfo = {
 };
 
 interface RecipeDependencies {
-  items: ClassInfoMap<ItemInfo>,
-  buildings: ClassInfoMap<BuildingInfo>,
+  items: ParsedClassInfoMap<ItemInfo>,
+  buildables: ParsedClassInfoMap<BuildableInfo>,
 }
 
 const christmasRecipes = [
@@ -57,7 +57,7 @@ const christmasRecipes = [
   'Recipe_SnowballWeapon_C',
 ];
 
-// These are all made in a building marked as Build_Converter_C which doesn't exist afaik
+// These are all made in a buildable marked as Build_Converter_C which doesn't exist afaik
 // They just take a raw resource and output the same resource
 export const converterRecipes = [
   'Recipe_OreIron_C',
@@ -78,9 +78,9 @@ const excludeRecipes = [
   'Recipe_Wall_Window_8x4_03_Steel_C' // Don't think this exists in game??
 ];
 
-export function parseRecipes(categoryClasses: CategoryClasses, { items, buildings }: RecipeDependencies) {
-  const itemRecipes: ClassInfoMap<ItemRecipeInfo> = {};
-  const buildRecipes: ClassInfoMap<BuildRecipeInfo> = {};
+export function parseRecipes(categoryClasses: CategorizedDataClasses, { items, buildables }: RecipeDependencies) {
+  const productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo> = {};
+  const buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo> = {};
 
   categoryClasses.recipes.forEach((entry) => {
     if (!entry.mProducedIn || excludeRecipes.includes(entry.ClassName)) {
@@ -112,9 +112,9 @@ export function parseRecipes(categoryClasses: CategoryClasses, { items, building
 
 
     if (isBuildRecipe) {
-      const product = parseBuildingQuantity(parseCollection<any[]>(entry.mProduct)[0], buildings);
-      buildRecipes[entry.ClassName] = {
-        slug: `${createBuildingSlug(entry.ClassName, entry.mDisplayName)}-recipe`,
+      const product = parseBuildableQuantity(parseCollection<any[]>(entry.mProduct)[0], buildables);
+      buildableRecipes[entry.ClassName] = {
+        slug: `${createBuildableSlug(entry.ClassName, entry.mDisplayName)}-recipe`,
         name: entry.mDisplayName,
         ingredients,
         product,
@@ -124,7 +124,7 @@ export function parseRecipes(categoryClasses: CategoryClasses, { items, building
       const products = parseCollection<any[]>(entry.mProduct)
         .map((data) => parseItemQuantity(data, items));
 
-      itemRecipes[entry.ClassName] = {
+      productionRecipes[entry.ClassName] = {
         slug: `${createBasicSlug(entry.mDisplayName)}-recipe`,
         name: entry.mDisplayName,
         craftTime: parseFloat(entry.mManufactoringDuration),
@@ -140,14 +140,14 @@ export function parseRecipes(categoryClasses: CategoryClasses, { items, building
     }
   });
 
-  validateRecipes(itemRecipes, buildRecipes);
+  validateRecipes(productionRecipes, buildableRecipes);
 
-  return { itemRecipes, buildRecipes };
+  return { productionRecipes, buildableRecipes };
 }
 
-function validateRecipes(itemRecipes: ClassInfoMap<ItemRecipeInfo>, buildRecipes: ClassInfoMap<BuildRecipeInfo>) {
+function validateRecipes(productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo>, buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo>) {
   const slugs: string[] = [];
-  Object.entries(itemRecipes).forEach(([name, data]) => {
+  Object.entries(productionRecipes).forEach(([name, data]) => {
     if (!data.slug) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Blank slug for recipe: [${name}]`);
@@ -158,7 +158,7 @@ function validateRecipes(itemRecipes: ClassInfoMap<ItemRecipeInfo>, buildRecipes
       slugs.push(data.slug);
     }
   });
-  Object.entries(buildRecipes).forEach(([name, data]) => {
+  Object.entries(buildableRecipes).forEach(([name, data]) => {
     if (!data.slug) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Blank slug for recipe: [${name}]`);

@@ -1,6 +1,6 @@
 # Satisfactory Docs Parser
 
-This is a package for parsing the `Docs.json` file provided by the developers of the game [Satisfactory](https://www.satisfactorygame.com/) into a format easily consumable by those interested in developing tools for the game. This `Docs.json` file can be found at `<your-satisfactory-directory>/CommunityResources/Docs/Docs.json` and contains metadata about the items, buildings, recipes, etc found in the game. This package aims to parse this file into a format both more human- and script- readable.
+This is a package for parsing the `Docs.json` file provided by the developers of the game [Satisfactory](https://www.satisfactorygame.com/) into a format easily consumable by those interested in developing tools for the game. This `Docs.json` file can be found at `<your-satisfactory-directory>/CommunityResources/Docs/Docs.json` and contains metadata about the items, buildables, recipes, etc found in the game. This package aims to parse this file into a format both more human- and script- readable.
 
 # IMPORTANT!!
 
@@ -27,22 +27,22 @@ data = {
   items, // Includes anything that can go in the player's inventory
   resources, // List of raw resources found in the game
   equipment, // All equippable items
-  buildings, // All things buildable with the build gun (this includes vehicles)
-  itemRecipes, // All recipes that produce items
-  buildRecipes, // All recipes used by the build gun
+  buildables, // All things buildable with the build gun (this includes vehicles)
+  productionRecipes, // All recipes that produce items
+  buildableRecipes, // All recipes used by the build gun
   schematics, // All unlockables including milestones, MAM, AWESOME Shop, hard drive researches, and misc progression
 
   // Extra metadata about the original docs file
   meta: {
-    originalDocs: any[], // the original file
+    originalDocs: DocsTopLevelClass[], // the original file
     topLevelClassList: string[], // list of the names of all top-level classes provided in Docs.json
-    classlistMap: { [className: string]: any[] }, // mapping of top-level classes to their subclass lists
-    categories: { [category: string]: any[] }, // mapping of the above categories (items, buildings, etc) to their subclass lists
+    dataClassesByTopLevelClass: { [className: string]: DocsDataClass[] }, // mapping of top-level classes to their data class lists
+    dataClassesByCategory: { [category: string]: DocsDataClass[] }, // mapping of the above categories (items, buildables, etc) to their data class lists
   },
 }
 ```
 
-All data (items, resources, buildings, etc) is provided as an object that maps the item's class name to its info. For example, to get information about iron plates (with internal classname `Desc_IronPlate_C`), you might do the following:
+All data (items, resources, buildables, etc) is provided as an object that maps the item's class name to its info. For example, to get information about iron plates (with internal classname `Desc_IronPlate_C`), you might do the following:
 ```js
 const ironPlate = data.items['Desc_IronPlate_C'];
 console.log(ironPlate.name);
