@@ -51,6 +51,7 @@ export function standardizeItemDescriptor(className: string) {
 
 const EQUIP_DESC_MANUAL_MAP: any = {
   'Equip_GolfCartDispenser_C': 'Desc_GolfCart_C',
+  'Equip_GoldGolfCartDispenser_C': 'Desc_GolfCartGold_C',
   'Equip_PortableMinerDispenser_C': 'Desc_PortableMiner_C',
   'Equip_RebarGun_Projectile_C': 'Desc_RebarGunProjectile_C',
   'Equip_Zipline_C': 'Desc_ZipLine_C',

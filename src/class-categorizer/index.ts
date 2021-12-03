@@ -1,5 +1,5 @@
 import { DocsDataClass, DocsDataClassMap } from 'types';
-import { CategorizedClassnames, CategorizedDataClasses } from './types';
+import { CategorizedClassnames, CategorizedDataClasses, CategoryKey } from './types';
 
 export const globalClassnameList = [
   'FGBuildable',
@@ -207,10 +207,17 @@ export function validateClassList(classListFromDocs: string[]) {
       console.warn(`WARNING: [${className}] was expected to be in the docs but does not exist!`);
     }
   });
+  const allCategorized = Object.values(categorizedClassnames).flatMap((list) => list);
+  globalClassnameList.forEach((className) => {
+    if (!allCategorized.includes(className)) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: [${className}] is not assigned to a category!`);
+    }
+  });
 }
 
 export function categorizeDataClasses(dataClassMap: DocsDataClassMap): CategorizedDataClasses {
-  const categorizedClasses: any = {};
+  const categorizedClasses: CategorizedDataClasses = ({} as CategorizedDataClasses);
   Object.entries(categorizedClassnames).forEach(([category, classnames]) => {
     const categoryDocsClasses: DocsDataClass[] = [];
     classnames.forEach((className) => {
@@ -221,7 +228,7 @@ export function categorizeDataClasses(dataClassMap: DocsDataClassMap): Categoriz
       }
       categoryDocsClasses.push(...docsClasses);
     });
-    categorizedClasses[category] = categoryDocsClasses;
+    categorizedClasses[(category as CategoryKey)] = categoryDocsClasses;
   });
-  return (categorizedClasses as CategorizedDataClasses);
+  return categorizedClasses;
 }

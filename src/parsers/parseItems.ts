@@ -14,6 +14,7 @@ export type ItemInfo = {
   isFluid: boolean,
   isFuel: boolean,
   isRadioactive: boolean,
+  isEquipment: boolean,
   meta: ItemMeta,
 };
 
@@ -21,6 +22,21 @@ export type ItemMeta = {
   energyValue?: number,
   radioactiveDecay?: number,
   fluidColor?: Color,
+  equipSlot?: string,
+  healthGain?: number,
+  energyConsumption?: number,
+  sawDownTreeTime?: number,
+  damage?: number,
+  magSize?: number,
+  reloadTime?: number,
+  fireRate?: number,
+  attackDistance?: number,
+  filterDuration?: number,
+  sprintSpeedFactor?: number,
+  jumpSpeedFactor?: number,
+  explosionDamage?: number,
+  explosionRadius?: number,
+  detectionRange?: number,
 };
 
 export type ResourceInfo = {
@@ -44,29 +60,6 @@ export type WellCounts = {
   normal: number,
   pure: number,
   wells: number,
-};
-
-export type EquipmentInfo = {
-  itemClass: string,
-  slot: string,
-  meta: EquipmentMeta,
-};
-
-export type EquipmentMeta = {
-  healthGain?: number,
-  energyConsumption?: number,
-  sawDownTreeTime?: number,
-  damage?: number,
-  magSize?: number,
-  reloadTime?: number,
-  fireRate?: number,
-  attackDistance?: number,
-  filterDuration?: number,
-  sprintSpeedFactor?: number,
-  jumpSpeedFactor?: number,
-  explosionDamage?: number,
-  explosionRadius?: number,
-  detectionRange?: number,
 };
 
 const christmasItems = [
@@ -107,17 +100,15 @@ const excludeEquip = [
 
 export function parseItems(categoryClasses: CategorizedDataClasses) {
   const items = getItems(categoryClasses);
+  mergeEquipmentInfo(items, categoryClasses);
   const resources = getResources(categoryClasses);
-  const equipment = getEquipment(categoryClasses);
 
   validateItems(items);
   validateResources(resources, items);
-  validateEquipment(equipment, items);
 
   return {
     items,
     resources,
-    equipment,
   };
 }
 
@@ -157,6 +148,7 @@ function getItems(categoryClasses: CategorizedDataClasses) {
       isFluid,
       isFuel,
       isRadioactive,
+      isEquipment: false,
       meta,
     };
   });
@@ -237,84 +229,87 @@ function getResources(categoryClasses: CategorizedDataClasses) {
 }
 
 
-function getEquipment(categoryClasses: CategorizedDataClasses) {
-  const equipment: ParsedClassInfoMap<EquipmentInfo> = {};
-
+function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categoryClasses: CategorizedDataClasses) {
   categoryClasses.equipment.forEach((entry) => {
     if (excludeEquip.includes(entry.ClassName)) {
       return;
     }
+
     if (entry.ClassName === 'BP_ConsumeableEquipment_C') {
       categoryClasses.consumables.forEach((consumableInfo) => {
+        const key = standardizeItemDescriptor(consumableInfo.ClassName);
+        const item = items[key];
+        if (!item) {
+          // eslint-disable-next-line no-console
+          console.warn(`WARNING: Equipment missing item descriptor: [${entry.ClassName}]`);
+          return;
+        }
+
+        item.isEquipment = true;
+
         if (consumableInfo.mHealthGain) {
-          const key = consumableInfo.ClassName.replace('Desc_', 'Equip_');
-          equipment[key] = {
-            itemClass: consumableInfo.ClassName,
-            slot: parseEquipmentSlot(entry.mEquipmentSlot),
-            meta: {
-              healthGain: parseFloat(consumableInfo.mHealthGain),
-            }
-          };
+          item.meta.healthGain = parseFloat(consumableInfo.mHealthGain);
         }
       });
       return;
     }
 
-    const meta: EquipmentMeta = {};
+    const key = equipmentNameToDescriptorName(entry.ClassName);
+    const item = items[key];
+    if (!item) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Equipment missing item descriptor: [${entry.ClassName}]`);
+      return;
+    }
+
+    item.isEquipment = true;
+
     if (entry.mEnergyConsumption) {
-      meta.energyConsumption = parseFloat(entry.mEnergyConsumption);
+      item.meta.energyConsumption = parseFloat(entry.mEnergyConsumption);
     }
     if (entry.mSawDownTreeTime) {
-      meta.sawDownTreeTime = parseFloat(entry.mSawDownTreeTime);
+      item.meta.sawDownTreeTime = parseFloat(entry.mSawDownTreeTime);
     }
     if (entry.mInstantHitDamage) {
-      meta.damage = parseFloat(entry.mInstantHitDamage);
+      item.meta.damage = parseFloat(entry.mInstantHitDamage);
     }
     if (entry.mMagSize) {
-      meta.magSize = parseInt(entry.mMagSize, 10);
+      item.meta.magSize = parseInt(entry.mMagSize, 10);
     }
     if (entry.mReloadTime) {
-      meta.reloadTime = parseFloat(entry.mReloadTime);
+      item.meta.reloadTime = parseFloat(entry.mReloadTime);
     }
     if (entry.mFireRate) {
-      meta.fireRate = parseFloat(entry.mFireRate);
+      item.meta.fireRate = parseFloat(entry.mFireRate);
     }
     if (entry.mDamage) {
-      meta.damage = parseFloat(entry.mDamage);
+      item.meta.damage = parseFloat(entry.mDamage);
     }
     if (entry.mAttackDistance) {
-      meta.attackDistance = parseFloat(entry.mAttackDistance);
+      item.meta.attackDistance = parseFloat(entry.mAttackDistance);
     }
     if (entry.mFilterDuration) {
-      meta.filterDuration = parseFloat(entry.mFilterDuration);
+      item.meta.filterDuration = parseFloat(entry.mFilterDuration);
     }
     if (entry.mSprintSpeedFactor) {
-      meta.sprintSpeedFactor = parseFloat(entry.mSprintSpeedFactor);
+      item.meta.sprintSpeedFactor = parseFloat(entry.mSprintSpeedFactor);
     }
     if (entry.mJumpSpeedFactor) {
-      meta.jumpSpeedFactor = parseFloat(entry.mJumpSpeedFactor);
+      item.meta.jumpSpeedFactor = parseFloat(entry.mJumpSpeedFactor);
     }
     if (entry.mExplosiveData) {
       const explosiveData = parseCollection(entry.mExplosiveData);
-      meta.explosionDamage = parseFloat(explosiveData.ExplosionDamage);
-      meta.explosionRadius = parseFloat(explosiveData.ExplosionRadius);
+      item.meta.explosionDamage = parseFloat(explosiveData.ExplosionDamage);
+      item.meta.explosionRadius = parseFloat(explosiveData.ExplosionRadius);
     }
     if (entry.mDetectionRange) {
-      meta.detectionRange = parseFloat(entry.mDetectionRange);
+      item.meta.detectionRange = parseFloat(entry.mDetectionRange);
     }
     if (entry.mProjectileData) {
       const projectileData = parseCollection(entry.mProjectileData);
-      meta.damage = parseFloat(projectileData.ImpactDamage);
+      item.meta.damage = parseFloat(projectileData.ImpactDamage);
     }
-
-    equipment[entry.ClassName] = {
-      itemClass: equipmentNameToDescriptorName(entry.ClassName),
-      slot: parseEquipmentSlot(entry.mEquipmentSlot),
-      meta,
-    };
   });
-
-  return equipment;
 }
 
 function validateItems(items: ParsedClassInfoMap<ItemInfo>) {
@@ -337,15 +332,6 @@ function validateResources(resources: ParsedClassInfoMap<ResourceInfo>, items: P
     if (!Object.keys(items).includes(data.itemClass)) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Resource missing item descriptor: [${name}]`);
-    }
-  });
-}
-
-function validateEquipment(equipment: ParsedClassInfoMap<EquipmentInfo>, items: ParsedClassInfoMap<ItemInfo>) {
-  Object.entries(equipment).forEach(([name, data]) => {
-    if (!Object.keys(items).includes(data.itemClass)) {
-      // eslint-disable-next-line no-console
-      console.warn(`WARNING: Equipment missing item descriptor: [${name}]`);
     }
   });
 }
