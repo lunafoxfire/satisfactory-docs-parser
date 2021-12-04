@@ -27,7 +27,7 @@ export type ItemMeta = {
   energyConsumption?: number,
   sawDownTreeTime?: number,
   damage?: number,
-  magSize?: number,
+  magazineSize?: number,
   reloadTime?: number,
   fireRate?: number,
   attackDistance?: number,
@@ -273,8 +273,8 @@ function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categoryClasses
     if (entry.mInstantHitDamage) {
       item.meta.damage = parseFloat(entry.mInstantHitDamage);
     }
-    if (entry.mMagSize) {
-      item.meta.magSize = parseInt(entry.mMagSize, 10);
+    if (entry.mMagazineSize) {
+      item.meta.magazineSize = parseInt(entry.mMagazineSize, 10);
     }
     if (entry.mReloadTime) {
       item.meta.reloadTime = parseFloat(entry.mReloadTime);

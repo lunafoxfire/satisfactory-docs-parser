@@ -1,6 +1,6 @@
 import {
   createBasicSlug, createBuildableSlug, getShortClassname,
-  parseCollection, parseItemQuantity, parseBuildableQuantity, ItemQuantity,
+  parseCollection, parseItemQuantity, parseBuildableQuantity, ItemQuantity, createCustomizerSlug,
 } from 'utilities';
 import { ParsedClassInfoMap } from 'types';
 import { CategorizedDataClasses } from 'class-categorizer/types';
@@ -26,6 +26,13 @@ export type BuildableRecipeInfo = {
   name: string,
   ingredients: ItemQuantity[],
   product: string,
+};
+
+export type CustomizerRecipeInfo = {
+  slug: string,
+  isSwatch: boolean,
+  isPatternRemover: boolean,
+  ingredients: ItemQuantity[],
 };
 
 interface RecipeDependencies {
@@ -75,10 +82,22 @@ export const converterRecipes = [
 const excludeRecipes = [
   ...christmasRecipes,
   ...converterRecipes,
-  'Recipe_Wall_Window_8x4_03_Steel_C' // Don't think this exists in game??
+  // old wall recipes
+  'Recipe_Wall_Window_8x4_03_Steel_C',
+  'Recipe_SteelWall_8x4_C',
 ];
 
-export function parseRecipes(categoryClasses: CategorizedDataClasses, { items, buildables }: RecipeDependencies) {
+export function parseRecipes(categoryClasses: CategorizedDataClasses, deps: RecipeDependencies) {
+  const { productionRecipes, buildableRecipes } = getMainRecipes(categoryClasses, deps);
+  const customizerRecipes = getCustomizerRecipes(categoryClasses, deps);
+
+  validateRecipes(productionRecipes, buildableRecipes);
+  validateCustomizerRecipes(customizerRecipes);
+
+  return { productionRecipes, buildableRecipes, customizerRecipes };
+}
+
+function getMainRecipes(categoryClasses: CategorizedDataClasses, { items, buildables }: RecipeDependencies) {
   const productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo> = {};
   const buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo> = {};
 
@@ -140,9 +159,38 @@ export function parseRecipes(categoryClasses: CategorizedDataClasses, { items, b
     }
   });
 
-  validateRecipes(productionRecipes, buildableRecipes);
-
   return { productionRecipes, buildableRecipes };
+}
+
+function getCustomizerRecipes(categoryClasses: CategorizedDataClasses, { items }: RecipeDependencies) {
+  const customizerRecipes: ParsedClassInfoMap<CustomizerRecipeInfo> = {};
+
+  categoryClasses.customizerRecipes.forEach((entry) => {
+    let ingredients: ItemQuantity[] = [];
+    let isSwatch = false;
+    let isPatternRemover = false;
+
+    if (entry.mIngerdients) {
+      ingredients = parseCollection<any[]>(entry.mIngredients)
+        .map((data) => parseItemQuantity(data, items));
+    } else {
+      if (entry.ClassName.includes('_Swatch')) {
+        isSwatch = true;
+      }
+      if (entry.ClassName.includes('_Pattern_Remover')) {
+        isPatternRemover = true;
+      }
+    }
+
+    customizerRecipes[entry.ClassName] = {
+      slug: createCustomizerSlug(entry.ClassName),
+      isSwatch,
+      isPatternRemover,
+      ingredients,
+    };
+  });
+
+  return customizerRecipes;
 }
 
 function validateRecipes(productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo>, buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo>) {
@@ -165,6 +213,21 @@ function validateRecipes(productionRecipes: ParsedClassInfoMap<ProductionRecipeI
     } else if (slugs.includes(data.slug)) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Duplicate recipe slug: [${data.slug}] of [${name}]`);
+    } else {
+      slugs.push(data.slug);
+    }
+  });
+}
+
+function validateCustomizerRecipes(customizerRecipes: ParsedClassInfoMap<CustomizerRecipeInfo>) {
+  const slugs: string[] = [];
+  Object.entries(customizerRecipes).forEach(([name, data]) => {
+    if (!data.slug) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Blank slug for customizer recipe: [${name}]`);
+    } else if (slugs.includes(data.slug)) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Duplicate customizer recipe slug: [${data.slug}] of [${name}]`);
     } else {
       slugs.push(data.slug);
     }

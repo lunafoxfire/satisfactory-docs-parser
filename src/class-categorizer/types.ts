@@ -11,6 +11,7 @@ export type CategoryKey =
   | 'vehicles'
 
   | 'recipes'
+  | 'customizerRecipes'
 
   | 'schematics';
 

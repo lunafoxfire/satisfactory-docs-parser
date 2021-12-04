@@ -84,8 +84,11 @@ const christmasBuildables = [
 
 const excludeBuildables = [
   ...christmasBuildables,
-  'Build_JumpPad_C', // Old jump pads
+  // old jump pads
+  'Build_JumpPad_C',
   'Build_JumpPadTilted_C',
+  // old wall
+  'Build_SteelWall_8x4_C',
 ];
 
 export function parseBuildables(categoryClasses: CategorizedDataClasses, { resources }: BuildableDependencies) {

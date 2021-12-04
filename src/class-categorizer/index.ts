@@ -5,12 +5,16 @@ export const globalClassnameList = [
   'FGBuildable',
   'FGBuildableAttachmentMerger',
   'FGBuildableAttachmentSplitter',
+  'FGBuildableBeam',
   'FGBuildableCircuitSwitch',
   'FGBuildableConveyorBelt',
   'FGBuildableConveyorLift',
+  'FGBuildableCornerWall',
   'FGBuildableDockingStation',
+  'FGBuildableDoor',
   'FGBuildableDroneStation',
   'FGBuildableFactory',
+  'FGBuildableFactoryBuilding',
   'FGBuildableFactorySimpleProducer',
   'FGBuildableFloodlight',
   'FGBuildableFoundation',
@@ -26,6 +30,8 @@ export const globalClassnameList = [
   'FGBuildableMAM',
   'FGBuildableManufacturer',
   'FGBuildableManufacturerVariablePower',
+  'FGBuildablePassthrough',
+  'FGBuildablePillar',
   'FGBuildablePipeHyper',
   'FGBuildablePipeReservoir',
   'FGBuildablePipeline',
@@ -36,8 +42,10 @@ export const globalClassnameList = [
   'FGBuildablePowerPole',
   'FGBuildablePowerStorage',
   'FGBuildableRadarTower',
+  'FGBuildableRailroadSignal',
   'FGBuildableRailroadStation',
   'FGBuildableRailroadTrack',
+  'FGBuildableRamp',
   'FGBuildableResourceExtractor',
   'FGBuildableResourceSink',
   'FGBuildableResourceSinkShop',
@@ -52,25 +60,29 @@ export const globalClassnameList = [
   'FGBuildableWalkway',
   'FGBuildableWall',
   'FGBuildableWaterPump',
+  'FGBuildableWidgetSign',
   'FGBuildableWire',
   'FGBuildingDescriptor',
   'FGChainsaw',
-  'FGColorGun',
+  'FGChargedWeapon',
   'FGConsumableDescriptor',
   'FGConsumableEquipment',
   'FGConveyorPoleStackable',
+  'FGCustomizationRecipe',
   'FGEquipmentDescriptor',
   'FGEquipmentStunSpear',
   'FGEquipmentZipline',
   'FGGasMask',
   'FGGolfCartDispenser',
   'FGHoverPack',
+  'FGItemDescAmmoTypeColorCartridge',
+  'FGItemDescAmmoTypeInstantHit',
+  'FGItemDescAmmoTypeProjectile',
   'FGItemDescriptor',
   'FGItemDescriptorBiomass',
   'FGItemDescriptorNuclearFuel',
   'FGJetPack',
   'FGJumpingStilts',
-  'FGNobeliskDetonator',
   'FGObjectScanner',
   'FGParachute',
   'FGPipeHyperStart',
@@ -79,11 +91,9 @@ export const globalClassnameList = [
   'FGRecipe',
   'FGResourceDescriptor',
   'FGSchematic',
-  'FGSnowballWeapon',
   'FGSuitBase',
   'FGVehicleDescriptor',
-  'FGWeaponInstantFire',
-  'FGWeaponProjectileFire',
+  'FGWeapon'
 ];
 
 export const categorizedClassnames: CategorizedClassnames = {
@@ -94,6 +104,9 @@ export const categorizedClassnames: CategorizedClassnames = {
     'FGItemDescriptorBiomass',
     'FGItemDescriptorNuclearFuel',
     'FGResourceDescriptor',
+    'FGItemDescAmmoTypeColorCartridge',
+    'FGItemDescAmmoTypeInstantHit',
+    'FGItemDescAmmoTypeProjectile',
   ],
   resources: [
     'FGResourceDescriptor',
@@ -103,7 +116,6 @@ export const categorizedClassnames: CategorizedClassnames = {
   ],
   equipment: [
     'FGChainsaw',
-    'FGColorGun',
     'FGConsumableEquipment',
     'FGEquipmentStunSpear',
     'FGEquipmentZipline',
@@ -112,14 +124,12 @@ export const categorizedClassnames: CategorizedClassnames = {
     'FGHoverPack',
     'FGJetPack',
     'FGJumpingStilts',
-    'FGNobeliskDetonator',
     'FGObjectScanner',
     'FGParachute',
     'FGPortableMinerDispenser',
-    'FGSnowballWeapon',
     'FGSuitBase',
-    'FGWeaponInstantFire',
-    'FGWeaponProjectileFire',
+    'FGChargedWeapon',
+    'FGWeapon',
   ],
 
   buildableDescriptors: [
@@ -183,10 +193,22 @@ export const categorizedClassnames: CategorizedClassnames = {
     'FGBuildableWire',
     'FGConveyorPoleStackable',
     'FGPipeHyperStart',
+    'FGBuildableBeam',
+    'FGBuildableCornerWall',
+    'FGBuildableDoor',
+    'FGBuildableFactoryBuilding',
+    'FGBuildablePassthrough',
+    'FGBuildablePillar',
+    'FGBuildableRailroadSignal',
+    'FGBuildableRamp',
+    'FGBuildableWidgetSign',
   ],
 
   recipes: [
     'FGRecipe',
+  ],
+  customizerRecipes: [
+    'FGCustomizationRecipe'
   ],
 
   schematics: [
@@ -207,12 +229,21 @@ export function validateClassList(classListFromDocs: string[]) {
       console.warn(`WARNING: [${className}] was expected to be in the docs but does not exist!`);
     }
   });
+
   const allCategorized = Object.values(categorizedClassnames).flatMap((list) => list);
   globalClassnameList.forEach((className) => {
     if (!allCategorized.includes(className)) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: [${className}] is not assigned to a category!`);
     }
+  });
+  Object.entries(categorizedClassnames).forEach(([category, list]) => {
+    list.forEach((className) => {
+      if (!globalClassnameList.includes(className)) {
+        // eslint-disable-next-line no-console
+        console.warn(`WARNING: [${className}] in category [${category}] is not in the global class list!`);
+      }
+    });
   });
 }
 

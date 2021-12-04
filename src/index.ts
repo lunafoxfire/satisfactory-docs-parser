@@ -47,8 +47,8 @@ function parseDocsString(input: string) {
 
   const { items, resources } = parseItems(categorizedDataClasses);
   const buildables = parseBuildables(categorizedDataClasses, { resources });
-  const { productionRecipes, buildableRecipes } = parseRecipes(categorizedDataClasses, { items, buildables });
-  const schematics = parseSchematics(categorizedDataClasses, { items, resources, productionRecipes, buildableRecipes });
+  const { productionRecipes, buildableRecipes, customizerRecipes } = parseRecipes(categorizedDataClasses, { items, buildables });
+  const schematics = parseSchematics(categorizedDataClasses, { items, resources, productionRecipes, buildableRecipes, customizerRecipes });
 
   const data = {
     items,
@@ -56,6 +56,7 @@ function parseDocsString(input: string) {
     buildables,
     productionRecipes,
     buildableRecipes,
+    customizerRecipes,
     schematics,
   };
 
@@ -72,10 +73,15 @@ function parseDocsString(input: string) {
   };
 }
 
+const slugRegex = /^[a-z0-9-]+$/;
 function validateSlugs(data: any) {
-  const slugs: any[] = [];
+  const slugs: string[] = [];
   Object.entries<any>(data).forEach(([category, entries]) => {
     Object.entries<any>(entries).forEach(([className, classData]) => {
+      if (!slugRegex.exec(classData.slug)) {
+        // eslint-disable-next-line no-console
+        console.warn(`WARNING: Invalid slug format: [${classData.slug}] of [${className}] from [${category}]`);
+      }
       if (classData.slug) {
         if (slugs.includes(classData.slug)) {
           // eslint-disable-next-line no-console

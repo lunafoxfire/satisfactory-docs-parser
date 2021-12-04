@@ -16,8 +16,8 @@ export type ItemQuantity = {
 
 export function createBasicSlug(displayName: string) {
   return displayName
+    .replace(/[^A-Za-z0-9\s\-_.|]/g, '')
     .replace(/[\s\-_.|]+/g, '-')
-    .replace(/[™:'"]/g, '')
     .toLowerCase();
 }
 
@@ -25,20 +25,34 @@ export function createSlugFromClassname(className: string) {
   return createBasicSlug(className.replace(/_C$/, ''));
 }
 
-const wallSlugRegex = /^(?:Desc|Build|Recipe)_Wall_(?:(.+?)_)?8x4_(\d\d)_(?:(Steel)_)?C$/;
+
+const MATERIAL_SLUGS: any = {
+  'Concrete': 'concrete',
+  'Metal': 'metal',
+  'ConcretePolished': 'polished',
+  'Polished': 'polished',
+  'Asphalt': 'asphalt',
+  'Orange': 'ficsit',
+  'SteelWall': 'steel',
+  'Steel': 'steel',
+  'Wall_8x4_01': 'ficsit',
+  'Wall_8x4_02': 'steel',
+};
+
+const materialRegex = /_(Concrete|Metal|ConcretePolished|Polished|Asphalt|Orange|SteelWall|Steel|Wall_8x4_01|Wall_8x4_02)_/;
 export function createBuildableSlug(className: string, displayName: string) {
-  const match = wallSlugRegex.exec(className);
+  let slug = createBasicSlug(displayName);
+
+  const match = materialRegex.exec(className);
   if (match) {
-    let slug = 'wall';
-    const [, ...captures] = match;
-    for (const capture of captures) {
-      if (capture) {
-        slug += `-${capture}`;
-      }
-    }
-    return createBasicSlug(slug);
+    slug += `-${MATERIAL_SLUGS[match[1]]}`;
   }
-  return createBasicSlug(displayName);
+
+  return slug;
+}
+
+export function createCustomizerSlug(className: string) {
+  return createSlugFromClassname(className.replace('Recipe_', ''));
 }
 
 export function cleanDescription(desc: string) {
@@ -70,6 +84,25 @@ const BUILDING_DESC_MANUAL_MAP: any = {
   'Build_PowerPoleWallDouble_Mk3_C': 'Desc_PowerPoleWallDoubleMk3_C',
   'Build_PowerPoleWall_Mk3_C': 'Desc_PowerPoleWallMk3_C',
   'Build_WalkwayTrun_C': 'Desc_WalkwayTurn_C',
+  'Build_Foundation_ConcretePolished_8x2_2_C': 'Foundation_ConcretePolished_8x2_C',
+  'Build_Foundation_ConcretePolished_8x4_C': 'Foundation_ConcretePolished_8x4_C',
+  'Build_CatwalkCorner_C': 'Desc_CatwalkTurn_C',
+  'Build_Wall_Concrete_FlipTris_8x1_C': 'Desc_Wall_Concrete_8x1_FlipTris_C',
+  'Build_Wall_Concrete_FlipTris_8x2_C': 'Desc_Wall_Concrete_8x2_FlipTris_C',
+  'Build_Wall_Concrete_FlipTris_8x4_C': 'Desc_Wall_Concrete_8x4_FlipTris_C',
+  'Build_Wall_Concrete_FlipTris_8x8_C': 'Desc_Wall_Concrete_8x8_FlipTris_C',
+  'Build_Wall_Concrete_Tris_8x1_C': 'Desc_Wall_Concrete_8x1_Tris_C',
+  'Build_Wall_Concrete_Tris_8x2_C': 'Desc_Wall_Concrete_8x2_Tris_C',
+  'Build_Wall_Concrete_Tris_8x4_C': 'Desc_Wall_Concrete_8x4_Tris_C',
+  'Build_Wall_Concrete_Tris_8x8_C': 'Desc_Wall_Concrete_8x8_Tris_C',
+  'Build_Wall_Orange_FlipTris_8x1_C': 'Desc_Wall_Orange_8x1_FlipTris_C',
+  'Build_Wall_Orange_FlipTris_8x2_C': 'Desc_Wall_Orange_8x2_FlipTris_C',
+  'Build_Wall_Orange_FlipTris_8x4_C': 'Desc_Wall_Orange_8x4_FlipTris_C',
+  'Build_Wall_Orange_FlipTris_8x8_C': 'Desc_Wall_Orange_8x8_FlipTris_C',
+  'Build_Wall_Orange_Tris_8x1_C': 'Desc_Wall_Orange_8x1_Tris_C',
+  'Build_Wall_Orange_Tris_8x2_C': 'Desc_Wall_Orange_8x2_Tris_C',
+  'Build_Wall_Orange_Tris_8x4_C': 'Desc_Wall_Orange_8x4_Tris_C',
+  'Build_Wall_Orange_Tris_8x8_C': 'Desc_Wall_Orange_8x8_Tris_C',
 };
 export function buildableNameToDescriptorName(buildableName: string) {
   if (BUILDING_DESC_MANUAL_MAP[buildableName]) {

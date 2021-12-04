@@ -5,7 +5,7 @@ import {
 import { ParsedClassInfoMap, DocsDataClass } from 'types';
 import { CategorizedDataClasses } from 'class-categorizer/types';
 import { ItemInfo, ResourceInfo } from './parseItems';
-import { ProductionRecipeInfo, BuildableRecipeInfo, converterRecipes } from './parseRecipes';
+import { ProductionRecipeInfo, BuildableRecipeInfo, converterRecipes, CustomizerRecipeInfo } from './parseRecipes';
 
 type SchematicsEntry = DocsDataClass & { mUnlocks: any[] }
 
@@ -35,6 +35,8 @@ export type SchematicUnlocks = {
   overclockPanel?: boolean,
   map?: boolean,
   giveItems?: ItemQuantity[],
+  emotes?: string[],
+  customizer?: boolean,
 };
 
 interface SchematicDependencies {
@@ -42,6 +44,7 @@ interface SchematicDependencies {
   resources: ParsedClassInfoMap<ResourceInfo>,
   productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo>,
   buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo>,
+  customizerRecipes: ParsedClassInfoMap<CustomizerRecipeInfo>,
 }
 
 const christmasSchematics = [
@@ -139,6 +142,24 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
         unlocks.giveItems = parseCollection<any[]>(unlockData.mItemsToGive).map((i) => parseItemQuantity(i, items));
         break;
       }
+      case 'BP_UnlockEmote_C': {
+        unlocks.emotes = parseCollection<string[]>(unlockData.mEmotes).map((str) => {
+          const emoteRegex = /\/Game\/FactoryGame\/Emotes\/Emote_(.+)\./;
+          const match = emoteRegex.exec(str);
+          if (match) {
+            return match[1];
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn(`WARNING: Unknown emote blueprint: [${str}]`);
+            return 'UNKNOWN';
+          }
+        });
+        break;
+      }
+      case 'BP_UnlockInfoOnly_C': {
+        unlocks.customizer = true;
+        break;
+      }
       default: {
         // eslint-disable-next-line no-console
         console.warn(`WARNING: Unknown schematic unlock type: [${unlockData.Class}]`);
@@ -151,7 +172,7 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
 }
 
 function validateSchematics(schematics: ParsedClassInfoMap<SchematicInfo>, deps: SchematicDependencies) {
-  const { resources, productionRecipes, buildableRecipes } = deps;
+  const { resources, productionRecipes, buildableRecipes, customizerRecipes } = deps;
   const slugs: string[] = [];
   Object.entries(schematics).forEach(([name, data]) => {
     if (!data.slug) {
@@ -166,7 +187,8 @@ function validateSchematics(schematics: ParsedClassInfoMap<SchematicInfo>, deps:
 
     if (data.unlocks.recipes) {
       data.unlocks.recipes.forEach((key) => {
-        if (!(Object.keys(productionRecipes).includes(key) || Object.keys(buildableRecipes).includes(key))) {
+        const recipeMissing = !(Object.keys(productionRecipes).includes(key) || Object.keys(buildableRecipes).includes(key) || Object.keys(customizerRecipes).includes(key));
+        if (recipeMissing) {
           // eslint-disable-next-line no-console
           console.warn(`WARNING: schematic unlocks unknown recipe [${key}]`);
         }
