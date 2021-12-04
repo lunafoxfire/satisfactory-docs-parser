@@ -6,6 +6,7 @@ import { ParsedClassInfoMap, DocsDataClass } from 'types';
 import { CategorizedDataClasses } from 'class-categorizer/types';
 import { ItemInfo, ResourceInfo } from './parseItems';
 import { ProductionRecipeInfo, BuildableRecipeInfo, converterRecipes, CustomizerRecipeInfo } from './parseRecipes';
+import { EventType } from 'enums';
 
 type SchematicsEntry = DocsDataClass & { mUnlocks: any[] }
 
@@ -23,6 +24,7 @@ export interface SchematicInfo {
   cost: ItemQuantity[],
   timeToComplete: number,
   unlocks: SchematicUnlocks,
+  event: EventType,
 }
 
 export interface SchematicUnlocks {
@@ -47,7 +49,7 @@ interface SchematicDependencies {
   customizerRecipes: ParsedClassInfoMap<CustomizerRecipeInfo>,
 }
 
-const christmasSchematics = [
+const ficsmasSchematics = [
   'Research_XMas_1_C',
   'Research_XMas_1-1_C',
   'Research_XMas_1-2_C',
@@ -64,7 +66,6 @@ const christmasSchematics = [
 ];
 
 const excludeSchematics = [
-  ...christmasSchematics,
   'Schematic_SaveCompatibility_C', // Some sort of compatibility schematic with removed items in it
 ];
 
@@ -90,6 +91,7 @@ export function parseSchematics(categorizedDataClasses: CategorizedDataClasses, 
       cost,
       timeToComplete: parseFloat(entry.mTimeToComplete),
       unlocks: parseUnlocks((entry.mUnlocks), deps),
+      event: ficsmasSchematics.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
     };
   });
 
@@ -171,6 +173,13 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
   return unlocks;
 }
 
+// No entry for these in docs
+const SUPPRESS_SCHEMATIC_WARNING = [
+  'Schematic_XMassTree_T1_C',
+  'Schematic_XMassTree_T2_C',
+  'Schematic_XMassTree_T3_C',
+  'Schematic_XMassTree_T4_C',
+];
 function validateSchematics(schematics: ParsedClassInfoMap<SchematicInfo>, deps: SchematicDependencies) {
   const { resources, productionRecipes, buildableRecipes, customizerRecipes } = deps;
   const slugs: string[] = [];
@@ -197,7 +206,7 @@ function validateSchematics(schematics: ParsedClassInfoMap<SchematicInfo>, deps:
 
     if (data.unlocks.schematics) {
       data.unlocks.schematics.forEach((key) => {
-        if (!Object.keys(schematics).includes(key)) {
+        if (!Object.keys(schematics).includes(key) && !SUPPRESS_SCHEMATIC_WARNING.includes(key)) {
           // eslint-disable-next-line no-console
           console.warn(`WARNING: schematic unlocks unknown schematic [${key}]`);
         }

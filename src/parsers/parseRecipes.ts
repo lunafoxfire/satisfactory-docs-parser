@@ -6,6 +6,7 @@ import { ParsedClassInfoMap } from 'types';
 import { CategorizedDataClasses } from 'class-categorizer/types';
 import { ItemInfo } from './parseItems';
 import { BuildableInfo } from './parseBuildables';
+import { EventType } from 'enums';
 
 export interface ProductionRecipeInfo {
   slug: string,
@@ -19,6 +20,7 @@ export interface ProductionRecipeInfo {
   ingredients: ItemQuantity[],
   products: ItemQuantity[],
   producedIn: string[],
+  event: EventType,
 }
 
 export interface BuildableRecipeInfo {
@@ -26,6 +28,7 @@ export interface BuildableRecipeInfo {
   name: string,
   ingredients: ItemQuantity[],
   product: string,
+  event: EventType,
 }
 
 export interface CustomizerRecipeInfo {
@@ -33,6 +36,7 @@ export interface CustomizerRecipeInfo {
   isSwatch: boolean,
   isPatternRemover: boolean,
   ingredients: ItemQuantity[],
+  event: EventType,
 }
 
 interface RecipeDependencies {
@@ -40,7 +44,7 @@ interface RecipeDependencies {
   buildables: ParsedClassInfoMap<BuildableInfo>,
 }
 
-const christmasRecipes = [
+const ficsmasRecipes = [
   'Recipe_XMassTree_C',
   'Recipe_XmasBranch_C',
   'Recipe_CandyCane_C',
@@ -80,7 +84,6 @@ export const converterRecipes = [
 ];
 
 const excludeRecipes = [
-  ...christmasRecipes,
   ...converterRecipes,
   // old wall recipes
   'Recipe_Wall_Window_8x4_03_Steel_C',
@@ -137,6 +140,7 @@ function getMainRecipes(categorizedDataClasses: CategorizedDataClasses, { items,
         name: entry.mDisplayName,
         ingredients,
         product,
+        event: ficsmasRecipes.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
       };
     } else {
       const isAlternate = entry.mDisplayName.startsWith('Alternate:') || entry.ClassName.startsWith('Recipe_Alternate');
@@ -155,6 +159,7 @@ function getMainRecipes(categorizedDataClasses: CategorizedDataClasses, { items,
         ingredients,
         products,
         producedIn: machines,
+        event: ficsmasRecipes.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
       };
     }
   });
@@ -187,6 +192,7 @@ function getCustomizerRecipes(categorizedDataClasses: CategorizedDataClasses, { 
       isSwatch,
       isPatternRemover,
       ingredients,
+      event: ficsmasRecipes.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
     };
   });
 

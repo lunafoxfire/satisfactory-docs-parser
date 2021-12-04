@@ -4,7 +4,7 @@ import {
 } from 'utilities';
 import { ParsedClassInfoMap } from 'types';
 import { CategorizedDataClasses } from 'class-categorizer/types';
-import { EquipmentSlotType } from 'enums';
+import { EquipmentSlotType, EventType } from 'enums';
 
 export interface ItemInfo {
   slug: string,
@@ -18,6 +18,7 @@ export interface ItemInfo {
   isRadioactive: boolean,
   isEquipment: boolean,
   meta: ItemMeta,
+  event: EventType,
 }
 
 interface ItemMeta {
@@ -53,6 +54,7 @@ export interface ResourceInfo {
   maxExtraction: number,
   pingColor: Color,
   collectionSpeed: number,
+  event: EventType,
 }
 
 export interface NodeCounts {
@@ -68,7 +70,7 @@ export interface WellCounts {
   wells: number,
 }
 
-const christmasItems = [
+const ficsmasItems = [
   'BP_EquipmentDescriptorCandyCane_C',
   'BP_EquipmentDescriptorSnowballMittens_C',
   'Desc_CandyCane_C',
@@ -90,17 +92,14 @@ const christmasItems = [
   'Desc_XmassTree_C',
 ];
 
-const christmasEquip = [
+const ficsmasEquip = [
   'Equip_SnowballWeaponMittens_C',
   'Equip_CandyCaneBasher_C',
 ];
 
-const excludeItems = [
-  ...christmasItems,
-];
+const excludeItems: string[] = [];
 
 const excludeEquip = [
-  ...christmasEquip,
   'Equip_MedKit_C', // Handled as consumable equipment
 ];
 
@@ -158,6 +157,7 @@ function getItems(categorizedDataClasses: CategorizedDataClasses) {
       isRadioactive,
       isEquipment: false,
       meta,
+      event: ficsmasItems.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
     };
   });
 
@@ -195,6 +195,7 @@ function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedData
         item.isEquipment = true;
         item.meta.equipmentInfo = ({} as EquipmentMeta);
         item.meta.equipmentInfo.slot = parseEquipmentSlot(entry.mEquipmentSlot);
+        item.event = ficsmasItems.includes(consumableInfo.ClassName) ? 'FICSMAS' : 'NONE';
 
         if (consumableInfo.mHealthGain) {
           item.meta.equipmentInfo.healthGain = parseFloat(consumableInfo.mHealthGain);
@@ -214,6 +215,7 @@ function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedData
     item.isEquipment = true;
     item.meta.equipmentInfo = ({} as EquipmentMeta);
     item.meta.equipmentInfo.slot = parseEquipmentSlot(entry.mEquipmentSlot);
+    item.event = ficsmasEquip.includes(entry.ClassName) ? 'FICSMAS' : 'NONE';
 
     if (entry.mEnergyConsumption) {
       item.meta.equipmentInfo.energyConsumption = parseFloat(entry.mEnergyConsumption);
@@ -329,6 +331,7 @@ function getResources(categorizedDataClasses: CategorizedDataClasses) {
       maxExtraction,
       pingColor: parseColor(parseCollection(entry.mPingColor), true),
       collectionSpeed: parseFloat(entry.mCollectSpeedMultiplier),
+      event: ficsmasItems.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
     };
   });
 

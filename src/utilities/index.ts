@@ -45,6 +45,9 @@ const MATERIAL_SLUGS: any = {
 };
 const materialRegex = /_(Concrete|Metal|ConcretePolished|Polished|Asphalt|Orange|SteelWall|Steel|Wall_8x4_01|Wall_8x4_02)_/;
 export function createBuildableSlug(className: string, displayName: string) {
+  if (className.includes('_CandyCaneDecor')) {
+    return 'candy-cane-decor';
+  }
   let slug = createBasicSlug(displayName);
 
   const match = materialRegex.exec(className);
@@ -74,6 +77,7 @@ const EQUIP_DESC_MANUAL_MAP: any = {
   'Equip_RebarGun_Projectile_C': 'Desc_RebarGunProjectile_C',
   'Equip_Zipline_C': 'Desc_ZipLine_C',
   'Equip_GasMask_C': 'Desc_Gasmask_C',
+  'Equip_CandyCaneBasher_C': 'Desc_CandyCane_C',
 };
 export function equipmentNameToDescriptorName(equipName: string) {
   if (EQUIP_DESC_MANUAL_MAP[equipName]) {
@@ -107,6 +111,8 @@ const BUILDING_DESC_MANUAL_MAP: any = {
   'Build_Wall_Orange_Tris_8x2_C': 'Desc_Wall_Orange_8x2_Tris_C',
   'Build_Wall_Orange_Tris_8x4_C': 'Desc_Wall_Orange_8x4_Tris_C',
   'Build_Wall_Orange_Tris_8x8_C': 'Desc_Wall_Orange_8x8_Tris_C',
+  'Build_XmassTree_C': 'Desc_XMassTree_C',
+  'Build_XmassLightsLine_C': 'Desc_xmassLights_C',
 };
 export function buildableNameToDescriptorName(buildableName: string) {
   if (BUILDING_DESC_MANUAL_MAP[buildableName]) {
