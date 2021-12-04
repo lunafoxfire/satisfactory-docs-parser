@@ -111,6 +111,9 @@ export const categorizedClassnames: CategorizedClassnames = {
   resources: [
     'FGResourceDescriptor',
   ],
+  biomass: [
+    'FGItemDescriptorBiomass',
+  ],
   consumables: [
     'FGConsumableDescriptor',
   ],

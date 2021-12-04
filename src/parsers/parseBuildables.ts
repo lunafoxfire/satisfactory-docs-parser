@@ -1,74 +1,94 @@
 import {
   createBasicSlug, createBuildableSlug, cleanDescription, buildableNameToDescriptorName,
-  parseBlueprintClassname, getShortClassname, parseCollection,
+  parseBlueprintClassname, parseCollection, ItemRate,
 } from 'utilities';
 import { ParsedClassInfoMap } from 'types';
 import { CategorizedDataClasses } from 'class-categorizer/types';
-import { ResourceInfo } from './parseItems';
+import { ItemInfo, ResourceInfo } from './parseItems';
 
-export type BuildableInfo = {
+export interface BuildableInfo {
   slug: string,
   name: string,
   description: string,
   categories: string[],
   buildMenuPriority: number,
   isPowered: boolean,
+  isOverclockable: boolean,
   isProduction: boolean,
   isResourceExtractor: boolean,
   isGenerator: boolean,
   isVehicle: boolean,
   meta: BuildableMeta,
-};
+}
 
-export type BuildableMeta = {
+export interface BuildableMeta {
+  powerInfo?: PoweredMeta,
+  overclockInfo?: OverclockMeta,
+  extractorInfo?: ResourceExtractorMeta,
+  generatorInfo?: GeneratorMeta,
+  vehicleInfo?: VehicleMeta,
   size?: BuildableSize,
   beltSpeed?: number,
-  manufacturingSpeed?: number,
   inventorySize?: number,
-  powerConsumption?: number,
-  overclockPowerExponent?: number,
-  powerConsumptionCycle?: PowerConsumptionCycle,
-  powerConsumptionRange?: PowerConsumptionRange,
   powerStorageCapacity?: number,
-  allowedResources?: string[],
-  allowedResourceForms?: string[],
-  resourceExtractSpeed?: number,
-  allowedFuel?: string[],
-  powerProduction?: number,
-  overclockProductionExponent?: number,
-  waterToPowerRatio?: number,
   flowLimit?: number,
   headLift?: number,
   headLiftMax?: number,
   fluidStorageCapacity?: number,
-  radarInfo?: RadarTowerInfo,
-  vehicleFuelConsumption?: number,
-};
+  radarInfo?: RadarTowerMeta,
+}
 
-export type BuildableSize = {
-  width: number,
-  height: number,
-};
+export interface PoweredMeta {
+  consumption: number,
+  variableConsumption?: VariablePower,
+}
 
-export type PowerConsumptionCycle = {
-  cycleTime: number,
-  minimumConsumption: number,
-  maximumConsumption: number,
-};
+export interface OverclockMeta {
+  exponent: number,
+}
 
-export type PowerConsumptionRange = {
-  minimumConsumption: number,
-  maximumConsumption: number,
-};
+export interface ResourceExtractorMeta {
+  allowedResourceForms: string[],
+  allowedResources: string[],
+  resourceExtractSpeed: number,
+}
 
-export type RadarTowerInfo = {
+export interface GeneratorMeta {
+  powerProduction: number,
+  variablePowerProduction?: VariablePower,
+  fuels: FuelConsumption[],
+}
+
+export interface VehicleMeta {
+  fuelConsumption: number,
+}
+
+export interface RadarTowerMeta {
   minRevealRadius: number,
   maxRevealRadius: number,
   expansionSteps: number,
   expansionInterval: number,
-};
+}
+
+export interface BuildableSize {
+  width: number,
+  height: number,
+}
+
+export interface VariablePower {
+  cycleTime: number,
+  minimum: number,
+  maximum: number,
+}
+
+export interface FuelConsumption {
+  fuel: ItemRate,
+  supplement?: ItemRate,
+  byproduct?: ItemRate,
+}
 
 interface BuildableDependencies {
+  items: ParsedClassInfoMap<ItemInfo>,
   resources: ParsedClassInfoMap<ResourceInfo>,
 }
 
@@ -91,10 +111,10 @@ const excludeBuildables = [
   'Build_SteelWall_8x4_C',
 ];
 
-export function parseBuildables(categoryClasses: CategorizedDataClasses, { resources }: BuildableDependencies) {
+export function parseBuildables(categorizedDataClasses: CategorizedDataClasses, { items, resources }: BuildableDependencies) {
   const buildables: ParsedClassInfoMap<BuildableInfo> = {};
 
-  categoryClasses.buildables.forEach((buildableInfo) => {
+  categorizedDataClasses.buildables.forEach((buildableInfo) => {
     if (excludeBuildables.includes(buildableInfo.ClassName)) {
       return;
     }
@@ -102,7 +122,7 @@ export function parseBuildables(categoryClasses: CategorizedDataClasses, { resou
 
     let categories: string[] = [];
     let buildMenuPriority = 0;
-    const descriptorInfo = categoryClasses.buildableDescriptors.find((desc) => desc.ClassName === descriptorName);
+    const descriptorInfo = categorizedDataClasses.buildableDescriptors.find((desc) => desc.ClassName === descriptorName);
     if (descriptorInfo) {
       categories = parseCollection<string[]>(descriptorInfo.mSubCategories)
         .map((data) => parseBlueprintClassname(data));
@@ -114,10 +134,169 @@ export function parseBuildables(categoryClasses: CategorizedDataClasses, { resou
 
     const meta: BuildableMeta = {};
     let isPowered = false;
+    let isOverclockable = false;
     let isProduction = false;
     let isResourceExtractor = false;
     let isGenerator = false;
 
+    // Power
+    if (buildableInfo.mPowerConsumption) {
+      if (parseFloat(buildableInfo.mPowerConsumption) > 0) {
+        isPowered = true;
+        meta.powerInfo = {
+          consumption: parseFloat(buildableInfo.mPowerConsumption),
+        };
+      }
+    }
+    if (buildableInfo.ClassName === 'Build_HadronCollider_C') {
+      isPowered = true;
+      const min = parseFloat(buildableInfo.mEstimatedMininumPowerConsumption);
+      const max = parseFloat(buildableInfo.mEstimatedMaximumPowerConsumption);
+      meta.powerInfo = {
+        consumption: (min + max) / 2,
+        variableConsumption: {
+          cycleTime: parseFloat(buildableInfo.mSequenceDuration),
+          minimum: min,
+          maximum: max,
+        },
+      };
+    }
+
+    // Overclock
+    if (buildableInfo.mCanChangePotential === 'True') {
+      isOverclockable = true;
+      if (buildableInfo.mPowerProductionExponent) {
+        meta.overclockInfo = {
+          exponent: parseFloat(buildableInfo.mPowerProductionExponent),
+        };
+      } else {
+        meta.overclockInfo = {
+          exponent: parseFloat(buildableInfo.mPowerConsumptionExponent),
+        };
+      }
+    }
+
+    // Manufacturer
+    if (buildableInfo.mManufacturingSpeed) {
+      isProduction = true;
+    }
+
+    // Extractor
+    if (buildableInfo.mAllowedResourceForms) {
+      isResourceExtractor = true;
+      const allowedResourceForms = parseCollection<string[]>(buildableInfo.mAllowedResourceForms);
+
+      let allowedResources: string[];
+      if (buildableInfo.mAllowedResources === '') {
+        allowedResources = [];
+        for (const [resourceName, resourceInfo] of Object.entries(resources)) {
+          if (allowedResourceForms.includes(resourceInfo.form)) {
+            allowedResources.push(resourceName);
+          }
+        }
+      } else {
+        allowedResources = parseCollection<string[]>(buildableInfo.mAllowedResources)
+          .map((data) => parseBlueprintClassname(data));
+      }
+
+      let resourceExtractSpeed = 0;
+      if (buildableInfo.mItemsPerCycle && buildableInfo.mExtractCycleTime) {
+        let itemsPerCycle = parseInt(buildableInfo.mItemsPerCycle, 10);
+        const extractCycleTime = parseFloat(buildableInfo.mExtractCycleTime);
+        if (allowedResourceForms.includes('RF_LIQUID') || allowedResourceForms.includes('RF_GAS')) {
+          itemsPerCycle /= 1000;
+        }
+        resourceExtractSpeed = 60 * itemsPerCycle / extractCycleTime;
+      }
+
+      meta.extractorInfo = {
+        allowedResourceForms,
+        allowedResources,
+        resourceExtractSpeed,
+      };
+    }
+
+    // Generator
+    if (buildableInfo.mPowerProduction) {
+      isGenerator = true;
+      const powerProduction = parseFloat(buildableInfo.mPowerProduction);
+      const fuels: FuelConsumption[] = [];
+
+      if (buildableInfo.mFuel && Array.isArray(buildableInfo.mFuel)) {
+        buildableInfo.mFuel.forEach((fuelEntry) => {
+          if (fuelEntry.mFuelClass === 'FGItemDescriptorBiomass') {
+            Object.entries(items).forEach(([itemKey, itemInfo]) => {
+              if (!itemInfo.isBiomass || !itemInfo.meta.energyValue) return;
+              const burnRate = 60 * powerProduction / itemInfo.meta.energyValue;
+              fuels.push({ fuel: { itemClass: itemKey, rate: burnRate } });
+            });
+            return;
+          }
+
+          const fuelItemInfo = items[fuelEntry.mFuelClass];
+          if (!fuelItemInfo) {
+            // eslint-disable-next-line no-console
+            console.warn(`WARNING: No item info for generator fuel: [${fuelEntry.mFuelClass}]`);
+            return;
+          }
+          if (!fuelItemInfo.meta.energyValue) {
+            // eslint-disable-next-line no-console
+            console.warn(`WARNING: Generator fuel [${fuelEntry.mFuelClass}] has no energy value!`);
+            return;
+          }
+
+          const burnRate = 60 * powerProduction / fuelItemInfo.meta.energyValue;
+          const fuelInfo: FuelConsumption = {
+            fuel: { itemClass: fuelEntry.mFuelClass, rate: burnRate },
+          };
+
+          if (fuelEntry.mSupplementalResourceClass) {
+            const supplementItemInfo = items[fuelEntry.mSupplementalResourceClass];
+            if (!supplementItemInfo) {
+              // eslint-disable-next-line no-console
+              console.warn(`WARNING: No item info for generator supplement: [${fuelEntry.mFuelClass}]`);
+              return;
+            }
+
+            const supplementalRatio = parseFloat(buildableInfo.mSupplementalToPowerRatio);
+            const supplementalItemRate = powerProduction * supplementalRatio * (3 / 50);
+            fuelInfo.supplement = { itemClass: fuelEntry.mSupplementalResourceClass, rate: supplementalItemRate };
+          }
+
+          if (fuelEntry.mByproduct) {
+            const byproductItemInfo = items[fuelEntry.mByproduct];
+            if (!byproductItemInfo) {
+              // eslint-disable-next-line no-console
+              console.warn(`WARNING: No item info for generator byproduct: [${fuelEntry.mFuelClass}]`);
+              return;
+            }
+
+            const byproductAmount = parseFloat(fuelEntry.mByproductAmount);
+            const byproductRate = byproductAmount * burnRate;
+            fuelInfo.byproduct = { itemClass: fuelEntry.mByproduct, rate: byproductRate };
+          }
+
+          fuels.push(fuelInfo);
+        });
+      }
+
+      meta.generatorInfo = {
+        powerProduction,
+        fuels,
+      };
+
+      if (buildableInfo.mVariablePowerProductionFactor) {
+        const powerFactor = parseFloat(buildableInfo.mVariablePowerProductionFactor);
+        meta.generatorInfo.powerProduction = powerFactor;
+        meta.generatorInfo.variablePowerProduction = {
+          cycleTime: parseFloat(buildableInfo.mVariablePowerProductionCycleLength),
+          minimum: 0.5 * powerFactor,
+          maximum: 1.5 * powerFactor,
+        };
+      }
+    }
+
+    // Other
     if (buildableInfo.mSize || buildableInfo.mWidth || buildableInfo.mHeight) {
       const size = { width: 0, height: 0 };
       if (buildableInfo.mSize) {
@@ -132,26 +311,6 @@ export function parseBuildables(categoryClasses: CategorizedDataClasses, { resou
     }
     if (buildableInfo.mSpeed) {
       meta.beltSpeed = parseFloat(buildableInfo.mSpeed) / 2;
-    }
-    if (buildableInfo.mPowerConsumption) {
-      if (parseFloat(buildableInfo.mPowerConsumption) > 0) {
-        isPowered = true;
-        meta.powerConsumption = parseFloat(buildableInfo.mPowerConsumption);
-        meta.overclockPowerExponent = parseFloat(buildableInfo.mPowerConsumptionExponent);
-      }
-    }
-    if (buildableInfo.ClassName === 'Build_HadronCollider_C') {
-      isPowered = true;
-      meta.powerConsumptionCycle = {
-        cycleTime: parseFloat(buildableInfo.mSequenceDuration),
-        minimumConsumption: parseFloat(buildableInfo.mEstimatedMininumPowerConsumption),
-        maximumConsumption: parseFloat(buildableInfo.mEstimatedMaximumPowerConsumption),
-      };
-      meta.overclockPowerExponent = parseFloat(buildableInfo.mPowerConsumptionExponent);
-    }
-    if (buildableInfo.mManufacturingSpeed) {
-      isProduction = true;
-      meta.manufacturingSpeed = parseFloat(buildableInfo.mManufacturingSpeed);
     }
     if (buildableInfo.mInventorySizeX && buildableInfo.mInventorySizeY) {
       meta.inventorySize = parseInt(buildableInfo.mInventorySizeX, 10) * parseInt(buildableInfo.mInventorySizeY, 10);
@@ -182,48 +341,6 @@ export function parseBuildables(categoryClasses: CategorizedDataClasses, { resou
         expansionInterval: parseFloat(buildableInfo.mRadarExpansionInterval),
       };
     }
-    if (buildableInfo.mAllowedResourceForms) {
-      isResourceExtractor = true;
-      const allowedResourceForms = parseCollection<string[]>(buildableInfo.mAllowedResourceForms);
-      meta.allowedResourceForms = allowedResourceForms;
-
-      let allowedResources: string[];
-      if (buildableInfo.mAllowedResources === '') {
-        allowedResources = [];
-        for (const [resourceName, resourceInfo] of Object.entries(resources)) {
-          if (allowedResourceForms.includes(resourceInfo.form)) {
-            allowedResources.push(resourceName);
-          }
-        }
-      } else {
-        allowedResources = parseCollection<string[]>(buildableInfo.mAllowedResources)
-          .map((data) => parseBlueprintClassname(data));
-      }
-      meta.allowedResources = allowedResources;
-
-      meta.resourceExtractSpeed = 0;
-      if (buildableInfo.mItemsPerCycle && buildableInfo.mExtractCycleTime) {
-        let itemsPerCycle = parseInt(buildableInfo.mItemsPerCycle, 10);
-        const extractCycleTime = parseFloat(buildableInfo.mExtractCycleTime);
-        if (allowedResourceForms.includes('RF_LIQUID') || allowedResourceForms.includes('RF_GAS')) {
-          itemsPerCycle /= 1000;
-        }
-        meta.resourceExtractSpeed = 60 * itemsPerCycle / extractCycleTime;
-      }
-    }
-    if (buildableInfo.mDefaultFuelClasses) {
-      meta.allowedFuel = parseCollection<string[]>(buildableInfo.mDefaultFuelClasses).map((data) => getShortClassname(data));
-    }
-    if (buildableInfo.mPowerProduction) {
-      isGenerator = true;
-      meta.powerProduction = parseFloat(buildableInfo.mPowerProduction);
-    }
-    if (buildableInfo.mPowerProductionExponent) {
-      meta.overclockProductionExponent = parseFloat(buildableInfo.mPowerProductionExponent);
-    }
-    if (buildableInfo.mSupplementalToPowerRatio) {
-      meta.waterToPowerRatio = parseFloat(buildableInfo.mSupplementalToPowerRatio);
-    }
 
     buildables[descriptorName] = {
       slug: createBuildableSlug(buildableInfo.ClassName, buildableInfo.mDisplayName),
@@ -232,6 +349,7 @@ export function parseBuildables(categoryClasses: CategorizedDataClasses, { resou
       categories,
       buildMenuPriority,
       isPowered,
+      isOverclockable,
       isProduction,
       isResourceExtractor,
       isGenerator,
@@ -240,86 +358,52 @@ export function parseBuildables(categoryClasses: CategorizedDataClasses, { resou
     };
   });
 
-  addVehicles(categoryClasses, buildables);
+  addVehicles(categorizedDataClasses, buildables);
   validateBuildables(buildables);
 
   return buildables;
 }
 
-
-type VehicleInfo = {
-  name: string,
-  description: string,
-};
-
-// Not provided in Docs.json :c
-const VEHICLE_MAPPING: { [key: string]: VehicleInfo } = {
-  'Desc_Truck_C': {
-    name: 'Truck',
-    description: '48 slot inventory. Has a built in Craft Bench. Can be automated to pick up and deliver resources at Truck Stations. Nicknamed the Unit by FICSIT pioneers because of its massive frame.',
-  },
-  'Desc_DroneTransport_C': {
-    name: 'Drone',
-    description: 'Has to be built on a Drone Port. Transports available input back an forth between its home and destination Port. Requires Batteries as fuel, based on travel distance.Refuels at any Port, if able. Drone Status and other details are shown on its home Drone Port.',
-  },
-  'Desc_Tractor_C': {
-    name: 'Tractor',
-    description: '25 slot inventory. Has a built in Craft Bench. Can be automated to pick up and deliver resources at Truck Stations. Nicknamed the Sugarcube by FICSIT pioneers.',
-  },
-  'Desc_FreightWagon_C': {
-    name: 'Freight Car',
-    description: 'The Freight Car is used to transport large quantity of resources from one place to another. Resources are loaded or unloaded at Freight Platforms.\nMust be built on Railway.',
-  },
-  'Desc_Locomotive_C': {
-    name: 'Electric Locomotive',
-    description: 'This locomotive is used to move Freight Cars from station to station.\nRequires 25-110MW of Power to drive.\nMust be built on railway.\nNamed \'Leif\' by FISCIT pioneers because of its reliability.',
-  },
-  'Desc_Explorer_C': {
-    name: 'Explorer',
-    description: '24 slot inventory. Has a built in craft bench. Fast and nimble exploration vehicle. Tuned for really rough terrain and can climb almost vertical surfaces.',
-  },
-  'Desc_CyberWagon_C': {
-    name: 'Cyber Wagon',
-    description: 'Absolutely indestructible.\nNeeds no further introduction.',
-  }
-};
-
-function addVehicles(categoryClasses: CategorizedDataClasses, buildables: ParsedClassInfoMap<BuildableInfo>) {
-  categoryClasses.vehicles.forEach((entry) => {
-    const vehicleInfo = VEHICLE_MAPPING[entry.ClassName];
-    if (!vehicleInfo) {
-      // eslint-disable-next-line no-console
-      console.warn(`WARNING: No vehicle mapping exists for vehicle: [${entry.className}]`);
-      return;
-    }
+function addVehicles(categorizedDataClasses: CategorizedDataClasses, buildables: ParsedClassInfoMap<BuildableInfo>) {
+  categorizedDataClasses.vehicles.forEach((entry) => {
     let isPowered = false;
     const categories = parseCollection<string[]>(entry.mSubCategories)
       .map((data) => parseBlueprintClassname(data));
     const buildMenuPriority = parseFloat(entry.mBuildMenuPriority);
 
     const meta: BuildableMeta = {};
+    let fuelConsumption = 0;
     if (entry.mFuelConsumption) {
-      meta.vehicleFuelConsumption = parseFloat(entry.mFuelConsumption);
+      fuelConsumption = parseFloat(entry.mFuelConsumption);
     }
+    meta.vehicleInfo = {
+      fuelConsumption,
+    };
+
     if (entry.mInventorySize) {
       meta.inventorySize = parseInt(entry.mInventorySize, 10);
     }
     if (entry.mPowerConsumption) {
       isPowered = true;
       const powerConsumption = parseCollection(entry.mPowerConsumption);
-      meta.powerConsumptionRange = {
-        minimumConsumption: powerConsumption.Min,
-        maximumConsumption: powerConsumption.Max,
+      meta.powerInfo = {
+        consumption: (powerConsumption.Min + powerConsumption.Max) / 2,
+        variableConsumption: {
+          cycleTime: 0,
+          minimum: powerConsumption.Min,
+          maximum: powerConsumption.Max,
+        }
       };
     }
 
     buildables[entry.ClassName] = {
-      slug: createBasicSlug(vehicleInfo.name),
-      name: vehicleInfo.name,
-      description: vehicleInfo.description,
+      slug: createBasicSlug(entry.mDisplayName),
+      name: entry.mDisplayName,
+      description: cleanDescription(entry.mDescription),
       categories,
       buildMenuPriority,
       isPowered,
+      isOverclockable: false,
       isProduction: false,
       isResourceExtractor: false,
       isGenerator: false,

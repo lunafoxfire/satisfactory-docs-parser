@@ -7,7 +7,7 @@ import { CategorizedDataClasses } from 'class-categorizer/types';
 import { ItemInfo } from './parseItems';
 import { BuildableInfo } from './parseBuildables';
 
-export type ProductionRecipeInfo = {
+export interface ProductionRecipeInfo {
   slug: string,
   name: string,
   craftTime: number,
@@ -19,21 +19,21 @@ export type ProductionRecipeInfo = {
   ingredients: ItemQuantity[],
   products: ItemQuantity[],
   producedIn: string[],
-};
+}
 
-export type BuildableRecipeInfo = {
+export interface BuildableRecipeInfo {
   slug: string,
   name: string,
   ingredients: ItemQuantity[],
   product: string,
-};
+}
 
-export type CustomizerRecipeInfo = {
+export interface CustomizerRecipeInfo {
   slug: string,
   isSwatch: boolean,
   isPatternRemover: boolean,
   ingredients: ItemQuantity[],
-};
+}
 
 interface RecipeDependencies {
   items: ParsedClassInfoMap<ItemInfo>,
@@ -87,9 +87,9 @@ const excludeRecipes = [
   'Recipe_SteelWall_8x4_C',
 ];
 
-export function parseRecipes(categoryClasses: CategorizedDataClasses, deps: RecipeDependencies) {
-  const { productionRecipes, buildableRecipes } = getMainRecipes(categoryClasses, deps);
-  const customizerRecipes = getCustomizerRecipes(categoryClasses, deps);
+export function parseRecipes(categorizedDataClasses: CategorizedDataClasses, deps: RecipeDependencies) {
+  const { productionRecipes, buildableRecipes } = getMainRecipes(categorizedDataClasses, deps);
+  const customizerRecipes = getCustomizerRecipes(categorizedDataClasses, deps);
 
   validateRecipes(productionRecipes, buildableRecipes);
   validateCustomizerRecipes(customizerRecipes);
@@ -97,11 +97,11 @@ export function parseRecipes(categoryClasses: CategorizedDataClasses, deps: Reci
   return { productionRecipes, buildableRecipes, customizerRecipes };
 }
 
-function getMainRecipes(categoryClasses: CategorizedDataClasses, { items, buildables }: RecipeDependencies) {
+function getMainRecipes(categorizedDataClasses: CategorizedDataClasses, { items, buildables }: RecipeDependencies) {
   const productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo> = {};
   const buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo> = {};
 
-  categoryClasses.recipes.forEach((entry) => {
+  categorizedDataClasses.recipes.forEach((entry) => {
     if (!entry.mProducedIn || excludeRecipes.includes(entry.ClassName)) {
       return;
     }
@@ -162,10 +162,10 @@ function getMainRecipes(categoryClasses: CategorizedDataClasses, { items, builda
   return { productionRecipes, buildableRecipes };
 }
 
-function getCustomizerRecipes(categoryClasses: CategorizedDataClasses, { items }: RecipeDependencies) {
+function getCustomizerRecipes(categorizedDataClasses: CategorizedDataClasses, { items }: RecipeDependencies) {
   const customizerRecipes: ParsedClassInfoMap<CustomizerRecipeInfo> = {};
 
-  categoryClasses.customizerRecipes.forEach((entry) => {
+  categorizedDataClasses.customizerRecipes.forEach((entry) => {
     let ingredients: ItemQuantity[] = [];
     let isSwatch = false;
     let isPatternRemover = false;

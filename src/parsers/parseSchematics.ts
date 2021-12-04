@@ -14,7 +14,7 @@ type UnlockData = {
   [key: string]: string,
 };
 
-export type SchematicInfo = {
+export interface SchematicInfo {
   slug: string,
   name: string,
   description: string,
@@ -23,9 +23,9 @@ export type SchematicInfo = {
   cost: ItemQuantity[],
   timeToComplete: number,
   unlocks: SchematicUnlocks,
-};
+}
 
-export type SchematicUnlocks = {
+export interface SchematicUnlocks {
   recipes?: string[],
   schematics?: string[],
   scannerResources?: string[],
@@ -37,7 +37,7 @@ export type SchematicUnlocks = {
   giveItems?: ItemQuantity[],
   emotes?: string[],
   customizer?: boolean,
-};
+}
 
 interface SchematicDependencies {
   items: ParsedClassInfoMap<ItemInfo>,
@@ -68,11 +68,11 @@ const excludeSchematics = [
   'Schematic_SaveCompatibility_C', // Some sort of compatibility schematic with removed items in it
 ];
 
-export function parseSchematics(categoryClasses: CategorizedDataClasses, deps: SchematicDependencies) {
+export function parseSchematics(categorizedDataClasses: CategorizedDataClasses, deps: SchematicDependencies) {
   const { items } = deps;
   const schematics: ParsedClassInfoMap<SchematicInfo> = {};
 
-  categoryClasses.schematics.forEach((e) => {
+  categorizedDataClasses.schematics.forEach((e) => {
     const entry = e as SchematicsEntry;
     if (excludeSchematics.includes(entry.ClassName)) {
       return;

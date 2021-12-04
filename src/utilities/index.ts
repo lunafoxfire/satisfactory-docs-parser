@@ -1,6 +1,7 @@
 import { ParsedClassInfoMap } from 'types';
 import { ItemInfo } from 'parsers/parseItems';
 import { BuildableInfo } from 'parsers/parseBuildables';
+import { EquipmentSlotType } from 'enums';
 export { parseCollection } from './deserialization';
 
 export type Color = {
@@ -14,6 +15,11 @@ export type ItemQuantity = {
   quantity: number,
 }
 
+export type ItemRate = {
+  itemClass: string,
+  rate: number,
+}
+
 export function createBasicSlug(displayName: string) {
   return displayName
     .replace(/[^A-Za-z0-9\s\-_.|]/g, '')
@@ -24,7 +30,6 @@ export function createBasicSlug(displayName: string) {
 export function createSlugFromClassname(className: string) {
   return createBasicSlug(className.replace(/_C$/, ''));
 }
-
 
 const MATERIAL_SLUGS: any = {
   'Concrete': 'concrete',
@@ -38,7 +43,6 @@ const MATERIAL_SLUGS: any = {
   'Wall_8x4_01': 'ficsit',
   'Wall_8x4_02': 'steel',
 };
-
 const materialRegex = /_(Concrete|Metal|ConcretePolished|Polished|Asphalt|Orange|SteelWall|Steel|Wall_8x4_01|Wall_8x4_02)_/;
 export function createBuildableSlug(className: string, displayName: string) {
   let slug = createBasicSlug(displayName);
@@ -154,7 +158,7 @@ export function parseStackSize(data: string) {
   }
 }
 
-export function parseEquipmentSlot(data: string) {
+export function parseEquipmentSlot(data: string): EquipmentSlotType {
   switch (data) {
     case 'ES_ARMS':
       return 'HAND';

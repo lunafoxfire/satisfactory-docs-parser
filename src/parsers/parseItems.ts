@@ -4,8 +4,9 @@ import {
 } from 'utilities';
 import { ParsedClassInfoMap } from 'types';
 import { CategorizedDataClasses } from 'class-categorizer/types';
+import { EquipmentSlotType } from 'enums';
 
-export type ItemInfo = {
+export interface ItemInfo {
   slug: string,
   name: string,
   description: string,
@@ -13,16 +14,21 @@ export type ItemInfo = {
   sinkPoints: number,
   isFluid: boolean,
   isFuel: boolean,
+  isBiomass: boolean,
   isRadioactive: boolean,
   isEquipment: boolean,
   meta: ItemMeta,
-};
+}
 
-export type ItemMeta = {
+interface ItemMeta {
+  fluidColor?: Color,
   energyValue?: number,
   radioactiveDecay?: number,
-  fluidColor?: Color,
-  equipSlot?: string,
+  equipmentInfo?: EquipmentMeta,
+}
+
+export interface EquipmentMeta {
+  slot: EquipmentSlotType,
   healthGain?: number,
   energyConsumption?: number,
   sawDownTreeTime?: number,
@@ -37,9 +43,9 @@ export type ItemMeta = {
   explosionDamage?: number,
   explosionRadius?: number,
   detectionRange?: number,
-};
+}
 
-export type ResourceInfo = {
+export interface ResourceInfo {
   itemClass: string,
   form: string,
   nodes?: NodeCounts,
@@ -47,20 +53,20 @@ export type ResourceInfo = {
   maxExtraction: number,
   pingColor: Color,
   collectionSpeed: number,
-};
+}
 
-export type NodeCounts = {
+export interface NodeCounts {
   impure: number,
   normal: number,
   pure: number,
-};
+}
 
-export type WellCounts = {
+export interface WellCounts {
   impure: number,
   normal: number,
   pure: number,
   wells: number,
-};
+}
 
 const christmasItems = [
   'BP_EquipmentDescriptorCandyCane_C',
@@ -98,10 +104,11 @@ const excludeEquip = [
   'Equip_MedKit_C', // Handled as consumable equipment
 ];
 
-export function parseItems(categoryClasses: CategorizedDataClasses) {
-  const items = getItems(categoryClasses);
-  mergeEquipmentInfo(items, categoryClasses);
-  const resources = getResources(categoryClasses);
+export function parseItems(categorizedDataClasses: CategorizedDataClasses) {
+  const items = getItems(categorizedDataClasses);
+  mergeBiomassInfo(items, categorizedDataClasses);
+  mergeEquipmentInfo(items, categorizedDataClasses);
+  const resources = getResources(categorizedDataClasses);
 
   validateItems(items);
   validateResources(resources, items);
@@ -113,10 +120,10 @@ export function parseItems(categoryClasses: CategorizedDataClasses) {
 }
 
 
-function getItems(categoryClasses: CategorizedDataClasses) {
+function getItems(categorizedDataClasses: CategorizedDataClasses) {
   const items: ParsedClassInfoMap<ItemInfo> = {};
 
-  categoryClasses.itemDescriptors.forEach((entry) => {
+  categorizedDataClasses.itemDescriptors.forEach((entry) => {
     if (excludeItems.includes(entry.ClassName)) {
       return;
     }
@@ -147,6 +154,7 @@ function getItems(categoryClasses: CategorizedDataClasses) {
       sinkPoints: parseInt(entry.mResourceSinkPoints, 10),
       isFluid,
       isFuel,
+      isBiomass: false,
       isRadioactive,
       isEquipment: false,
       meta,
@@ -154,6 +162,105 @@ function getItems(categoryClasses: CategorizedDataClasses) {
   });
 
   return items;
+}
+
+function mergeBiomassInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedDataClasses: CategorizedDataClasses) {
+  categorizedDataClasses.biomass.forEach((entry) => {
+    const key = standardizeItemDescriptor(entry.ClassName);
+    const item = items[key];
+    if (!item) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Biomass missing item descriptor: [${entry.ClassName}]`);
+    }
+    item.isBiomass = true;
+  });
+}
+
+function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedDataClasses: CategorizedDataClasses) {
+  categorizedDataClasses.equipment.forEach((entry) => {
+    if (excludeEquip.includes(entry.ClassName)) {
+      return;
+    }
+
+    if (entry.ClassName === 'BP_ConsumeableEquipment_C') {
+      categorizedDataClasses.consumables.forEach((consumableInfo) => {
+        const key = standardizeItemDescriptor(consumableInfo.ClassName);
+        const item = items[key];
+        if (!item) {
+          // eslint-disable-next-line no-console
+          console.warn(`WARNING: Equipment missing item descriptor: [${entry.ClassName}]`);
+          return;
+        }
+
+        item.isEquipment = true;
+        item.meta.equipmentInfo = ({} as EquipmentMeta);
+        item.meta.equipmentInfo.slot = parseEquipmentSlot(entry.mEquipmentSlot);
+
+        if (consumableInfo.mHealthGain) {
+          item.meta.equipmentInfo.healthGain = parseFloat(consumableInfo.mHealthGain);
+        }
+      });
+      return;
+    }
+
+    const key = equipmentNameToDescriptorName(entry.ClassName);
+    const item = items[key];
+    if (!item) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Equipment missing item descriptor: [${entry.ClassName}]`);
+      return;
+    }
+
+    item.isEquipment = true;
+    item.meta.equipmentInfo = ({} as EquipmentMeta);
+    item.meta.equipmentInfo.slot = parseEquipmentSlot(entry.mEquipmentSlot);
+
+    if (entry.mEnergyConsumption) {
+      item.meta.equipmentInfo.energyConsumption = parseFloat(entry.mEnergyConsumption);
+    }
+    if (entry.mSawDownTreeTime) {
+      item.meta.equipmentInfo.sawDownTreeTime = parseFloat(entry.mSawDownTreeTime);
+    }
+    if (entry.mInstantHitDamage) {
+      item.meta.equipmentInfo.damage = parseFloat(entry.mInstantHitDamage);
+    }
+    if (entry.mMagazineSize) {
+      item.meta.equipmentInfo.magazineSize = parseInt(entry.mMagazineSize, 10);
+    }
+    if (entry.mReloadTime) {
+      item.meta.equipmentInfo.reloadTime = parseFloat(entry.mReloadTime);
+    }
+    if (entry.mFireRate) {
+      item.meta.equipmentInfo.fireRate = parseFloat(entry.mFireRate);
+    }
+    if (entry.mDamage) {
+      item.meta.equipmentInfo.damage = parseFloat(entry.mDamage);
+    }
+    if (entry.mAttackDistance) {
+      item.meta.equipmentInfo.attackDistance = parseFloat(entry.mAttackDistance);
+    }
+    if (entry.mFilterDuration) {
+      item.meta.equipmentInfo.filterDuration = parseFloat(entry.mFilterDuration);
+    }
+    if (entry.mSprintSpeedFactor) {
+      item.meta.equipmentInfo.sprintSpeedFactor = parseFloat(entry.mSprintSpeedFactor);
+    }
+    if (entry.mJumpSpeedFactor) {
+      item.meta.equipmentInfo.jumpSpeedFactor = parseFloat(entry.mJumpSpeedFactor);
+    }
+    if (entry.mExplosiveData) {
+      const explosiveData = parseCollection(entry.mExplosiveData);
+      item.meta.equipmentInfo.explosionDamage = parseFloat(explosiveData.ExplosionDamage);
+      item.meta.equipmentInfo.explosionRadius = parseFloat(explosiveData.ExplosionRadius);
+    }
+    if (entry.mDetectionRange) {
+      item.meta.equipmentInfo.detectionRange = parseFloat(entry.mDetectionRange);
+    }
+    if (entry.mProjectileData) {
+      const projectileData = parseCollection(entry.mProjectileData);
+      item.meta.equipmentInfo.damage = parseFloat(projectileData.ImpactDamage);
+    }
+  });
 }
 
 const RESOURCE_NODE_DATA: { [key: string]: NodeCounts } = {
@@ -177,10 +284,10 @@ const RESOURCE_WELL_DATA: { [key: string]: WellCounts } = {
 
 const MAX_OVERCLOCK = 2.5;
 
-function getResources(categoryClasses: CategorizedDataClasses) {
+function getResources(categorizedDataClasses: CategorizedDataClasses) {
   const resources: ParsedClassInfoMap<ResourceInfo> = {};
 
-  categoryClasses.resources.forEach((entry) => {
+  categorizedDataClasses.resources.forEach((entry) => {
     const nodeData = RESOURCE_NODE_DATA[entry.ClassName];
     const wellData = RESOURCE_WELL_DATA[entry.ClassName];
     let maxExtraction = 0;
@@ -226,90 +333,6 @@ function getResources(categoryClasses: CategorizedDataClasses) {
   });
 
   return resources;
-}
-
-
-function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categoryClasses: CategorizedDataClasses) {
-  categoryClasses.equipment.forEach((entry) => {
-    if (excludeEquip.includes(entry.ClassName)) {
-      return;
-    }
-
-    if (entry.ClassName === 'BP_ConsumeableEquipment_C') {
-      categoryClasses.consumables.forEach((consumableInfo) => {
-        const key = standardizeItemDescriptor(consumableInfo.ClassName);
-        const item = items[key];
-        if (!item) {
-          // eslint-disable-next-line no-console
-          console.warn(`WARNING: Equipment missing item descriptor: [${entry.ClassName}]`);
-          return;
-        }
-
-        item.isEquipment = true;
-
-        if (consumableInfo.mHealthGain) {
-          item.meta.healthGain = parseFloat(consumableInfo.mHealthGain);
-        }
-      });
-      return;
-    }
-
-    const key = equipmentNameToDescriptorName(entry.ClassName);
-    const item = items[key];
-    if (!item) {
-      // eslint-disable-next-line no-console
-      console.warn(`WARNING: Equipment missing item descriptor: [${entry.ClassName}]`);
-      return;
-    }
-
-    item.isEquipment = true;
-
-    if (entry.mEnergyConsumption) {
-      item.meta.energyConsumption = parseFloat(entry.mEnergyConsumption);
-    }
-    if (entry.mSawDownTreeTime) {
-      item.meta.sawDownTreeTime = parseFloat(entry.mSawDownTreeTime);
-    }
-    if (entry.mInstantHitDamage) {
-      item.meta.damage = parseFloat(entry.mInstantHitDamage);
-    }
-    if (entry.mMagazineSize) {
-      item.meta.magazineSize = parseInt(entry.mMagazineSize, 10);
-    }
-    if (entry.mReloadTime) {
-      item.meta.reloadTime = parseFloat(entry.mReloadTime);
-    }
-    if (entry.mFireRate) {
-      item.meta.fireRate = parseFloat(entry.mFireRate);
-    }
-    if (entry.mDamage) {
-      item.meta.damage = parseFloat(entry.mDamage);
-    }
-    if (entry.mAttackDistance) {
-      item.meta.attackDistance = parseFloat(entry.mAttackDistance);
-    }
-    if (entry.mFilterDuration) {
-      item.meta.filterDuration = parseFloat(entry.mFilterDuration);
-    }
-    if (entry.mSprintSpeedFactor) {
-      item.meta.sprintSpeedFactor = parseFloat(entry.mSprintSpeedFactor);
-    }
-    if (entry.mJumpSpeedFactor) {
-      item.meta.jumpSpeedFactor = parseFloat(entry.mJumpSpeedFactor);
-    }
-    if (entry.mExplosiveData) {
-      const explosiveData = parseCollection(entry.mExplosiveData);
-      item.meta.explosionDamage = parseFloat(explosiveData.ExplosionDamage);
-      item.meta.explosionRadius = parseFloat(explosiveData.ExplosionRadius);
-    }
-    if (entry.mDetectionRange) {
-      item.meta.detectionRange = parseFloat(entry.mDetectionRange);
-    }
-    if (entry.mProjectileData) {
-      const projectileData = parseCollection(entry.mProjectileData);
-      item.meta.damage = parseFloat(projectileData.ImpactDamage);
-    }
-  });
 }
 
 function validateItems(items: ParsedClassInfoMap<ItemInfo>) {

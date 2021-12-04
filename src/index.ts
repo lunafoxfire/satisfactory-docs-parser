@@ -46,7 +46,7 @@ function parseDocsString(input: string) {
   const categorizedDataClasses = categorizeDataClasses(dataClassMap);
 
   const { items, resources } = parseItems(categorizedDataClasses);
-  const buildables = parseBuildables(categorizedDataClasses, { resources });
+  const buildables = parseBuildables(categorizedDataClasses, { items, resources });
   const { productionRecipes, buildableRecipes, customizerRecipes } = parseRecipes(categorizedDataClasses, { items, buildables });
   const schematics = parseSchematics(categorizedDataClasses, { items, resources, productionRecipes, buildableRecipes, customizerRecipes });
 

@@ -3,6 +3,7 @@ import { DocsDataClass } from 'types';
 export type CategoryKey =
   'itemDescriptors'
   | 'resources'
+  | 'biomass'
   | 'consumables'
   | 'equipment'
 
