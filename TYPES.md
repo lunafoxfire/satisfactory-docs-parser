@@ -3,7 +3,7 @@
 ## `items`
 
 ```ts
-type ItemInfo = {
+interface ItemInfo {
   slug: string,
   name: string,
   description: string,
@@ -11,59 +11,27 @@ type ItemInfo = {
   sinkPoints: number,
   isFluid: boolean,
   isFuel: boolean,
+  isBiomass: boolean,
   isRadioactive: boolean,
+  isEquipment: boolean,
   meta: ItemMeta,
-};
+  event: EventType,
+}
 
-type ItemMeta = {
+interface ItemMeta {
+  fluidColor?: Color,
   energyValue?: number,
   radioactiveDecay?: number,
-  fluidColor?: Color,
-};
-```
+  equipmentInfo?: EquipmentMeta,
+}
 
-## `resources`
-
-```ts
-type ResourceInfo = {
-  itemClass: string,
-  form: string,
-  nodes?: NodeCounts,
-  resourceWells?: WellCounts,
-  maxExtraction: number,
-  pingColor: Color,
-  collectionSpeed: number,
-};
-
-type NodeCounts = {
-  impure: number,
-  normal: number,
-  pure: number,
-};
-
-type WellCounts = {
-  impure: number,
-  normal: number,
-  pure: number,
-  wells: number,
-};
-```
-
-## `equipment`
-
-```ts
-type EquipmentInfo = {
-  itemClass: string,
-  slot: string,
-  meta: EquipmentMeta,
-};
-
-type EquipmentMeta = {
+interface EquipmentMeta {
+  slot: EquipmentSlotType,
   healthGain?: number,
   energyConsumption?: number,
   sawDownTreeTime?: number,
   damage?: number,
-  magSize?: number,
+  magazineSize?: number,
   reloadTime?: number,
   fireRate?: number,
   attackDistance?: number,
@@ -73,79 +41,127 @@ type EquipmentMeta = {
   explosionDamage?: number,
   explosionRadius?: number,
   detectionRange?: number,
-};
+}
+```
+
+## `resources`
+
+```ts
+interface ResourceInfo {
+  itemClass: string,
+  form: string,
+  nodes?: NodeCounts,
+  resourceWells?: WellCounts,
+  maxExtraction: number,
+  pingColor: Color,
+  collectionSpeed: number,
+  event: EventType,
+}
+
+interface NodeCounts {
+  impure: number,
+  normal: number,
+  pure: number,
+}
+
+interface WellCounts {
+  impure: number,
+  normal: number,
+  pure: number,
+  wells: number,
+}
 ```
 
 ## `buildables`
 
 ```ts
-type BuildableInfo = {
+interface BuildableInfo {
   slug: string,
   name: string,
   description: string,
   categories: string[],
   buildMenuPriority: number,
   isPowered: boolean,
+  isOverclockable: boolean,
   isProduction: boolean,
   isResourceExtractor: boolean,
   isGenerator: boolean,
   isVehicle: boolean,
   meta: BuildableMeta,
-};
+  event: EventType,
+}
 
-type BuildableMeta = {
+interface BuildableMeta {
+  powerInfo?: PoweredMeta,
+  overclockInfo?: OverclockMeta,
+  extractorInfo?: ResourceExtractorMeta,
+  generatorInfo?: GeneratorMeta,
+  vehicleInfo?: VehicleMeta,
   size?: BuildableSize,
   beltSpeed?: number,
-  manufacturingSpeed?: number,
   inventorySize?: number,
-  powerConsumption?: number,
-  overclockPowerExponent?: number,
-  powerConsumptionCycle?: PowerConsumptionCycle,
-  powerConsumptionRange?: PowerConsumptionRange,
   powerStorageCapacity?: number,
-  allowedResources?: string[],
-  allowedResourceForms?: string[],
-  resourceExtractSpeed?: number,
-  allowedFuel?: string[],
-  powerProduction?: number,
-  overclockProductionExponent?: number,
-  waterToPowerRatio?: number,
   flowLimit?: number,
   headLift?: number,
   headLiftMax?: number,
   fluidStorageCapacity?: number,
-  radarInfo?: RadarTowerInfo,
-  vehicleFuelConsumption?: number,
-};
+  radarInfo?: RadarTowerMeta,
+}
 
-type BuildableSize = {
-  width: number,
-  height: number,
-};
+interface PoweredMeta {
+  consumption: number,
+  variableConsumption?: VariablePower,
+}
 
-type PowerConsumptionCycle = {
-  cycleTime: number,
-  minimumConsumption: number,
-  maximumConsumption: number,
-};
+interface OverclockMeta {
+  exponent: number,
+}
 
-type PowerConsumptionRange = {
-  minimumConsumption: number,
-  maximumConsumption: number,
-};
+interface ResourceExtractorMeta {
+  allowedResourceForms: string[],
+  allowedResources: string[],
+  resourceExtractSpeed: number,
+}
 
-type RadarTowerInfo = {
+interface GeneratorMeta {
+  powerProduction: number,
+  variablePowerProduction?: VariablePower,
+  fuels: FuelConsumption[],
+}
+
+interface VehicleMeta {
+  fuelConsumption: number,
+}
+
+interface RadarTowerMeta {
   minRevealRadius: number,
   maxRevealRadius: number,
   expansionSteps: number,
   expansionInterval: number,
-};
+}
+
+interface BuildableSize {
+  width: number,
+  height: number,
+}
+
+interface VariablePower {
+  cycleTime: number,
+  minimum: number,
+  maximum: number,
+}
+
+interface FuelConsumption {
+  fuel: ItemRate,
+  supplement?: ItemRate,
+  byproduct?: ItemRate,
+}
 ```
 
 ## `productionRecipes`
 
 ```ts
-type ProductionRecipeInfo = {
+interface ProductionRecipeInfo {
   slug: string,
   name: string,
   craftTime: number,
@@ -157,24 +173,38 @@ type ProductionRecipeInfo = {
   ingredients: ItemQuantity[],
   products: ItemQuantity[],
   producedIn: string[],
-};
+  event: EventType,
+}
 ```
 
 ## `buildableRecipes`
 
 ```ts
-type BuildableRecipeInfo = {
+interface BuildableRecipeInfo {
   slug: string,
   name: string,
   ingredients: ItemQuantity[],
   product: string,
-};
+  event: EventType,
+}
+```
+
+## `customizerRecipes`
+
+```ts
+interface CustomizerRecipeInfo {
+  slug: string,
+  isSwatch: boolean,
+  isPatternRemover: boolean,
+  ingredients: ItemQuantity[],
+  event: EventType,
+}
 ```
 
 ## `schematics`
 
 ```ts
-type SchematicInfo = {
+interface SchematicInfo {
   slug: string,
   name: string,
   description: string,
@@ -183,9 +213,10 @@ type SchematicInfo = {
   cost: ItemQuantity[],
   timeToComplete: number,
   unlocks: SchematicUnlocks,
-};
+  event: EventType,
+}
 
-type SchematicUnlocks = {
+interface SchematicUnlocks {
   recipes?: string[],
   schematics?: string[],
   scannerResources?: string[],
@@ -195,7 +226,9 @@ type SchematicUnlocks = {
   overclockPanel?: boolean,
   map?: boolean,
   giveItems?: ItemQuantity[],
-};
+  emotes?: string[],
+  customizer?: boolean,
+}
 ```
 
 ## Global Types
@@ -205,10 +238,22 @@ type Color = {
   r: number,
   g: number,
   b: number,
-};
+}
 
 type ItemQuantity = {
   itemClass: string,
   quantity: number,
-};
+}
+
+type ItemRate = {
+  itemClass: string,
+  rate: number,
+}
+```
+
+## Enums
+
+```ts
+type EquipmentSlotType = 'HAND' | 'BODY' | 'UNDEFINED';
+type EventType = 'NONE' | 'FICSMAS';
 ```

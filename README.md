@@ -2,10 +2,6 @@
 
 This is a package for parsing the `Docs.json` file provided by the developers of the game [Satisfactory](https://www.satisfactorygame.com/) into a format easily consumable by those interested in developing tools for the game. This `Docs.json` file can be found at `<your-satisfactory-directory>/CommunityResources/Docs/Docs.json` and contains metadata about the items, buildables, recipes, etc found in the game. This package aims to parse this file into a format both more human- and script- readable.
 
-# IMPORTANT!!
-
-This package is not up-to-date with U5 yet, I will be working on that over the next few days. If you are here from [Yet Another Factory Planner](https://github.com/lydianlights/yet-another-factory-planner) trying to get that up and running locally, here is a link to the U4 Docs file used by that site: [U4 Docs.json](https://drive.google.com/file/d/1-0KRxx2EPKRwem0Igx7POnoQnM62GyrX/view?usp=sharing). The factory planner is currently still using the U4 docs because none of the production recipes had changed between versions.
-
 # Usage
   `npm install satisfactory-docs-parser`
 
@@ -30,6 +26,7 @@ data = {
   buildables, // All things buildable with the build gun (this includes vehicles)
   productionRecipes, // All recipes that produce items
   buildableRecipes, // All recipes used by the build gun
+  customizerRecipes, // All recipes used by the customizer
   schematics, // All unlockables including milestones, MAM, AWESOME Shop, hard drive researches, and misc progression
 
   // Extra metadata about the original docs file

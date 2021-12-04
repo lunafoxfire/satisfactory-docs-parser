@@ -21,7 +21,7 @@ export interface ItemInfo {
   event: EventType,
 }
 
-interface ItemMeta {
+export interface ItemMeta {
   fluidColor?: Color,
   energyValue?: number,
   radioactiveDecay?: number,
