@@ -73,6 +73,7 @@ export interface RadarTowerMeta {
 }
 
 export interface BuildableSize {
+  length: number,
   width: number,
   height: number,
 }
@@ -111,6 +112,50 @@ const excludeBuildables = [
   // old wall
   'Build_SteelWall_8x4_C',
 ];
+
+// From the wiki, not in the docs :c
+const BUILDABLE_SIZES: { [key: string]: BuildableSize } = {
+  'Desc_TradingPost_C': { width: 14, length: 26, height: 28 },
+  'Desc_Mam_C': { width: 5, length: 9, height: 6 },
+  'Desc_SpaceElevator_C': { width: 54, length: 54, height: 118 },
+  'Desc_ResourceSink_C': { width: 16, length: 13, height: 24 },
+  'Desc_ResourceSinkShop_C': { width: 4, length: 6, height: 5 },
+  'Desc_WaterPump_C': { width: 20, length: 19.5, height: 26 },
+  'Desc_OilPump_C': { width: 12, length: 20, height: 20 },
+  'Desc_FrackingSmasher_C': { width: 20, length: 20, height: 23 },
+  'Desc_FrackingExtractor_C': { width: 4, length: 4, height: 5 },
+  'Desc_ConstructorMk1_C': { width: 8, length: 10, height: 8 },
+  'Desc_AssemblerMk1_C': { width: 10, length: 15, height: 11 },
+  'Desc_ManufacturerMk1_C': { width: 18, length: 19, height: 12 },
+  'Desc_Packager_C': { width: 8, length: 8, height: 12 },
+  'Desc_OilRefinery_C': { width: 10, length: 20, height: 31 },
+  'Desc_Blender_C': { width: 18, length: 16, height: 15 },
+  'Desc_HadronCollider_C': { width: 24, length: 38, height: 32 },
+  'Desc_MinerMk1_C': { width: 6, length: 14, height: 18 },
+  'Desc_MinerMk2_C': { width: 6, length: 14, height: 18 },
+  'Desc_MinerMk3_C': { width: 6, length: 14, height: 18 },
+  'Desc_SmelterMk1_C': { width: 6, length: 9, height: 9 },
+  'Desc_FoundryMk1_C': { width: 10, length: 9, height: 9 },
+  'Desc_WorkBench_C': { width: 6, length: 3, height: 3 },
+  'Desc_Workshop_C': { width: 10, length: 7, height: 5 },
+  'Desc_GeneratorBiomass_C': { width: 8, length: 8, height: 7 },
+  'Desc_GeneratorCoal_C': { width: 10, length: 26, height: 36 },
+  'Desc_GeneratorFuel_C': { width: 20, length: 20, height: 27 },
+  'Desc_GeneratorGeoThermal_C': { width: 19, length: 20, height: 34 },
+  'Desc_GeneratorNuclear_C': { width: 38, length: 43, height: 49 },
+  'Desc_PowerStorageMk1_C': { width: 6, length: 6, height: 12 },
+  'Desc_StorageContainerMk1_C': { width: 5, length: 10, height: 4 },
+  'Desc_StorageContainerMk2_C': { width: 5, length: 10, height: 8 },
+  'Desc_PipeStorageTank_C': { width: 6, length: 6, height: 8 },
+  'Desc_IndustrialTank_C': { width: 14, length: 14, height: 12 },
+  'Desc_LookoutTower_C': { width: 9, length: 9, height: 24 },
+  'Desc_RadarTower_C': { width: 10, length: 10, height: 118 },
+  'Desc_TrainStation_C': { width: 34, length: 16, height: 20 },
+  'Desc_TrainDockingStation_C': { width: 34, length: 16, height: 20 },
+  'Desc_TrainDockingStationLiquid_C': { width: 34, length: 16, height: 20 },
+  'Desc_TrainPlatformEmpty_C': { width: 34, length: 16, height: 1 },
+  'Desc_TrainPlatformEmpty_02_C': { width: 34, length: 16, height: 1 },
+};
 
 export function parseBuildables(categorizedDataClasses: CategorizedDataClasses, { items, resources }: BuildableDependencies) {
   const buildables: ParsedClassInfoMap<BuildableInfo> = {};
@@ -300,17 +345,8 @@ export function parseBuildables(categorizedDataClasses: CategorizedDataClasses, 
     }
 
     // Other
-    if (entry.mSize || entry.mWidth || entry.mHeight) {
-      const size = { width: 0, height: 0 };
-      if (entry.mSize) {
-        size.width = parseFloat(entry.mSize);
-      } else if (entry.mWidth) {
-        size.width = parseFloat(entry.mWidth);
-      }
-      if (entry.mHeight) {
-        size.height = parseFloat(entry.mHeight);
-      }
-      meta.size = size;
+    if (BUILDABLE_SIZES[descriptorName]) {
+      meta.size = BUILDABLE_SIZES[descriptorName];
     }
     if (entry.mSpeed) {
       meta.beltSpeed = parseFloat(entry.mSpeed) / 2;

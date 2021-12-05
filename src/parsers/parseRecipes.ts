@@ -1,6 +1,6 @@
 import {
   createBasicSlug, createBuildableSlug, getShortClassname,
-  parseCollection, parseItemQuantity, parseBuildableQuantity, ItemQuantity, createCustomizerSlug,
+  parseCollection, parseItemQuantity, parseBuildableQuantity, ItemQuantity, createCustomizerSlug, buildableNameToDescriptorName,
 } from 'utilities';
 import { ParsedClassInfoMap } from 'types';
 import { CategorizedDataClasses } from 'class-categorizer/types';
@@ -19,7 +19,7 @@ export interface ProductionRecipeInfo {
   machineCraftable: boolean,
   ingredients: ItemQuantity[],
   products: ItemQuantity[],
-  producedIn: string[],
+  producedIn: string,
   event: EventType,
 }
 
@@ -94,7 +94,8 @@ export function parseRecipes(categorizedDataClasses: CategorizedDataClasses, dep
   const { productionRecipes, buildableRecipes } = getMainRecipes(categorizedDataClasses, deps);
   const customizerRecipes = getCustomizerRecipes(categorizedDataClasses, deps);
 
-  validateRecipes(productionRecipes, buildableRecipes);
+  validateProductionRecipes(productionRecipes, deps);
+  validateBuildableRecipes(buildableRecipes);
   validateCustomizerRecipes(customizerRecipes);
 
   return { productionRecipes, buildableRecipes, customizerRecipes };
@@ -122,13 +123,19 @@ function getMainRecipes(categorizedDataClasses: CategorizedDataClasses, { items,
         isBuildRecipe = true;
       } else if (producer === 'BP_WorkshopComponent_C') {
         workshopCraftable = true;
-      } else if (producer === 'BP_WorkBenchComponent_C' || producer === 'FGBuildableAutomatedWorkBench' || producer === 'Desc_AutomatedWorkBench_C') {
+      } else if (producer === 'BP_WorkBenchComponent_C' || producer === 'FGBuildableAutomatedWorkBench' || producer === 'Build_AutomatedWorkBench_C') {
         handCraftable = true;
       } else {
         machineCraftable = true;
-        machines.push(producer);
+        machines.push(buildableNameToDescriptorName(producer));
       }
     }
+
+    if (machineCraftable && machines.length > 1) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Recipe [${entry.ClassName}] can be produced in multiple machines, which is not supported! Machines: [${machines.join(', ')}]`);
+    }
+
     const ingredients = parseCollection<any[]>(entry.mIngredients)
       .map((data) => parseItemQuantity(data, items));
 
@@ -158,7 +165,7 @@ function getMainRecipes(categorizedDataClasses: CategorizedDataClasses, { items,
         machineCraftable,
         ingredients,
         products,
-        producedIn: machines,
+        producedIn: machines.length ? machines[0] : '',
         event: ficsmasRecipes.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
       };
     }
@@ -199,9 +206,19 @@ function getCustomizerRecipes(categorizedDataClasses: CategorizedDataClasses, { 
   return customizerRecipes;
 }
 
-function validateRecipes(productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo>, buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo>) {
+function validateProductionRecipes(productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo>, { buildables }: RecipeDependencies) {
   const slugs: string[] = [];
   Object.entries(productionRecipes).forEach(([name, data]) => {
+    if (!data.handCraftable && !data.workshopCraftable && !data.machineCraftable) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Recipe [${data}] cannot be produced anywhere!`);
+    }
+
+    if (data.producedIn && !buildables[data.producedIn]) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Recipe [${data}] is produced in missing building [${data.producedIn}]`);
+    }
+
     if (!data.slug) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Blank slug for recipe: [${name}]`);
@@ -212,6 +229,10 @@ function validateRecipes(productionRecipes: ParsedClassInfoMap<ProductionRecipeI
       slugs.push(data.slug);
     }
   });
+}
+
+function validateBuildableRecipes(buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo>) {
+  const slugs: string[] = [];
   Object.entries(buildableRecipes).forEach(([name, data]) => {
     if (!data.slug) {
       // eslint-disable-next-line no-console
