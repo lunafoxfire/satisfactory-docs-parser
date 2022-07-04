@@ -58,6 +58,18 @@ export function createBuildableSlug(className: string, displayName: string) {
   return slug;
 }
 
+
+export function createBuildableRecipeSlug(className: string, displayName: string) {
+  return `${createBuildableSlug(className, displayName)}-recipe`;
+}
+
+export function createRecipeSlug(className: string, displayName: string) {
+  if (className === 'Recipe_CartridgeChaos_Packaged_C') {
+    return 'turbo-rifle-ammo-packaged-recipe';
+  }
+  return `${createBasicSlug(displayName)}-recipe`;
+}
+
 export function createCustomizerSlug(className: string) {
   return createSlugFromClassname(className.replace('Recipe_', ''));
 }
@@ -166,10 +178,16 @@ export function parseStackSize(data: string) {
 
 export function parseEquipmentSlot(data: string): EquipmentSlotType {
   switch (data) {
-    case 'ES_ARMS':
-      return 'HAND';
-    case 'ES_BACK':
+    case 'ES_HEAD':
+      return 'HEAD';
+    case 'ES_BODY':
       return 'BODY';
+    case 'ES_BACK':
+      return 'BACK';
+    case 'ES_ARMS':
+      return 'ARMS';
+    case 'ES_LEGS':
+      return 'LEGS';
     default:
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Invalid equipment slot: [${data}]`);

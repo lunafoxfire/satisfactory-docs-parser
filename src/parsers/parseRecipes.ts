@@ -1,6 +1,5 @@
 import {
-  createBasicSlug, createBuildableSlug, getShortClassname,
-  parseCollection, parseItemQuantity, parseBuildableQuantity, ItemQuantity, createCustomizerSlug, buildableNameToDescriptorName,
+  getShortClassname, parseCollection, parseItemQuantity, parseBuildableQuantity, ItemQuantity, createCustomizerSlug, buildableNameToDescriptorName, createRecipeSlug, createBuildableRecipeSlug,
 } from 'utilities';
 import { ParsedClassInfoMap } from 'types';
 import { CategorizedDataClasses } from 'class-categorizer/types';
@@ -143,7 +142,7 @@ function getMainRecipes(categorizedDataClasses: CategorizedDataClasses, { items,
     if (isBuildRecipe) {
       const product = parseBuildableQuantity(parseCollection<any[]>(entry.mProduct)[0], buildables);
       buildableRecipes[entry.ClassName] = {
-        slug: `${createBuildableSlug(entry.ClassName, entry.mDisplayName)}-recipe`,
+        slug: createBuildableRecipeSlug(entry.ClassName, entry.mDisplayName),
         name: entry.mDisplayName,
         ingredients,
         product,
@@ -155,7 +154,7 @@ function getMainRecipes(categorizedDataClasses: CategorizedDataClasses, { items,
         .map((data) => parseItemQuantity(data, items));
 
       productionRecipes[entry.ClassName] = {
-        slug: `${createBasicSlug(entry.mDisplayName)}-recipe`,
+        slug: createRecipeSlug(entry.ClassName, entry.mDisplayName),
         name: entry.mDisplayName,
         craftTime: parseFloat(entry.mManufactoringDuration),
         maunalCraftMultiplier: parseFloat(entry.mManualManufacturingMultiplier),
