@@ -165,7 +165,7 @@ interface ProductionRecipeInfo {
   slug: string,
   name: string,
   craftTime: number,
-  maunalCraftMultiplier: number,
+  manualCraftMultiplier: number,
   isAlternate: boolean,
   handCraftable: boolean,
   workshopCraftable: boolean,
