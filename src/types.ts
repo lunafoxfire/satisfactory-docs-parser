@@ -14,4 +14,4 @@ export type DocsDataClassMap = {
 
 export type ParsedClassInfoMap<T> = {
   [ClassName: string]: T
-}
+};

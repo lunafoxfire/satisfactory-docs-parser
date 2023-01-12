@@ -6,14 +6,23 @@
     "declaration": true,
     "strict": true,
     "esModuleInterop": true,
-    "outDir": "dist/",
-    "baseUrl": "./src",
     "forceConsistentCasingInFileNames": true,
     "strictPropertyInitialization": false,
+    "outDir": "dist/",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*",
+      ]
+    },
     "plugins": [
       {
-        "transform": "@zerollup/ts-transform-paths"
+        "transform": "typescript-transform-paths"
+      },
+      {
+        "transform": "typescript-transform-paths",
+        "afterDeclarations": true
       }
-    ]
+    ],
   }
 }

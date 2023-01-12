@@ -1,24 +1,24 @@
-import { ParsedClassInfoMap } from 'types';
-import { ItemInfo } from 'parsers/parseItems';
-import { BuildableInfo } from 'parsers/parseBuildables';
-import { EquipmentSlotType } from 'enums';
+import { ParsedClassInfoMap } from '@/types';
+import { ItemInfo } from '@/parsers/parseItems';
+import { BuildableInfo } from '@/parsers/parseBuildables';
+import { EquipmentSlotType } from '@/enums';
 export { parseCollection } from './deserialization';
 
 export type Color = {
   r: number,
   g: number,
   b: number,
-}
+};
 
 export type ItemQuantity = {
   itemClass: string,
   quantity: number,
-}
+};
 
 export type ItemRate = {
   itemClass: string,
   rate: number,
-}
+};
 
 export function createBasicSlug(displayName: string) {
   return displayName

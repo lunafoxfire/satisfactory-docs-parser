@@ -1,10 +1,10 @@
 import {
   createBasicSlug, cleanDescription, standardizeItemDescriptor, equipmentNameToDescriptorName,
   parseStackSize, parseEquipmentSlot, parseCollection, parseColor, Color
-} from 'utilities';
-import { ParsedClassInfoMap } from 'types';
-import { CategorizedDataClasses } from 'class-categorizer/types';
-import { EquipmentSlotType, EventType } from 'enums';
+} from '@/utilities';
+import { ParsedClassInfoMap } from '@/types';
+import { CategorizedDataClasses } from '@/class-categorizer/types';
+import { EquipmentSlotType, EventType } from '@/enums';
 
 export interface ItemInfo {
   slug: string,

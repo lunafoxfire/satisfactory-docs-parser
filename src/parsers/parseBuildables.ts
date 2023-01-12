@@ -1,11 +1,11 @@
 import {
   createBasicSlug, createBuildableSlug, cleanDescription, buildableNameToDescriptorName,
   parseBlueprintClassname, parseCollection, ItemRate,
-} from 'utilities';
-import { ParsedClassInfoMap } from 'types';
-import { CategorizedDataClasses } from 'class-categorizer/types';
+} from '@/utilities';
+import { ParsedClassInfoMap } from '@/types';
+import { CategorizedDataClasses } from '@/class-categorizer/types';
+import { EventType } from '@/enums';
 import { ItemInfo, ResourceInfo } from './parseItems';
-import { EventType } from 'enums';
 
 export interface BuildableInfo {
   slug: string,

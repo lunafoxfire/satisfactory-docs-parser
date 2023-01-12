@@ -1,14 +1,14 @@
 import {
   createSlugFromClassname, cleanDescription,
   parseCollection, parseItemQuantity, ItemQuantity, parseBlueprintClassname
-} from 'utilities';
-import { ParsedClassInfoMap, DocsDataClass } from 'types';
-import { CategorizedDataClasses } from 'class-categorizer/types';
+} from '@/utilities';
+import { ParsedClassInfoMap, DocsDataClass } from '@/types';
+import { CategorizedDataClasses } from '@/class-categorizer/types';
+import { EventType } from '@/enums';
 import { ItemInfo, ResourceInfo } from './parseItems';
 import { ProductionRecipeInfo, BuildableRecipeInfo, converterRecipes, CustomizerRecipeInfo } from './parseRecipes';
-import { EventType } from 'enums';
 
-type SchematicsEntry = DocsDataClass & { mUnlocks: any[] }
+type SchematicsEntry = DocsDataClass & { mUnlocks: any[] };
 
 type UnlockData = {
   Class: string,

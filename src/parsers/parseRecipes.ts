@@ -1,11 +1,11 @@
 import {
   getShortClassname, parseCollection, parseItemQuantity, parseBuildableQuantity, ItemQuantity, createCustomizerSlug, buildableNameToDescriptorName, createRecipeSlug, createBuildableRecipeSlug,
-} from 'utilities';
-import { ParsedClassInfoMap } from 'types';
-import { CategorizedDataClasses } from 'class-categorizer/types';
+} from '@/utilities';
+import { ParsedClassInfoMap } from '@/types';
+import { CategorizedDataClasses } from '@/class-categorizer/types';
+import { EventType } from '@/enums';
 import { ItemInfo } from './parseItems';
 import { BuildableInfo } from './parseBuildables';
-import { EventType } from 'enums';
 
 export interface ProductionRecipeInfo {
   slug: string,
@@ -210,12 +210,12 @@ function validateProductionRecipes(productionRecipes: ParsedClassInfoMap<Product
   Object.entries(productionRecipes).forEach(([name, data]) => {
     if (!data.handCraftable && !data.workshopCraftable && !data.machineCraftable) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Recipe [${data}] cannot be produced anywhere!`);
+      console.warn(`WARNING: Recipe [${name}] cannot be produced anywhere!`);
     }
 
     if (data.producedIn && !buildables[data.producedIn]) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Recipe [${data}] is produced in missing building [${data.producedIn}]`);
+      console.warn(`WARNING: Recipe [${name}] is produced in missing building [${data.producedIn}]`);
     }
 
     if (!data.slug) {

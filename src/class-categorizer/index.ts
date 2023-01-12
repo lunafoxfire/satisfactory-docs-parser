@@ -1,4 +1,4 @@
-import { DocsDataClass, DocsDataClassMap } from 'types';
+import { DocsDataClass, DocsDataClassMap } from '@/types';
 import { ClassnameCategories, CategorizedClassnames, CategorizedDataClasses, CategoryKey } from './types';
 
 export const classnameCategories: ClassnameCategories = {

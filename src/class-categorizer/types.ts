@@ -1,4 +1,4 @@
-import { DocsDataClass } from 'types';
+import { DocsDataClass } from '@/types';
 
 export type CategoryKey =
   'itemDescriptors'
@@ -18,12 +18,12 @@ export type CategoryKey =
 
 export type ClassnameCategories = {
   [key: string]: CategoryKey[],
-}
+};
 
 export type CategorizedClassnames = {
   [key in CategoryKey]: string[];
-}
+};
 
 export type CategorizedDataClasses = {
   [key in CategoryKey]: DocsDataClass[];
-}
+};

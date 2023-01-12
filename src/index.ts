@@ -1,7 +1,7 @@
 import util from 'util';
-import { DocsTopLevelClass, DocsDataClassMap } from 'types';
-import { parseItems, parseBuildables, parseRecipes, parseSchematics } from 'parsers';
-import { categorizeDataClasses, validateClassList } from 'class-categorizer';
+import { DocsTopLevelClass, DocsDataClassMap } from '@/types';
+import { parseItems, parseBuildables, parseRecipes, parseSchematics } from '@/parsers';
+import { categorizeDataClasses, validateClassList } from '@/class-categorizer';
 
 const nativeClassRegex = /FactoryGame\.(.+)'$/;
 
