@@ -31,6 +31,7 @@ export interface SchematicUnlocks {
   recipes?: string[],
   schematics?: string[],
   scannerResources?: string[],
+  scannerObject?: boolean,
   inventorySlots?: number,
   equipmentHandSlots?: number,
   efficiencyPanel?: boolean,
@@ -39,6 +40,7 @@ export interface SchematicUnlocks {
   giveItems?: ItemQuantity[],
   emotes?: string[],
   customizer?: boolean,
+  tape?: boolean,
 }
 
 interface SchematicDependencies {
@@ -120,6 +122,10 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
         unlocks.scannerResources = parseCollection<any[]>(unlockData.mResourcePairsToAddToScanner).map((r) => parseBlueprintClassname(r.ResourceDescriptor));
         break;
       }
+      case 'BP_UnlockScannableObject_C': {
+        unlocks.scannerObject = true;
+        break;
+      }
       case 'BP_UnlockInventorySlot_C': {
         unlocks.inventorySlots = parseInt(unlockData.mNumInventorySlotsToUnlock, 10);
         break;
@@ -160,6 +166,10 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
       }
       case 'BP_UnlockInfoOnly_C': {
         unlocks.customizer = true;
+        break;
+      }
+      case 'FGUnlockTape': {
+        unlocks.tape = true;
         break;
       }
       default: {

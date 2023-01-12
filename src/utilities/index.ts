@@ -34,16 +34,20 @@ export function createSlugFromClassname(className: string) {
 const MATERIAL_SLUGS: any = {
   'Concrete': 'concrete',
   'Metal': 'metal',
-  'ConcretePolished': 'polished',
+  'Grip': 'metal',
   'Polished': 'polished',
+  'ConcretePolished': 'polished',
+  'PolishedConcrete': 'polished',
   'Asphalt': 'asphalt',
+  'Tar': 'asphalt',
   'Orange': 'ficsit',
-  'SteelWall': 'steel',
   'Steel': 'steel',
+  'SteelWall': 'steel',
+  'Window': 'window',
   'Wall_8x4_01': 'ficsit',
   'Wall_8x4_02': 'steel',
 };
-const materialRegex = /_(Concrete|Metal|ConcretePolished|Polished|Asphalt|Orange|SteelWall|Steel|Wall_8x4_01|Wall_8x4_02)_/;
+const materialRegex = new RegExp(`_(${Object.keys(MATERIAL_SLUGS).join('|')})(?:_|InCorner|OutCorner)`);
 export function createBuildableSlug(className: string, displayName: string) {
   if (className.includes('_CandyCaneDecor')) {
     return 'candy-cane-decor';
@@ -125,6 +129,9 @@ const BUILDING_DESC_MANUAL_MAP: any = {
   'Build_Wall_Orange_Tris_8x8_C': 'Desc_Wall_Orange_8x8_Tris_C',
   'Build_XmassTree_C': 'Desc_XMassTree_C',
   'Build_XmassLightsLine_C': 'Desc_xmassLights_C',
+  'Build_QuarterPipeMiddle_Ficsit_8x1_C': 'Desc_QuarterPipeMiddle_Ficsit_4x1_C',
+  'Build_QuarterPipeMiddle_Ficsit_8x2_C': 'Desc_QuarterPipeMiddle_Ficsit_4x2_C',
+  'Build_QuarterPipeMiddle_Ficsit_8x4_C': 'Desc_QuarterPipeMiddle_Ficsit_4x4_C',
 };
 export function buildableNameToDescriptorName(buildableName: string) {
   if (BUILDING_DESC_MANUAL_MAP[buildableName]) {
@@ -216,6 +223,7 @@ const SUPRESS_ITEM_WARNINGS = [
   'Desc_SpaceGiraffeStatue_C',
   'Desc_GoldenNut_Statue_C',
   'Desc_Cup_C',
+  'Desc_BoomBox_C',
 ];
 export function parseItemQuantity(data: any, itemData: ParsedClassInfoMap<ItemInfo>): ItemQuantity {
   const className = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
