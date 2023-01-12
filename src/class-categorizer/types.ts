@@ -16,6 +16,10 @@ export type CategoryKey =
 
   | 'schematics';
 
+export type ClassnameCategories = {
+  [key: string]: CategoryKey[],
+}
+
 export type CategorizedClassnames = {
   [key in CategoryKey]: string[];
 }
