@@ -151,11 +151,11 @@ export function getShortClassname(fullName: string) {
   return 'UNDEFINED';
 }
 
-const blueprintClassRegex = /^BlueprintGeneratedClass'"(.+)"'$/;
+const blueprintClassRegex = /^(\/Script\/Engine\.)?BlueprintGeneratedClass'"(.+)"'$/;
 export function parseBlueprintClassname(classStr: string) {
   const match = blueprintClassRegex.exec(classStr);
-  if (match && match[1]) {
-    return getShortClassname(match[1]);
+  if (match && match[2]) {
+    return getShortClassname(match[2]);
   }
   // eslint-disable-next-line no-console
   console.warn(`WARNING: Failed to parse blueprint class name: [${classStr}]`);
