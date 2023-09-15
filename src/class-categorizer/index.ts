@@ -101,6 +101,7 @@ export const classnameCategories: ClassnameCategories = {
   'FGBuildableWire': ['buildables'],
   'FGConveyorPoleStackable': ['buildables'],
   'FGPipeHyperStart': ['buildables'],
+  'FGBuildablePriorityPowerSwitch': ['buildables'],
 
   // recipes
   'FGRecipe': ['recipes'],
