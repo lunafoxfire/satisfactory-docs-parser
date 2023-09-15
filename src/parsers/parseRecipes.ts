@@ -110,7 +110,8 @@ function getMainRecipes(categorizedDataClasses: CategorizedDataClasses, { items,
     }
 
     const producedIn = parseCollection<any[]>(entry.mProducedIn)
-      .map((data) => getShortClassname(data));
+      .map((data) => getShortClassname(data))
+      .map((data) => data.replace(/"$/,''));
 
     let isBuildRecipe = false;
     let handCraftable = false;
