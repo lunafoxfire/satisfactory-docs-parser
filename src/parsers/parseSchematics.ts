@@ -41,6 +41,8 @@ export interface SchematicUnlocks {
   emotes?: string[],
   customizer?: boolean,
   tape?: boolean,
+  checkMark?: boolean,
+  blueprints?: boolean,
 }
 
 interface SchematicDependencies {
@@ -164,12 +166,21 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
         });
         break;
       }
+      case 'BP_UnlockCustomizer_C':
       case 'BP_UnlockInfoOnly_C': {
         unlocks.customizer = true;
         break;
       }
       case 'FGUnlockTape': {
         unlocks.tape = true;
+        break;
+      }
+      case 'BP_UnlockCheckmark_C': {
+        unlocks.checkMark = true;
+        break;
+      }
+      case 'BP_UnlockBlueprints_C': {
+        unlocks.blueprints = true;
         break;
       }
       default: {
