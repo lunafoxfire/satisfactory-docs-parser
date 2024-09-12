@@ -2,6 +2,7 @@
 const OFF = 0;
 const WARN = 1;
 const ERROR = 2;
+
 module.exports = {
   root: true,
   env: {
@@ -16,6 +17,7 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'module'
   },
+  files: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
   rules: {
     '@typescript-eslint/semi': [ERROR, 'always'],
     '@typescript-eslint/comma-dangle': OFF,
