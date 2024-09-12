@@ -24,7 +24,7 @@ const args: any = yargs(hideBin(process.argv))
   .parserConfiguration(OPTIONS)
   .option('input', {
     alias: 'i',
-    describe: 'Path to the Docs.json file.',
+    describe: 'Path to the Docs file.',
     nargs: 1,
     demandOption: true,
   })
@@ -43,6 +43,7 @@ const args: any = yargs(hideBin(process.argv))
     describe: 'Outputs metadata to <output-directory>/meta. Optionally a path may be provided. Relative paths are relative to output directory.',
   })
   .option('meta-only', {
+    alias: 'M',
     describe: 'Same as meta, but only metadata is output.',
   })
   .help()

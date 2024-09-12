@@ -1,6 +1,6 @@
 # Satisfactory Docs Parser
 
-This is a package for parsing the `Docs.json` file provided by the developers of the game [Satisfactory](https://www.satisfactorygame.com/) into a format easily consumable by those interested in developing tools for the game. This `Docs.json` file can be found at `<your-satisfactory-directory>/CommunityResources/Docs/Docs.json` and contains metadata about the items, buildables, recipes, etc found in the game. This package aims to parse this file into a format both more human- and script- readable.
+This is a package for parsing the Docs file provided by the developers of the game [Satisfactory](https://www.satisfactorygame.com/) into a format easily consumable by those interested in developing tools for the game. This Docs file can be found at `<your-satisfactory-directory>/CommunityResources/Docs/en-US.json` and contains metadata about the items, buildables, recipes, etc found in the game. This package aims to parse this file into a format both more human- and script- readable.
 
 # Usage
   `npm install satisfactory-docs-parser`
@@ -11,7 +11,7 @@ This is a package for parsing the `Docs.json` file provided by the developers of
 ```js
 import parseDocs from 'satisfactory-docs-parser';
 
-const file = fs.readFileSync('Docs.json'); // read the Docs.json file from wherever
+const file = fs.readFileSync('Docs/en-US.json'); // read the Docs file from wherever
 const data = parseDocs(file); // parseDocs accepts either a Buffer or a string
 
 // That's it!
@@ -32,7 +32,7 @@ data = {
   // Extra metadata about the original docs file
   meta: {
     originalDocs: DocsTopLevelClass[], // the original file
-    topLevelClassList: string[], // list of the names of all top-level classes provided in Docs.json
+    topLevelClassList: string[], // list of the names of all top-level classes
     dataClassesByTopLevelClass: { [className: string]: DocsDataClass[] }, // mapping of top-level classes to their data class lists
     dataClassesByCategory: { [category: string]: DocsDataClass[] }, // mapping of the above categories (items, buildables, etc) to their data class lists
   },
@@ -72,30 +72,27 @@ This is just a quick overview of the formatting to get you started. Full details
 
 ## CLI
 
-This package also provides a command line interface for parsing `Docs.json` via the command `parse-docs`. The following arguments are accepted:
+This package also provides a command line interface for parsing the Docs file via the command `parse-docs`. The following arguments are accepted:
 
 |Argument<br>(alias)|Description|Type|
 |-|-|-|
-|<nobr>`--input`</nobr><br>`-i`|Path to the `Docs.json` file.|path (required)|
+|<nobr>`--input`</nobr><br>`-i`|Path to the Docs file.|path (required)|
 |<nobr>`--output`</nobr><br>`-o`|Directory to output parsed files to.|path (required)|
 |<nobr>`--single-file`</nobr><br>`-f`|Outputs a single `data.json` file instead of individual files. Optionally a filename may be provided.|flag or filename|
 |<nobr>`--meta`</nobr><br>`-m`|Outputs metadata to `<output-directory>/meta`. Optionally a path may be provided. Relative paths are relative to output directory.|flag or path|
-|<nobr>`--meta-only`|Same as meta, but only metadata is output.|flag or path|
+|<nobr>`--meta-only`</nobr><br>`-M`|Same as meta, but only metadata is output.|flag or path|
 
 ### Example
 
-`parse-docs --input data/Docs.json --output parsed-docs/`
+`parse-docs --input data/Docs/en-US.json --output parsed-docs/`
 
 # Contributing
 
-Contributions and PR's are always welcome. The only things to know are
-
-- This project uses typescript
-- This project uses eslint to help with code style
+Contributions and PR's are always welcome.
 
 ## Installation
 
-`git clone https://github.com/lydianlights/satisfactory-docs-parser.git`
+`git clone https://github.com/lunafox/satisfactory-docs-parser.git`
 
 `npm install`
 
@@ -109,7 +106,7 @@ There are no automated tests or anything since this is a small project. I may ad
 
 # TODO
 
-Currently there's no parsing of image and icon paths but I plan on adding this very soon (tm)
+Currently there's no parsing of image and icon paths but I plan on adding this very soon (tm) (it's not happening soon)
 
 # Acknowledgements
 

@@ -25,13 +25,13 @@ function parseDocsString(input: string) {
   const docs = (JSON.parse(input) as DocsTopLevelClass[]);
 
   if (!Array.isArray(docs)) {
-    throw new Error('Invalid Docs.json file -- not an array');
+    throw new Error('Invalid Docs file -- not an array');
   }
 
   const dataClassMap: DocsDataClassMap = {};
   for (const entry of docs) {
     if (!Object.prototype.hasOwnProperty.call(entry, 'NativeClass') || !Object.prototype.hasOwnProperty.call(entry, 'Classes')) {
-      throw new Error('Invalid Docs.json file -- missing required keys');
+      throw new Error('Invalid Docs file -- missing required keys');
     }
     const match = nativeClassRegex.exec(entry.NativeClass);
     if (!match || !match[1]) {

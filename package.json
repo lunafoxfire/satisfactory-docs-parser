@@ -1,12 +1,12 @@
 {
   "name": "satisfactory-docs-parser",
-  "description": "Parser for Satisfactory's Docs.json file",
+  "description": "Parser for Satisfactory's Docs file",
   "version": "7.0.1",
-  "author": "LydianLights",
+  "author": "lunafox",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lydianlights/satisfactory-docs-parser.git"
+    "url": "git+https://github.com/lunafox/satisfactory-docs-parser.git"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test-cli": "npm run build && node ./dist/cli.js -i data/Docs.json -o data/parsed -m",
+    "test-cli": "npm run build && node ./dist/cli.js -i data/en-US.json -o data/parsed -m",
     "lint": "eslint .",
     "prepare": "ts-patch install -s && npm run build",
     "np": "np --no-tests"
