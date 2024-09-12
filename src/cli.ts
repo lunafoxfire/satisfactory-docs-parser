@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
-import parseDocs from './index';
+import { parseDocs, parseDocsMetaOnly, readTheDocs } from './index';
 
 const OPTIONS = {
   'short-option-groups': true,
@@ -34,7 +34,11 @@ const args: any = yargs(hideBin(process.argv))
     nargs: 1,
     demandOption: true,
   })
-  .option('single-file', {
+  .option('parse', {
+    alias: 'p',
+    describe: 'Parses the Docs file and writes one file per category to the output directory.',
+  })
+  .option('parse-to-file', {
     alias: 'f',
     describe: 'Outputs a single data.json file instead of individual files. Optionally a filename may be provided.',
   })
@@ -42,14 +46,14 @@ const args: any = yargs(hideBin(process.argv))
     alias: 'm',
     describe: 'Outputs metadata to <output-directory>/meta. Optionally a path may be provided. Relative paths are relative to output directory.',
   })
-  .option('meta-only', {
-    alias: 'M',
-    describe: 'Same as meta, but only metadata is output.',
+  .option('split', {
+    alias: 's',
+    describe: 'Splits the docs file into one file per superclass to <output-directory>/docs. Optionally a path may be provided. Relative paths are relative to output directory.',
   })
   .help()
   .argv;
 
-const { input: userInputPath, output: userOutputPath, singleFile, meta, metaOnly } = args;
+const { input: userInputPath, output: userOutputPath, parse, parseToFile, meta, split } = args;
 validateArgs();
 
 const cwd = process.cwd();
@@ -57,42 +61,70 @@ const inputPath = path.isAbsolute(userInputPath) ? userInputPath : path.join(cwd
 const outputPath = path.isAbsolute(userOutputPath) ? userOutputPath : path.join(cwd, userOutputPath);
 
 const docsFile = fs.readFileSync(inputPath);
-const { meta: metaData, ...data } = parseDocs(docsFile);
 
-if (!metaOnly) {
+if (split) {
+  let splitPath: string;
+  if (isString(split)) {
+    splitPath = path.isAbsolute(split) ? split : path.join(outputPath, split);
+  } else {
+    splitPath = path.join(outputPath, './docs');
+  }
+
+  // eslint-disable-next-line no-console
+  console.log('Splitting docs...');
+  const classMap = readTheDocs(docsFile);
+
+  // eslint-disable-next-line no-console
+  console.log(`Writing superclass files to ${splitPath}`);
+  Object.entries(classMap).forEach(([key, data]) => {
+    writeFileSafe(path.join(splitPath, `${key}.json`), data);
+  });
+}
+
+if (meta) {
+  let metaPath: string;
+  if (isString(meta)) {
+    metaPath = path.isAbsolute(meta) ? meta : path.join(outputPath, meta);
+  } else {
+    metaPath = path.join(outputPath, './meta');
+  }
+
+  // eslint-disable-next-line no-console
+  console.log('Parsing metadata...');
+  const metadata = parseDocsMetaOnly(docsFile);
+  const superclassMetadata = {
+    superclassCount: metadata.superclassCount,
+    superclassList: metadata.superclassList,
+    globalProperties: metadata.globalProperties,
+  };
+
+  // eslint-disable-next-line no-console
+  console.log(`Writing metadata to ${metaPath}`);
+  writeFileSafe(path.join(metaPath, 'superclasses.json'), superclassMetadata);
+  Object.entries(metadata.superclasses).forEach(([key, data]) => {
+    writeFileSafe(path.join(metaPath, `superclasses/${key}.json`), data);
+  });
+  Object.entries(metadata.categories).forEach(([key, data]) => {
+    writeFileSafe(path.join(metaPath, `categories/${key}.json`), data);
+  });
+}
+
+
+if (parse || parseToFile) {
+  // eslint-disable-next-line no-console
+  console.log('Parsing docs...');
+  const data = parseDocs(docsFile);
+
   // eslint-disable-next-line no-console
   console.log(`Writing data to ${outputPath}`);
-  if (singleFile) {
-    const dataFilename = isString(singleFile) ? singleFile : 'data.json';
+  if (parseToFile) {
+    const dataFilename = isString(parseToFile) ? parseToFile : 'data.json';
     writeFileSafe(path.join(outputPath, dataFilename), data);
   } else {
     Object.entries(data).forEach(([key, data]) => {
       writeFileSafe(path.join(outputPath, `${key}.json`), data);
     });
   }
-}
-
-const userMetaPath = meta || metaOnly;
-if (userMetaPath) {
-  let metaPath: string;
-  if (isString(userMetaPath)) {
-    metaPath = path.isAbsolute(userMetaPath) ? userMetaPath : path.join(outputPath, userMetaPath);
-  } else {
-    metaPath = path.join(outputPath, './meta');
-  }
-
-  // eslint-disable-next-line no-console
-  console.log(`Writing meta data to ${metaPath}`);
-
-  writeFileSafe(path.join(metaPath, '_classNames.json'), metaData.topLevelClassList);
-
-  Object.entries(metaData.dataClassesByTopLevelClass).forEach(([key, data]) => {
-    writeFileSafe(path.join(metaPath, `dataByTopLevelClass/${key}.json`), data);
-  });
-
-  Object.entries(metaData.dataClassesByCategory).forEach(([key, data]) => {
-    writeFileSafe(path.join(metaPath, `dataByCategory/${key}.json`), data);
-  });
 }
 
 function writeFileSafe(filePath: string, data: any) {
@@ -106,6 +138,10 @@ function isString(arg: any) {
   return typeof arg === 'string';
 }
 
+function isBool(arg: any) {
+  return typeof arg === 'boolean';
+}
+
 function isStringOrBool(arg: any) {
   return typeof arg === 'boolean' || typeof arg === 'string';
 }
@@ -117,16 +153,19 @@ function validateArgs() {
   if (!isString(userOutputPath)) {
     throw new Error('Invalid value for option: output');
   }
-  if (singleFile && !isStringOrBool(singleFile)) {
+  if (parse && !isBool(parse)) {
+    throw new Error('Invalid value for option: parse');
+  }
+  if (parseToFile && !isStringOrBool(parseToFile)) {
     throw new Error('Invalid value for option: single-file');
   }
   if (meta && !isStringOrBool(meta)) {
     throw new Error('Invalid value for option: meta');
   }
-  if (metaOnly && !isStringOrBool(metaOnly)) {
-    throw new Error('Invalid value for option: meta-only');
+  if (split && !isStringOrBool(split)) {
+    throw new Error('Invalid value for option: split');
   }
-  if (meta && metaOnly) {
-    throw new Error('Only one of meta or meta-only should be set');
+  if (!(parse || parseToFile || meta || split)) {
+    throw new Error('At least one of --parse, --parse-to-file, --meta, or --split must be specified or there will be no output.');
   }
 }

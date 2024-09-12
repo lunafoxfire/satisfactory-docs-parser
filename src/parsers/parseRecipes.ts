@@ -1,8 +1,11 @@
 import {
-  getShortClassname, parseCollection, parseItemQuantity, parseBuildableQuantity, ItemQuantity, createCustomizerSlug, buildableNameToDescriptorName, createRecipeSlug, createBuildableRecipeSlug,
+  parseClassnameFromPath, parseItemQuantity, parseBuildableQuantity, ItemQuantity,
+  createCustomizerSlug, buildableNameToDescriptorName, createRecipeSlug, createBuildableRecipeSlug,
+  cleanString,
 } from '@/utilities';
+import { parseCollection, SerializedItemAmount } from '@/utilities/deserialization';
 import { ParsedClassInfoMap } from '@/types';
-import { CategorizedDataClasses } from '@/class-categorizer/types';
+import { CategorizedRawClasses } from '@/class-categorizer/types';
 import { EventType } from '@/enums';
 import { ItemInfo } from './parseItems';
 import { BuildableInfo } from './parseBuildables';
@@ -43,64 +46,50 @@ interface RecipeDependencies {
   buildables: ParsedClassInfoMap<BuildableInfo>,
 }
 
-const ficsmasRecipes = [
-  'Recipe_XMassTree_C',
-  'Recipe_XmasBranch_C',
-  'Recipe_CandyCane_C',
-  'Recipe_CandyCaneBasher_C',
-  'Recipe_CandyCaneDecor_C',
-  'Recipe_XmasBow_C',
-  'Recipe_Snowman_C',
-  'Recipe_Snow_C',
-  'Recipe_XmasBall3_C',
-  'Recipe_XmasBall4_C',
-  'Recipe_TreeGiftProducer_C',
-  'Recipe_XmasBall1_C',
-  'Recipe_XmasBall2_C',
-  'Recipe_xmassLights_C',
-  'Recipe_XmasBallCluster_C',
-  'Recipe_SnowDispenser_C',
-  'Recipe_XmasWreath_C',
-  'Recipe_WreathDecor_C',
-  'Recipe_XmasStar_C',
-  'Recipe_Snowball_C',
-  'Recipe_SnowballWeapon_C',
+const ficsmasRecipes: string[] = [
+    'Recipe_XMassTree_C',
+    'Recipe_XmasBranch_C',
+    'Recipe_CandyCane_C',
+    'Recipe_CandyCaneBasher_C',
+    'Recipe_CandyCaneDecor_C',
+    'Recipe_XmasBow_C',
+    'Recipe_Snowman_C',
+    'Recipe_Snow_C',
+    'Recipe_XmasBall3_C',
+    'Recipe_XmasBall4_C',
+    'Recipe_TreeGiftProducer_C',
+    'Recipe_XmasBall1_C',
+    'Recipe_XmasBall2_C',
+    'Recipe_xmassLights_C',
+    'Recipe_XmasBallCluster_C',
+    'Recipe_SnowDispenser_C',
+    'Recipe_XmasWreath_C',
+    'Recipe_WreathDecor_C',
+    'Recipe_XmasStar_C',
+    'Recipe_Snowball_C',
 ];
 
-// These are all made in a buildable marked as Build_Converter_C which doesn't exist afaik
-// They just take a raw resource and output the same resource
-export const converterRecipes = [
-  'Recipe_OreIron_C',
-  'Recipe_OreCopper_C',
-  'Recipe_OreBauxite_C',
-  'Recipe_OreCaterium_C',
-  'Recipe_OreUranium_C',
-  'Recipe_CrudeOil_C',
-  'Recipe_Sulfur_C',
-  'Recipe_Limestone_C',
-  'Recipe_Coal_C',
-  'Recipe_RawQuartz_C',
+const excludeRecipes: string[] = [
+    // Old recipes that are not produced anywhere
+    'Recipe_Wall_Window_8x4_03_Steel_C',
+    'Recipe_JumpPad_C',
+    'Recipe_JumpPadTilted_C',
+    'Recipe_PillarTop_C',
+    'Recipe_SteelWall_8x4_C',
 ];
 
-const excludeRecipes = [
-  ...converterRecipes,
-  // old wall recipes
-  'Recipe_Wall_Window_8x4_03_Steel_C',
-  'Recipe_SteelWall_8x4_C',
-];
-
-export function parseRecipes(categorizedDataClasses: CategorizedDataClasses, deps: RecipeDependencies) {
+export function parseRecipes(categorizedDataClasses: CategorizedRawClasses, deps: RecipeDependencies) {
   const { productionRecipes, buildableRecipes } = getMainRecipes(categorizedDataClasses, deps);
   const customizerRecipes = getCustomizerRecipes(categorizedDataClasses, deps);
 
   validateProductionRecipes(productionRecipes, deps);
-  validateBuildableRecipes(buildableRecipes);
+  validateBuildableRecipes(buildableRecipes, deps);
   validateCustomizerRecipes(customizerRecipes);
 
   return { productionRecipes, buildableRecipes, customizerRecipes };
 }
 
-function getMainRecipes(categorizedDataClasses: CategorizedDataClasses, { items, buildables }: RecipeDependencies) {
+function getMainRecipes(categorizedDataClasses: CategorizedRawClasses, { items, buildables }: RecipeDependencies) {
   const productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo> = {};
   const buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo> = {};
 
@@ -109,8 +98,8 @@ function getMainRecipes(categorizedDataClasses: CategorizedDataClasses, { items,
       return;
     }
 
-    const producedIn = parseCollection<any[]>(entry.mProducedIn)
-      .map((data) => getShortClassname(data));
+    const producedIn = parseCollection<string[]>(entry.mProducedIn)!
+      .map((data) => parseClassnameFromPath(data));
 
     let isBuildRecipe = false;
     let handCraftable = false;
@@ -132,30 +121,32 @@ function getMainRecipes(categorizedDataClasses: CategorizedDataClasses, { items,
 
     if (machineCraftable && machines.length > 1) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Recipe [${entry.ClassName}] can be produced in multiple machines, which is not supported! Machines: [${machines.join(', ')}]`);
+      console.warn(`WARNING: Recipe <${entry.ClassName}> can be produced in multiple machines, which is not supported! Machines: <${machines.join(', ')}>`);
     }
 
-    const ingredients = parseCollection<any[]>(entry.mIngredients)
-      .map((data) => parseItemQuantity(data, items));
-
+    const ingredients = parseCollection<SerializedItemAmount[]>(entry.mIngredients)
+      ?.map((data) => parseItemQuantity(data, items))
+      ?? [];
 
     if (isBuildRecipe) {
-      const product = parseBuildableQuantity(parseCollection<any[]>(entry.mProduct)[0], buildables);
+      const product = parseBuildableQuantity(parseCollection<SerializedItemAmount[]>(entry.mProduct)![0]!, buildables);
+      const cleanName = cleanString(entry.mDisplayName);
       buildableRecipes[entry.ClassName] = {
-        slug: createBuildableRecipeSlug(entry.ClassName, entry.mDisplayName),
-        name: entry.mDisplayName,
+        slug: createBuildableRecipeSlug(entry.ClassName, cleanName),
+        name: cleanName,
         ingredients,
         product,
         event: ficsmasRecipes.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
       };
     } else {
       const isAlternate = entry.mDisplayName.startsWith('Alternate:') || entry.ClassName.startsWith('Recipe_Alternate');
-      const products = parseCollection<any[]>(entry.mProduct)
+      const products = parseCollection<SerializedItemAmount[]>(entry.mProduct)!
         .map((data) => parseItemQuantity(data, items));
 
+      const cleanName = cleanString(entry.mDisplayName);
       productionRecipes[entry.ClassName] = {
-        slug: createRecipeSlug(entry.ClassName, entry.mDisplayName),
-        name: entry.mDisplayName,
+        slug: createRecipeSlug(entry.ClassName, cleanName),
+        name: cleanName,
         craftTime: parseFloat(entry.mManufactoringDuration),
         manualCraftMultiplier: parseFloat(entry.mManualManufacturingMultiplier),
         isAlternate,
@@ -173,7 +164,7 @@ function getMainRecipes(categorizedDataClasses: CategorizedDataClasses, { items,
   return { productionRecipes, buildableRecipes };
 }
 
-function getCustomizerRecipes(categorizedDataClasses: CategorizedDataClasses, { items }: RecipeDependencies) {
+function getCustomizerRecipes(categorizedDataClasses: CategorizedRawClasses, { items }: RecipeDependencies) {
   const customizerRecipes: ParsedClassInfoMap<CustomizerRecipeInfo> = {};
 
   categorizedDataClasses.customizerRecipes.forEach((entry) => {
@@ -182,7 +173,7 @@ function getCustomizerRecipes(categorizedDataClasses: CategorizedDataClasses, { 
     let isPatternRemover = false;
 
     if (entry.mIngerdients) {
-      ingredients = parseCollection<any[]>(entry.mIngredients)
+      ingredients = parseCollection<SerializedItemAmount[]>(entry.mIngredients)!
         .map((data) => parseItemQuantity(data, items));
     } else {
       if (entry.ClassName.includes('_Swatch')) {
@@ -210,35 +201,47 @@ function validateProductionRecipes(productionRecipes: ParsedClassInfoMap<Product
   Object.entries(productionRecipes).forEach(([name, data]) => {
     if (!data.handCraftable && !data.workshopCraftable && !data.machineCraftable) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Recipe [${name}] cannot be produced anywhere!`);
+      console.warn(`WARNING: Recipe <${name}> cannot be produced anywhere!`);
     }
 
     if (data.producedIn && !buildables[data.producedIn]) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Recipe [${name}] is produced in missing building [${data.producedIn}]`);
+      console.warn(`WARNING: Recipe <${name}> is produced in missing building <${data.producedIn}>`);
     }
 
     if (!data.slug) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Blank slug for recipe: [${name}]`);
+      console.warn(`WARNING: Blank slug for recipe: <${name}>`);
     } else if (slugs.includes(data.slug)) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Duplicate recipe slug: [${data.slug}] of [${name}]`);
+      console.warn(`WARNING: Duplicate recipe slug: <${data.slug}> of <${name}>`);
     } else {
       slugs.push(data.slug);
     }
   });
 }
 
-function validateBuildableRecipes(buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo>) {
+function validateBuildableRecipes(buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo>, { buildables }: RecipeDependencies) {
   const slugs: string[] = [];
+  Object.keys(buildables).forEach((buildableName) => {
+    let hasRecipe = false;
+    Object.values(buildableRecipes).forEach((recipeData) => {
+      if (recipeData.product === buildableName) {
+        hasRecipe = true;
+        return;
+      }
+    });
+    if (!hasRecipe) {
+      console.warn(`WARNING: Buildable <${buildableName}> has no recipe!`)
+    }
+  });
   Object.entries(buildableRecipes).forEach(([name, data]) => {
     if (!data.slug) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Blank slug for recipe: [${name}]`);
+      console.warn(`WARNING: Blank slug for recipe: <${name}>`);
     } else if (slugs.includes(data.slug)) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Duplicate recipe slug: [${data.slug}] of [${name}]`);
+      console.warn(`WARNING: Duplicate recipe slug: <${data.slug}> of <${name}>`);
     } else {
       slugs.push(data.slug);
     }
@@ -250,10 +253,10 @@ function validateCustomizerRecipes(customizerRecipes: ParsedClassInfoMap<Customi
   Object.entries(customizerRecipes).forEach(([name, data]) => {
     if (!data.slug) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Blank slug for customizer recipe: [${name}]`);
+      console.warn(`WARNING: Blank slug for customizer recipe: <${name}>`);
     } else if (slugs.includes(data.slug)) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Duplicate customizer recipe slug: [${data.slug}] of [${name}]`);
+      console.warn(`WARNING: Duplicate customizer recipe slug: <${data.slug}> of <${name}>`);
     } else {
       slugs.push(data.slug);
     }

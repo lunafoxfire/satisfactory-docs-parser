@@ -1,4 +1,4 @@
-import { DocsDataClass } from '@/types';
+import { DocsRawClass } from '@/types';
 
 export type CategoryKey =
   'itemDescriptors'
@@ -16,14 +16,14 @@ export type CategoryKey =
 
   | 'schematics';
 
-export type ClassnameCategories = {
+export type ClassCategories = {
   [key: string]: CategoryKey[],
 };
 
-export type CategorizedClassnames = {
+export type CategorizedClasses = {
   [key in CategoryKey]: string[];
 };
 
-export type CategorizedDataClasses = {
-  [key in CategoryKey]: DocsDataClass[];
+export type CategorizedRawClasses = {
+  [key in CategoryKey]: DocsRawClass[];
 };

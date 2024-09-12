@@ -1,8 +1,8 @@
 import { ParsedClassInfoMap } from '@/types';
 import { ItemInfo } from '@/parsers/parseItems';
 import { BuildableInfo } from '@/parsers/parseBuildables';
-import { EquipmentSlotType } from '@/enums';
-export { parseCollection } from './deserialization';
+import { EquipmentSlotType, UnlockType } from '@/enums';
+import { SerializedColor, SerializedItemAmount } from './deserialization';
 
 export type Color = {
   r: number,
@@ -20,7 +20,16 @@ export type ItemRate = {
   rate: number,
 };
 
-export function createBasicSlug(displayName: string) {
+const SLUG_OVERRIDES: Record<string, string> = {
+  'Recipe_CartridgeChaos_Packaged_C': 'packaged-turbo-rifle-ammo-recipe',
+  'Build_CandyCaneDecor_C': 'candy-cane-decor',
+  'Recipe_CandyCaneDecor_C': 'candy-cane-decor-recipe',
+};
+
+export function createBasicSlug(className: string, displayName: string) {
+  if (SLUG_OVERRIDES[className]) {
+    return SLUG_OVERRIDES[className];
+  }
   return displayName
     .replace(/[^A-Za-z0-9\s\-_.|]/g, '')
     .replace(/[\s\-_.|]+/g, '-')
@@ -28,88 +37,170 @@ export function createBasicSlug(displayName: string) {
 }
 
 export function createSlugFromClassname(className: string) {
-  return createBasicSlug(className.replace(/_C$/, ''));
+  if (SLUG_OVERRIDES[className]) {
+    return SLUG_OVERRIDES[className];
+  }
+  return createBasicSlug(className, className.replace(/_C$/, ''));
 }
 
-const MATERIAL_SLUGS: any = {
-  'Concrete': 'concrete',
-  'Metal': 'metal',
-  'Grip': 'metal',
-  'Polished': 'polished',
-  'ConcretePolished': 'polished',
-  'PolishedConcrete': 'polished',
-  'Asphalt': 'asphalt',
-  'Tar': 'asphalt',
+const MATERIAL_SLUGS: Record<string, string> = {
+  'Ficsit': 'ficsit',
+  'FicsitSet': 'ficsit',
   'Orange': 'ficsit',
   'Steel': 'steel',
   'SteelWall': 'steel',
   'Window': 'window',
+  'Concrete': 'concrete',
+  'Metal': 'metal',
+  'Grip': 'metal',
+  'GripMetal': 'metal',
+  'Polished': 'polished',
+  'PolishedConcrete': 'polished',
+  'ConcretePolished': 'polished',
+  'Asphalt': 'asphalt',
+  'Tar': 'asphalt',
+};
+const materialRegex = new RegExp(`_(${Object.keys(MATERIAL_SLUGS).join('|')})_`);
+
+const MATERIAL_OVERRIDES: Record<string, string> = {
   'Wall_8x4_01': 'ficsit',
   'Wall_8x4_02': 'steel',
+  'Build_Wall_Door_8x4_01_C': 'ficsit',
+  'Build_Wall_Door_8x4_03_C': 'ficsit',
+  'Build_Foundation_8x1_01_C': 'ficsit',
+  'Build_Foundation_8x2_01_C': 'ficsit',
+  'Build_Foundation_8x4_01_C': 'ficsit',
+  'Build_QuarterPipe_C': 'ficsit',
+  'Build_QuarterPipe_02_C': 'ficsit',
+  'Build_QuarterPipeCorner_01_C': 'ficsit',
+  'Build_QuarterPipeCorner_02_C': 'ficsit',
+  'Build_QuarterPipeCorner_03_C': 'ficsit',
+  'Build_QuarterPipeCorner_04_C': 'ficsit',
+  'Build_Ramp_Diagonal_8x1_01_C': 'ficsit',
+  'Build_Ramp_Diagonal_8x1_02_C': 'ficsit',
+  'Build_Ramp_Diagonal_8x2_01_C': 'ficsit',
+  'Build_Ramp_Diagonal_8x2_02_C': 'ficsit',
+  'Build_Ramp_Diagonal_8x4_01_C': 'ficsit',
+  'Build_Ramp_Diagonal_8x4_02_C': 'ficsit',
+  'Build_RampInverted_8x1_Corner_01_C': 'ficsit',
+  'Build_RampInverted_8x1_Corner_02_C': 'ficsit',
+  'Build_RampInverted_8x2_Corner_01_C': 'ficsit',
+  'Build_RampInverted_8x2_Corner_02_C': 'ficsit',
+  'Build_RampInverted_8x4_Corner_01_C': 'ficsit',
+  'Build_RampInverted_8x4_Corner_02_C': 'ficsit',
+  'Build_Wall_Conveyor_8x4_01_C': 'ficsit',
+  'Build_Wall_Conveyor_8x4_02_C': 'ficsit',
+  'Build_Wall_Conveyor_8x4_03_C': 'ficsit',
+  'Build_Wall_8x4_01_C': 'ficsit',
+  'Build_Wall_8x4_02_C': 'steel',
+  'Build_Wall_Gate_8x4_01_C': 'ficsit',
+  'Build_Ramp_8x1_01_C': 'ficsit',
+  'Build_Ramp_8x2_01_C': 'ficsit',
+  'Build_Ramp_8x4_01_C': 'ficsit',
+  'Build_Ramp_8x4_Inverted_01_C': 'ficsit',
+  'Build_Ramp_8x8x8_C': 'ficsit',
+  'Build_RampDouble_C': 'ficsit',
+  'Build_RampDouble_8x1_C': 'ficsit',
+  'Build_RampInverted_8x1_C': 'ficsit',
+  'Build_RampInverted_8x2_01_C': 'ficsit',
+
+  // These are recipe overrides that have had Recipe_ replaced with Build_
+  'Build_DownQuarterPipe_GripInCorner_8x4_C': 'metal',
+  'Build_DownQuarterPipe_GripOutCorner_8x4_C': 'metal',
+  'Build_DownQuarterPipe_ConcretePolishedInCorner_8x4_C': 'polished',
+  'Build_DownQuarterPipe_ConcretePolishedOutCorner_8x4_C': 'polished',
+  'Build_DownQuarterPipe_AsphaltInCorner_8x4_C': 'asphalt',
+  'Build_DownQuarterPipe_AsphaltOutCorner_8x4_C': 'asphalt',
+  'Build_DownQuarterPipe_ConcreteInCorner_8x4_C': 'concrete',
+  'Build_DownQuarterPipe_ConcreteOutCorner_8x4_C': 'concrete',
 };
-const materialRegex = new RegExp(`_(${Object.keys(MATERIAL_SLUGS).join('|')})(?:_|InCorner|OutCorner)`);
+
 export function createBuildableSlug(className: string, displayName: string) {
-  if (className.includes('_CandyCaneDecor')) {
-    return 'candy-cane-decor';
+  if (SLUG_OVERRIDES[className]) {
+    return SLUG_OVERRIDES[className];
   }
-  let slug = createBasicSlug(displayName);
-
-  const match = materialRegex.exec(className);
-  if (match) {
-    slug += `-${MATERIAL_SLUGS[match[1]]}`;
+  let slug = createBasicSlug(className, displayName);
+  let material = '';
+  if (MATERIAL_OVERRIDES[className]) {
+    material = MATERIAL_OVERRIDES[className];
+  } else {
+    const match = materialRegex.exec(className);
+    if (match) {
+      material = `${MATERIAL_SLUGS[match[1]]}`;
+    }
   }
 
+  if (material) {
+    return `${slug}-${material}`;
+  }
   return slug;
 }
 
-
-export function createBuildableRecipeSlug(className: string, displayName: string) {
-  return `${createBuildableSlug(className, displayName)}-recipe`;
+export function createRecipeSlug(className: string, displayName: string) {
+  if (SLUG_OVERRIDES[className]) {
+    return SLUG_OVERRIDES[className];
+  }
+  return `${createBasicSlug(className, displayName)}-recipe`;
 }
 
-export function createRecipeSlug(className: string, displayName: string) {
-  if (className === 'Recipe_CartridgeChaos_Packaged_C') {
-    return 'turbo-rifle-ammo-packaged-recipe';
+export function createBuildableRecipeSlug(className: string, displayName: string) {
+  if (SLUG_OVERRIDES[className]) {
+    return SLUG_OVERRIDES[className];
   }
-  return `${createBasicSlug(displayName)}-recipe`;
+  const buildableClassname = className.replace('Recipe_', 'Build_');
+  return `${createBuildableSlug(buildableClassname, displayName)}-recipe`;
 }
 
 export function createCustomizerSlug(className: string) {
-  return createSlugFromClassname(className.replace('Recipe_', ''));
+  if (SLUG_OVERRIDES[className]) {
+    return SLUG_OVERRIDES[className];
+  }
+  return 'customizer-' + createSlugFromClassname(className);
 }
 
-export function cleanDescription(desc: string) {
-  return desc.replace(/\r\n/g, '\n');
+export function cleanString(desc: string) {
+  return desc
+    .replace(/[ ]/g, "")
+    .replace(/[ ]/g, " ")
+    .replace(/\r\n/g, '\n');
 }
 
 export function standardizeItemDescriptor(className: string) {
-  return className.replace(/^(?:BP_EquipmentDescriptor)|(?:BP_ItemDescriptor)|(?:BP_EqDesc)/, 'Desc_');
+  return className;
 }
 
-const EQUIP_DESC_MANUAL_MAP: any = {
+const EQUIP_DESC_OVERRIDES: Record<string, string> = {
+  'Equip_Chainsaw_C': 'Desc_Chainsaw_C',
+  'Equip_MedKit_C': 'Desc_Medkit_C',
+  'Equip_CandyCaneBasher_C': 'BP_EquipmentDescriptorCandyCane_C',
+  'Equip_Zipline_C': 'BP_EqDescZipLine_C',
+  'Equip_GasMask_C': 'BP_EquipmentDescriptorGasmask_C',
   'Equip_GolfCartDispenser_C': 'Desc_GolfCart_C',
   'Equip_GoldGolfCartDispenser_C': 'Desc_GolfCartGold_C',
-  'Equip_PortableMinerDispenser_C': 'Desc_PortableMiner_C',
+  'Equip_Parachute_C': 'Desc_Parachute_C',
+  'Equip_PortableMinerDispenser_C': 'BP_ItemDescriptorPortableMiner_C',
   'Equip_RebarGun_Projectile_C': 'Desc_RebarGunProjectile_C',
-  'Equip_Zipline_C': 'Desc_ZipLine_C',
-  'Equip_GasMask_C': 'Desc_Gasmask_C',
-  'Equip_CandyCaneBasher_C': 'Desc_CandyCane_C',
 };
 export function equipmentNameToDescriptorName(equipName: string) {
-  if (EQUIP_DESC_MANUAL_MAP[equipName]) {
-    return EQUIP_DESC_MANUAL_MAP[equipName];
+  if (EQUIP_DESC_OVERRIDES[equipName]) {
+    return EQUIP_DESC_OVERRIDES[equipName];
   }
-  return equipName.replace(/^Equip_/, 'Desc_');
+  return equipName.replace(/^Equip_/, 'BP_EquipmentDescriptor');
 }
 
-const BUILDING_DESC_MANUAL_MAP: any = {
+const BUILD_DESC_OVERRIDES: Record<string, string> = {
+  'Build_XmassTree_C': 'Desc_XMassTree_C',
+  'Build_BlueprintDesigner_Mk3_C': 'Desc_BlueprintDesigner_MK3_C',
+  'Build_QuarterPipeMiddle_Ficsit_8x1_C': 'Desc_QuarterPipeMiddle_Ficsit_4x1_C',
+  'Build_QuarterPipeMiddle_Ficsit_8x2_C': 'Desc_QuarterPipeMiddle_Ficsit_4x2_C',
+  'Build_QuarterPipeMiddle_Ficsit_8x4_C': 'Desc_QuarterPipeMiddle_Ficsit_4x4_C',
+  'Build_Foundation_ConcretePolished_8x2_2_C': 'Foundation_ConcretePolished_8x2_C',
+  'Build_Foundation_ConcretePolished_8x4_C': 'Foundation_ConcretePolished_8x4_C',
   'Build_PowerPoleWallDouble_Mk2_C': 'Desc_PowerPoleWallDoubleMk2_C',
   'Build_PowerPoleWall_Mk2_C': 'Desc_PowerPoleWallMk2_C',
   'Build_PowerPoleWallDouble_Mk3_C': 'Desc_PowerPoleWallDoubleMk3_C',
   'Build_PowerPoleWall_Mk3_C': 'Desc_PowerPoleWallMk3_C',
   'Build_WalkwayTrun_C': 'Desc_WalkwayTurn_C',
-  'Build_Foundation_ConcretePolished_8x2_2_C': 'Foundation_ConcretePolished_8x2_C',
-  'Build_Foundation_ConcretePolished_8x4_C': 'Foundation_ConcretePolished_8x4_C',
   'Build_CatwalkCorner_C': 'Desc_CatwalkTurn_C',
   'Build_Wall_Concrete_FlipTris_8x1_C': 'Desc_Wall_Concrete_8x1_FlipTris_C',
   'Build_Wall_Concrete_FlipTris_8x2_C': 'Desc_Wall_Concrete_8x2_FlipTris_C',
@@ -127,38 +218,35 @@ const BUILDING_DESC_MANUAL_MAP: any = {
   'Build_Wall_Orange_Tris_8x2_C': 'Desc_Wall_Orange_8x2_Tris_C',
   'Build_Wall_Orange_Tris_8x4_C': 'Desc_Wall_Orange_8x4_Tris_C',
   'Build_Wall_Orange_Tris_8x8_C': 'Desc_Wall_Orange_8x8_Tris_C',
-  'Build_XmassTree_C': 'Desc_XMassTree_C',
   'Build_XmassLightsLine_C': 'Desc_xmassLights_C',
-  'Build_QuarterPipeMiddle_Ficsit_8x1_C': 'Desc_QuarterPipeMiddle_Ficsit_4x1_C',
-  'Build_QuarterPipeMiddle_Ficsit_8x2_C': 'Desc_QuarterPipeMiddle_Ficsit_4x2_C',
-  'Build_QuarterPipeMiddle_Ficsit_8x4_C': 'Desc_QuarterPipeMiddle_Ficsit_4x4_C',
 };
 export function buildableNameToDescriptorName(buildableName: string) {
-  if (BUILDING_DESC_MANUAL_MAP[buildableName]) {
-    return BUILDING_DESC_MANUAL_MAP[buildableName];
+  if (BUILD_DESC_OVERRIDES[buildableName]) {
+    return BUILD_DESC_OVERRIDES[buildableName];
   }
   return buildableName.replace(/^Build_/, 'Desc_');
 }
 
-const classnameRegex = /\.(.+)$/;
-export function getShortClassname(fullName: string) {
-  const match = classnameRegex.exec(fullName);
+const classnameFromPathRegex = /^["' ]*(?:\/[A-Za-z0-9_-]+)+\.([A-Za-z0-9_-]+)["' ]*$/;
+export function parseClassnameFromPath(pathStr: string) {
+  const match = classnameFromPathRegex.exec(pathStr);
   if (match && match[1]) {
     return match[1];
   }
   // eslint-disable-next-line no-console
-  console.warn(`WARNING: Failed to parse class name: [${fullName}]`);
+  console.warn(`WARNING: Failed to parse class name from path: <${pathStr}>`);
   return 'UNDEFINED';
 }
 
-const blueprintClassRegex = /^BlueprintGeneratedClass'"(.+)"'$/;
+// What an overengineered nightmare. I love it.
+const blueprintClassRegex = /^(?:"\/Script\/Engine.BlueprintGeneratedClass'([A-Za-z0-9\/._-]+)'")|(?:BlueprintGeneratedClass ([A-Za-z0-9\/._-]+))$/;
 export function parseBlueprintClassname(classStr: string) {
   const match = blueprintClassRegex.exec(classStr);
   if (match && match[1]) {
-    return getShortClassname(match[1]);
+    return parseClassnameFromPath(match[1]);
   }
   // eslint-disable-next-line no-console
-  console.warn(`WARNING: Failed to parse blueprint class name: [${classStr}]`);
+  console.warn(`WARNING: Failed to parse blueprint class name: <${classStr}>`);
   return 'UNDEFINED';
 }
 
@@ -178,7 +266,7 @@ export function parseStackSize(data: string) {
       return 50;
     default:
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Invalid stack size: [${data}]`);
+      console.warn(`WARNING: Invalid stack size: <${data}>`);
       return NaN;
   }
 }
@@ -197,12 +285,37 @@ export function parseEquipmentSlot(data: string): EquipmentSlotType {
       return 'LEGS';
     default:
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Invalid equipment slot: [${data}]`);
+      console.warn(`WARNING: Invalid equipment slot: <${data}>`);
       return 'UNDEFINED';
   }
 }
 
-export function parseColor(data: any, scaleTo255 = false): Color {
+export function parseUnlockType(data: string): UnlockType {
+  switch (data) {
+    case 'EST_Custom':
+      return 'MISC';
+    case 'EST_ResourceSink':
+      return 'RESOURCE_SINK';
+    case 'EST_Milestone':
+      return 'MILESTONE';
+    case 'EST_MAM':
+      return 'MAM';
+    case 'EST_Alternate':
+      return 'ALTERNATE';
+    case 'EST_HardDrive':
+      return 'HARD_DRIVE';
+    case 'EST_Tutorial':
+      return 'TUTORIAL';
+    case 'EST_Customization':
+      return 'TUTORIAL';
+    default:
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Invalid unlock type: <${data}>`);
+      return 'UNDEFINED';
+  }
+}
+
+export function parseColor(data: SerializedColor, scaleTo255 = false): Color {
   const scaleFactor = scaleTo255 ? 255 : 1;
   return {
     r: Math.round(scaleFactor * data.R),
@@ -212,25 +325,25 @@ export function parseColor(data: any, scaleTo255 = false): Color {
 }
 
 const SUPRESS_ITEM_WARNINGS = [
-  'Desc_HardDrive_C',
   'Desc_ResourceSinkCoupon_C',
-  'Desc_CupGold_C',
+  'Desc_HardDrive_C',
+  'Desc_Hog_Statue_C',
+  'Desc_DoggoStatue_C',
+  'Desc_SpaceGiraffeStatue_C',
   'Desc_CharacterRunStatue_C',
   'Desc_CharacterSpin_Statue_C',
   'Desc_CharacterClap_Statue_C',
-  'Desc_DoggoStatue_C',
-  'Desc_Hog_Statue_C',
-  'Desc_SpaceGiraffeStatue_C',
   'Desc_GoldenNut_Statue_C',
-  'Desc_Cup_C',
+  'BP_EquipmentDescriptorCup_C',
+  'BP_EquipmentDescriptorCupGold_C',
   'Desc_BoomBox_C',
 ];
-export function parseItemQuantity(data: any, itemData: ParsedClassInfoMap<ItemInfo>): ItemQuantity {
+export function parseItemQuantity(data: SerializedItemAmount, itemData: ParsedClassInfoMap<ItemInfo>): ItemQuantity {
   const className = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
   const itemInfo = itemData[className];
   if (!itemInfo && !SUPRESS_ITEM_WARNINGS.includes(className)) {
     // eslint-disable-next-line no-console
-    console.warn(`WARNING: Missing item info for ${className}`);
+    console.warn(`WARNING: Missing item info for <${className}>`);
   }
   const scaleFactor = itemInfo?.isFluid ? 1000 : 1;
   return {
@@ -239,12 +352,12 @@ export function parseItemQuantity(data: any, itemData: ParsedClassInfoMap<ItemIn
   };
 }
 
-export function parseBuildableQuantity(data: any, buildableData: ParsedClassInfoMap<BuildableInfo>): string {
+export function parseBuildableQuantity(data: SerializedItemAmount, buildableData: ParsedClassInfoMap<BuildableInfo>): string {
   const className = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
   const buildableInfo = buildableData[className];
   if (!buildableInfo) {
     // eslint-disable-next-line no-console
-    console.warn(`WARNING: Missing buildable info for ${className}`);
+    console.warn(`WARNING: Missing buildable info for <${className}>`);
   }
   return className;
 }

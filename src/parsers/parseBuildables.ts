@@ -1,9 +1,10 @@
 import {
-  createBasicSlug, createBuildableSlug, cleanDescription, buildableNameToDescriptorName,
-  parseBlueprintClassname, parseCollection, ItemRate,
+  createBasicSlug, createBuildableSlug, cleanString, buildableNameToDescriptorName,
+  parseBlueprintClassname, ItemRate,
 } from '@/utilities';
+import { parseCollection, SerializedRange } from '@/utilities/deserialization';
 import { ParsedClassInfoMap } from '@/types';
-import { CategorizedDataClasses } from '@/class-categorizer/types';
+import { CategorizedRawClasses } from '@/class-categorizer/types';
 import { EventType } from '@/enums';
 import { ItemInfo, ResourceInfo } from './parseItems';
 
@@ -95,69 +96,70 @@ interface BuildableDependencies {
   resources: ParsedClassInfoMap<ResourceInfo>,
 }
 
-const ficsmasBuildables = [
-  'Build_XmassTree_C',
-  'Build_WreathDecor_C',
-  'Build_CandyCaneDecor_C',
-  'Build_Snowman_C',
-  'Build_TreeGiftProducer_C',
-  'Build_SnowDispenser_C',
-  'Build_XmassLightsLine_C',
+const ficsmasBuildables: string[] = [
+    'Build_XmassTree_C',
+    'Build_WreathDecor_C',
+    'Build_CandyCaneDecor_C',
+    'Build_Snowman_C',
+    'Build_TreeGiftProducer_C',
+    'Build_SnowDispenser_C',
+    'Build_XmassLightsLine_C',
 ];
 
-const excludeBuildables = [
-  // old jump pads
+const excludeBuildables: string[] = [
+  // Old buildables with no recipe
   'Build_JumpPad_C',
   'Build_JumpPadTilted_C',
-  // old wall
+  'Build_PillarTop_C',
   'Build_SteelWall_8x4_C',
 ];
 
 // From the wiki, not in the docs :c
+// TODO: Make this up-to-date
 const BUILDABLE_SIZES: { [key: string]: BuildableSize } = {
-  'Desc_TradingPost_C': { width: 14, length: 26, height: 28 },
-  'Desc_Mam_C': { width: 5, length: 9, height: 6 },
-  'Desc_SpaceElevator_C': { width: 54, length: 54, height: 118 },
-  'Desc_ResourceSink_C': { width: 16, length: 13, height: 24 },
-  'Desc_ResourceSinkShop_C': { width: 4, length: 6, height: 5 },
-  'Desc_WaterPump_C': { width: 20, length: 19.5, height: 26 },
-  'Desc_OilPump_C': { width: 12, length: 20, height: 20 },
-  'Desc_FrackingSmasher_C': { width: 20, length: 20, height: 23 },
-  'Desc_FrackingExtractor_C': { width: 4, length: 4, height: 5 },
-  'Desc_ConstructorMk1_C': { width: 8, length: 10, height: 8 },
-  'Desc_AssemblerMk1_C': { width: 10, length: 15, height: 11 },
-  'Desc_ManufacturerMk1_C': { width: 18, length: 19, height: 12 },
-  'Desc_Packager_C': { width: 8, length: 8, height: 12 },
-  'Desc_OilRefinery_C': { width: 10, length: 20, height: 31 },
-  'Desc_Blender_C': { width: 18, length: 16, height: 15 },
-  'Desc_HadronCollider_C': { width: 24, length: 38, height: 32 },
-  'Desc_MinerMk1_C': { width: 6, length: 14, height: 18 },
-  'Desc_MinerMk2_C': { width: 6, length: 14, height: 18 },
-  'Desc_MinerMk3_C': { width: 6, length: 14, height: 18 },
-  'Desc_SmelterMk1_C': { width: 6, length: 9, height: 9 },
-  'Desc_FoundryMk1_C': { width: 10, length: 9, height: 9 },
-  'Desc_WorkBench_C': { width: 6, length: 3, height: 3 },
-  'Desc_Workshop_C': { width: 10, length: 7, height: 5 },
-  'Desc_GeneratorBiomass_C': { width: 8, length: 8, height: 7 },
-  'Desc_GeneratorCoal_C': { width: 10, length: 26, height: 36 },
-  'Desc_GeneratorFuel_C': { width: 20, length: 20, height: 27 },
-  'Desc_GeneratorGeoThermal_C': { width: 19, length: 20, height: 34 },
-  'Desc_GeneratorNuclear_C': { width: 38, length: 43, height: 49 },
-  'Desc_PowerStorageMk1_C': { width: 6, length: 6, height: 12 },
-  'Desc_StorageContainerMk1_C': { width: 5, length: 10, height: 4 },
-  'Desc_StorageContainerMk2_C': { width: 5, length: 10, height: 8 },
-  'Desc_PipeStorageTank_C': { width: 6, length: 6, height: 8 },
-  'Desc_IndustrialTank_C': { width: 14, length: 14, height: 12 },
-  'Desc_LookoutTower_C': { width: 9, length: 9, height: 24 },
-  'Desc_RadarTower_C': { width: 10, length: 10, height: 118 },
-  'Desc_TrainStation_C': { width: 34, length: 16, height: 20 },
-  'Desc_TrainDockingStation_C': { width: 34, length: 16, height: 20 },
-  'Desc_TrainDockingStationLiquid_C': { width: 34, length: 16, height: 20 },
-  'Desc_TrainPlatformEmpty_C': { width: 34, length: 16, height: 1 },
-  'Desc_TrainPlatformEmpty_02_C': { width: 34, length: 16, height: 1 },
+  //   'Desc_TradingPost_C': { width: 14, length: 26, height: 28 },
+  //   'Desc_Mam_C': { width: 5, length: 9, height: 6 },
+  //   'Desc_SpaceElevator_C': { width: 54, length: 54, height: 118 },
+  //   'Desc_ResourceSink_C': { width: 16, length: 13, height: 24 },
+  //   'Desc_ResourceSinkShop_C': { width: 4, length: 6, height: 5 },
+  //   'Desc_WaterPump_C': { width: 20, length: 19.5, height: 26 },
+  //   'Desc_OilPump_C': { width: 12, length: 20, height: 20 },
+  //   'Desc_FrackingSmasher_C': { width: 20, length: 20, height: 23 },
+  //   'Desc_FrackingExtractor_C': { width: 4, length: 4, height: 5 },
+  //   'Desc_ConstructorMk1_C': { width: 8, length: 10, height: 8 },
+  //   'Desc_AssemblerMk1_C': { width: 10, length: 15, height: 11 },
+  //   'Desc_ManufacturerMk1_C': { width: 18, length: 19, height: 12 },
+  //   'Desc_Packager_C': { width: 8, length: 8, height: 12 },
+  //   'Desc_OilRefinery_C': { width: 10, length: 20, height: 31 },
+  //   'Desc_Blender_C': { width: 18, length: 16, height: 15 },
+  //   'Desc_HadronCollider_C': { width: 24, length: 38, height: 32 },
+  //   'Desc_MinerMk1_C': { width: 6, length: 14, height: 18 },
+  //   'Desc_MinerMk2_C': { width: 6, length: 14, height: 18 },
+  //   'Desc_MinerMk3_C': { width: 6, length: 14, height: 18 },
+  //   'Desc_SmelterMk1_C': { width: 6, length: 9, height: 9 },
+  //   'Desc_FoundryMk1_C': { width: 10, length: 9, height: 9 },
+  //   'Desc_WorkBench_C': { width: 6, length: 3, height: 3 },
+  //   'Desc_Workshop_C': { width: 10, length: 7, height: 5 },
+  //   'Desc_GeneratorBiomass_C': { width: 8, length: 8, height: 7 },
+  //   'Desc_GeneratorCoal_C': { width: 10, length: 26, height: 36 },
+  //   'Desc_GeneratorFuel_C': { width: 20, length: 20, height: 27 },
+  //   'Desc_GeneratorGeoThermal_C': { width: 19, length: 20, height: 34 },
+  //   'Desc_GeneratorNuclear_C': { width: 38, length: 43, height: 49 },
+  //   'Desc_PowerStorageMk1_C': { width: 6, length: 6, height: 12 },
+  //   'Desc_StorageContainerMk1_C': { width: 5, length: 10, height: 4 },
+  //   'Desc_StorageContainerMk2_C': { width: 5, length: 10, height: 8 },
+  //   'Desc_PipeStorageTank_C': { width: 6, length: 6, height: 8 },
+  //   'Desc_IndustrialTank_C': { width: 14, length: 14, height: 12 },
+  //   'Desc_LookoutTower_C': { width: 9, length: 9, height: 24 },
+  //   'Desc_RadarTower_C': { width: 10, length: 10, height: 118 },
+  //   'Desc_TrainStation_C': { width: 34, length: 16, height: 20 },
+  //   'Desc_TrainDockingStation_C': { width: 34, length: 16, height: 20 },
+  //   'Desc_TrainDockingStationLiquid_C': { width: 34, length: 16, height: 20 },
+  //   'Desc_TrainPlatformEmpty_C': { width: 34, length: 16, height: 1 },
+  //   'Desc_TrainPlatformEmpty_02_C': { width: 34, length: 16, height: 1 },
 };
 
-export function parseBuildables(categorizedDataClasses: CategorizedDataClasses, { items, resources }: BuildableDependencies) {
+export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, { items, resources }: BuildableDependencies) {
   const buildables: ParsedClassInfoMap<BuildableInfo> = {};
 
   categorizedDataClasses.buildables.forEach((entry) => {
@@ -170,12 +172,12 @@ export function parseBuildables(categorizedDataClasses: CategorizedDataClasses, 
     let buildMenuPriority = 0;
     const descriptorInfo = categorizedDataClasses.buildableDescriptors.find((desc) => desc.ClassName === descriptorName);
     if (descriptorInfo) {
-      categories = parseCollection<string[]>(descriptorInfo.mSubCategories)
+      categories = parseCollection<string[]>(descriptorInfo.mSubCategories)!
         .map((data) => parseBlueprintClassname(data));
       buildMenuPriority = parseFloat(descriptorInfo.mBuildMenuPriority);
     } else {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Buildable descriptor missing for buildable: [${entry.ClassName}]`);
+      console.warn(`WARNING: Buildable descriptor missing for buildable: <${entry.ClassName}>`);
     }
 
     const meta: BuildableMeta = {};
@@ -230,7 +232,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedDataClasses, 
     // Extractor
     if (entry.mAllowedResourceForms) {
       isResourceExtractor = true;
-      const allowedResourceForms = parseCollection<string[]>(entry.mAllowedResourceForms);
+      const allowedResourceForms = parseCollection<string[]>(entry.mAllowedResourceForms)!;
 
       let allowedResources: string[];
       if (entry.mAllowedResources === '') {
@@ -241,7 +243,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedDataClasses, 
           }
         }
       } else {
-        allowedResources = parseCollection<string[]>(entry.mAllowedResources)
+        allowedResources = parseCollection<string[]>(entry.mAllowedResources)!
           .map((data) => parseBlueprintClassname(data));
       }
 
@@ -283,12 +285,12 @@ export function parseBuildables(categorizedDataClasses: CategorizedDataClasses, 
           const fuelItemInfo = items[fuelEntry.mFuelClass];
           if (!fuelItemInfo) {
             // eslint-disable-next-line no-console
-            console.warn(`WARNING: No item info for generator fuel: [${fuelEntry.mFuelClass}]`);
+            console.warn(`WARNING: No item info for generator fuel: <${fuelEntry.mFuelClass}>`);
             return;
           }
           if (!fuelItemInfo.meta.energyValue) {
             // eslint-disable-next-line no-console
-            console.warn(`WARNING: Generator fuel [${fuelEntry.mFuelClass}] has no energy value!`);
+            console.warn(`WARNING: Generator fuel <${fuelEntry.mFuelClass}> has no energy value!`);
             return;
           }
 
@@ -302,7 +304,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedDataClasses, 
             const supplementItemInfo = items[fuelEntry.mSupplementalResourceClass];
             if (!supplementItemInfo) {
               // eslint-disable-next-line no-console
-              console.warn(`WARNING: No item info for generator supplement: [${fuelEntry.mFuelClass}]`);
+              console.warn(`WARNING: No item info for generator supplement: <${fuelEntry.mFuelClass}>`);
               return;
             }
 
@@ -315,7 +317,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedDataClasses, 
             const byproductItemInfo = items[fuelEntry.mByproduct];
             if (!byproductItemInfo) {
               // eslint-disable-next-line no-console
-              console.warn(`WARNING: No item info for generator byproduct: [${fuelEntry.mFuelClass}]`);
+              console.warn(`WARNING: No item info for generator byproduct: <${fuelEntry.mFuelClass}>`);
               return;
             }
 
@@ -381,10 +383,11 @@ export function parseBuildables(categorizedDataClasses: CategorizedDataClasses, 
       };
     }
 
+    const cleanName = cleanString(entry.mDisplayName);
     buildables[descriptorName] = {
-      slug: createBuildableSlug(entry.ClassName, entry.mDisplayName),
-      name: entry.mDisplayName,
-      description: cleanDescription(entry.mDescription),
+      slug: createBuildableSlug(entry.ClassName, cleanName),
+      name: cleanName,
+      description: cleanString(entry.mDescription),
       categories,
       buildMenuPriority,
       isPowered,
@@ -404,10 +407,10 @@ export function parseBuildables(categorizedDataClasses: CategorizedDataClasses, 
   return buildables;
 }
 
-function addVehicles(categorizedDataClasses: CategorizedDataClasses, buildables: ParsedClassInfoMap<BuildableInfo>) {
+function addVehicles(categorizedDataClasses: CategorizedRawClasses, buildables: ParsedClassInfoMap<BuildableInfo>) {
   categorizedDataClasses.vehicles.forEach((entry) => {
     let isPowered = false;
-    const categories = parseCollection<string[]>(entry.mSubCategories)
+    const categories = parseCollection<string[]>(entry.mSubCategories)!
       .map((data) => parseBlueprintClassname(data));
     const buildMenuPriority = parseFloat(entry.mBuildMenuPriority);
 
@@ -425,7 +428,7 @@ function addVehicles(categorizedDataClasses: CategorizedDataClasses, buildables:
     }
     if (entry.mPowerConsumption) {
       isPowered = true;
-      const powerConsumption = parseCollection(entry.mPowerConsumption);
+      const powerConsumption = parseCollection<SerializedRange>(entry.mPowerConsumption)!;
       meta.powerInfo = {
         consumption: (powerConsumption.Min + powerConsumption.Max) / 2,
         variableConsumption: {
@@ -436,10 +439,11 @@ function addVehicles(categorizedDataClasses: CategorizedDataClasses, buildables:
       };
     }
 
+    const cleanName = cleanString(entry.mDisplayName);
     buildables[entry.ClassName] = {
-      slug: createBasicSlug(entry.mDisplayName),
-      name: entry.mDisplayName,
-      description: cleanDescription(entry.mDescription),
+      slug: createBasicSlug(entry.ClassName, cleanName),
+      name: cleanName,
+      description: cleanString(entry.mDescription),
       categories,
       buildMenuPriority,
       isPowered,
@@ -459,10 +463,10 @@ function validateBuildables(buildables: ParsedClassInfoMap<BuildableInfo>) {
   Object.entries(buildables).forEach(([name, data]) => {
     if (!data.slug) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Blank slug for buildable: [${name}]`);
+      console.warn(`WARNING: Blank slug for buildable: <${name}>`);
     } else if (slugs.includes(data.slug)) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Duplicate buildable slug: [${data.slug}] of [${name}]`);
+      console.warn(`WARNING: Duplicate buildable slug: <${data.slug}> of <${name}>`);
     } else {
       slugs.push(data.slug);
     }

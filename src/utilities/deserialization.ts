@@ -1,3 +1,20 @@
+export type SerializedColor = {
+  R: number,
+  G: number,
+  B: number,
+  A: number,
+};
+
+export type SerializedRange = {
+  Min: number,
+  Max: number,
+};
+
+export type SerializedItemAmount = {
+  ItemClass: string,
+  Amount: number;
+};
+
 export type TokenParser = {
   regex: RegExp,
   getValue?: (text: string) => any
@@ -39,7 +56,10 @@ const PARSERS: { [key: string]: TokenParser } = {
   [TOKENS.STRING]: { regex: /^[a-zA-Z0-9:\\/.'"_-]+/, getValue: (text) => text },
 };
 
-export function parseCollection<T = any>(text: string): T {
+export function parseCollection<T>(text: string): T | null {
+  if (text === "") {
+    return null;
+  }
   return parseTokens(tokenize(text));
 }
 

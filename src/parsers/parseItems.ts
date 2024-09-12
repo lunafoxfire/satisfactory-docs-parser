@@ -1,9 +1,10 @@
 import {
-  createBasicSlug, cleanDescription, standardizeItemDescriptor, equipmentNameToDescriptorName,
-  parseStackSize, parseEquipmentSlot, parseCollection, parseColor, Color
+  createBasicSlug, cleanString, standardizeItemDescriptor, equipmentNameToDescriptorName,
+  parseStackSize, parseEquipmentSlot, parseColor, Color
 } from '@/utilities';
+import { parseCollection, SerializedColor } from '@/utilities/deserialization';
 import { ParsedClassInfoMap } from '@/types';
-import { CategorizedDataClasses } from '@/class-categorizer/types';
+import { CategorizedRawClasses } from '@/class-categorizer/types';
 import { EquipmentSlotType, EventType } from '@/enums';
 
 export interface ItemInfo {
@@ -70,40 +71,35 @@ export interface WellCounts {
   wells: number,
 }
 
-const ficsmasItems = [
-  'BP_EquipmentDescriptorCandyCane_C',
-  'BP_EquipmentDescriptorSnowballMittens_C',
-  'Desc_CandyCane_C',
-  'Desc_Gift_C',
-  'Desc_Snow_C',
-  'Desc_SnowballProjectile_C',
-  'Desc_XmasBall1_C',
-  'Desc_XmasBall2_C',
-  'Desc_XmasBall3_C',
-  'Desc_XmasBall4_C',
-  'Desc_XmasBallCluster_C',
-  'Desc_XmasBow_C',
-  'Desc_XmasBranch_C',
-  'Desc_XmasStar_C',
-  'Desc_XmasWreath_C',
-  'Desc_CandyCaneDecor_C',
-  'Desc_Snowman_C',
-  'Desc_WreathDecor_C',
-  'Desc_XmassTree_C',
+const ficsmasItems: string[] = [
+    'BP_EquipmentDescriptorCandyCane_C',
+    'Desc_CandyCane_C',
+    'Desc_Gift_C',
+    'Desc_Snow_C',
+    'Desc_SnowballProjectile_C',
+    'Desc_XmasBall1_C',
+    'Desc_XmasBall2_C',
+    'Desc_XmasBall3_C',
+    'Desc_XmasBall4_C',
+    'Desc_XmasBallCluster_C',
+    'Desc_XmasBow_C',
+    'Desc_XmasBranch_C',
+    'Desc_XmasStar_C',
+    'Desc_XmasWreath_C',
+    'Desc_CandyCaneDecor_C',
+    'Desc_Snowman_C',
+    'Desc_WreathDecor_C',
 ];
 
-const ficsmasEquip = [
-  'Equip_SnowballWeaponMittens_C',
-  'Equip_CandyCaneBasher_C',
+const ficsmasEquip: string[] = [
+    'Equip_CandyCaneBasher_C',
 ];
 
 const excludeItems: string[] = [];
 
-const excludeEquip = [
-  'Equip_MedKit_C', // Handled as consumable equipment
-];
+const excludeEquip: string[] = [];
 
-export function parseItems(categorizedDataClasses: CategorizedDataClasses) {
+export function parseItems(categorizedDataClasses: CategorizedRawClasses) {
   const items = getItems(categorizedDataClasses);
   mergeBiomassInfo(items, categorizedDataClasses);
   mergeEquipmentInfo(items, categorizedDataClasses);
@@ -119,7 +115,7 @@ export function parseItems(categorizedDataClasses: CategorizedDataClasses) {
 }
 
 
-function getItems(categorizedDataClasses: CategorizedDataClasses) {
+function getItems(categorizedDataClasses: CategorizedRawClasses) {
   const items: ParsedClassInfoMap<ItemInfo> = {};
 
   categorizedDataClasses.itemDescriptors.forEach((entry) => {
@@ -136,7 +132,7 @@ function getItems(categorizedDataClasses: CategorizedDataClasses) {
 
     const meta: ItemMeta = {};
     if (isFluid) {
-      meta.fluidColor = parseColor(parseCollection(entry.mFluidColor));
+      meta.fluidColor = parseColor(parseCollection<SerializedColor>(entry.mFluidColor)!);
     }
     if (isFuel) {
       meta.energyValue = energyValue;
@@ -145,10 +141,11 @@ function getItems(categorizedDataClasses: CategorizedDataClasses) {
       meta.radioactiveDecay = radioactiveDecay;
     }
 
+    const cleanName = cleanString(entry.mDisplayName);
     items[key] = {
-      slug: createBasicSlug(entry.mDisplayName),
-      name: entry.mDisplayName,
-      description: cleanDescription(entry.mDescription),
+      slug: createBasicSlug(entry.ClassName, cleanName),
+      name: cleanName,
+      description: cleanString(entry.mDescription),
       stackSize: parseStackSize(entry.mStackSize),
       sinkPoints: parseInt(entry.mResourceSinkPoints, 10),
       isFluid,
@@ -164,19 +161,19 @@ function getItems(categorizedDataClasses: CategorizedDataClasses) {
   return items;
 }
 
-function mergeBiomassInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedDataClasses: CategorizedDataClasses) {
+function mergeBiomassInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedDataClasses: CategorizedRawClasses) {
   categorizedDataClasses.biomass.forEach((entry) => {
     const key = standardizeItemDescriptor(entry.ClassName);
     const item = items[key];
     if (!item) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Biomass missing item descriptor: [${entry.ClassName}]`);
+      console.warn(`WARNING: Biomass missing item descriptor: <${entry.ClassName}>`);
     }
     item.isBiomass = true;
   });
 }
 
-function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedDataClasses: CategorizedDataClasses) {
+function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedDataClasses: CategorizedRawClasses) {
   categorizedDataClasses.equipment.forEach((entry) => {
     if (excludeEquip.includes(entry.ClassName)) {
       return;
@@ -188,7 +185,7 @@ function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedData
         const item = items[key];
         if (!item) {
           // eslint-disable-next-line no-console
-          console.warn(`WARNING: Equipment missing item descriptor: [${entry.ClassName}]`);
+          console.warn(`WARNING: Equipment missing item descriptor: <${entry.ClassName}>`);
           return;
         }
 
@@ -208,7 +205,7 @@ function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedData
     const item = items[key];
     if (!item) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Equipment missing item descriptor: [${entry.ClassName}]`);
+      console.warn(`WARNING: Equipment missing item descriptor: <${entry.ClassName}>`);
       return;
     }
 
@@ -250,43 +247,35 @@ function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedData
     if (entry.mJumpSpeedFactor) {
       item.meta.equipmentInfo.jumpSpeedFactor = parseFloat(entry.mJumpSpeedFactor);
     }
-    if (entry.mExplosiveData) {
-      const explosiveData = parseCollection(entry.mExplosiveData);
-      item.meta.equipmentInfo.explosionDamage = parseFloat(explosiveData.ExplosionDamage);
-      item.meta.equipmentInfo.explosionRadius = parseFloat(explosiveData.ExplosionRadius);
-    }
     if (entry.mDetectionRange) {
       item.meta.equipmentInfo.detectionRange = parseFloat(entry.mDetectionRange);
-    }
-    if (entry.mProjectileData) {
-      const projectileData = parseCollection(entry.mProjectileData);
-      item.meta.equipmentInfo.damage = parseFloat(projectileData.ImpactDamage);
     }
   });
 }
 
+// TODO: This is now out of date
 const RESOURCE_NODE_DATA: { [key: string]: NodeCounts } = {
-  'Desc_OreIron_C': { impure: 33, normal: 41, pure: 46 },
-  'Desc_OreCopper_C': { impure: 9, normal: 28, pure: 12 },
-  'Desc_Stone_C': { impure: 12, normal: 47, pure: 27 },
-  'Desc_Coal_C': { impure: 6, normal: 29, pure: 15 },
-  'Desc_OreGold_C': { impure: 0, normal: 8, pure: 8 },
-  'Desc_RawQuartz_C': { impure: 0, normal: 11, pure: 5 },
-  'Desc_Sulfur_C': { impure: 1, normal: 7, pure: 3 },
-  'Desc_OreUranium_C': { impure: 1, normal: 3, pure: 0 },
-  'Desc_OreBauxite_C': { impure: 5, normal: 6, pure: 6 },
-  'Desc_LiquidOil_C': { impure: 10, normal: 12, pure: 8 },
+  // 'Desc_OreIron_C': { impure: 33, normal: 41, pure: 46 },
+  // 'Desc_OreCopper_C': { impure: 9, normal: 28, pure: 12 },
+  // 'Desc_Stone_C': { impure: 12, normal: 47, pure: 27 },
+  // 'Desc_Coal_C': { impure: 6, normal: 29, pure: 15 },
+  // 'Desc_OreGold_C': { impure: 0, normal: 8, pure: 8 },
+  // 'Desc_RawQuartz_C': { impure: 0, normal: 11, pure: 5 },
+  // 'Desc_Sulfur_C': { impure: 1, normal: 7, pure: 3 },
+  // 'Desc_OreUranium_C': { impure: 1, normal: 3, pure: 0 },
+  // 'Desc_OreBauxite_C': { impure: 5, normal: 6, pure: 6 },
+  // 'Desc_LiquidOil_C': { impure: 10, normal: 12, pure: 8 },
 };
 
 const RESOURCE_WELL_DATA: { [key: string]: WellCounts } = {
-  'Desc_Water_C': { impure: 5, normal: 8, pure: 42, wells: 8 },
-  'Desc_LiquidOil_C': { impure: 6, normal: 3, pure: 3, wells: 2 },
-  'Desc_NitrogenGas_C': { impure: 2, normal: 7, pure: 36, wells: 6 },
+  // 'Desc_Water_C': { impure: 5, normal: 8, pure: 42, wells: 8 },
+  // 'Desc_LiquidOil_C': { impure: 6, normal: 3, pure: 3, wells: 2 },
+  // 'Desc_NitrogenGas_C': { impure: 2, normal: 7, pure: 36, wells: 6 },
 };
 
 const MAX_OVERCLOCK = 2.5;
 
-function getResources(categorizedDataClasses: CategorizedDataClasses) {
+function getResources(categorizedDataClasses: CategorizedRawClasses) {
   const resources: ParsedClassInfoMap<ResourceInfo> = {};
 
   categorizedDataClasses.resources.forEach((entry) => {
@@ -329,7 +318,7 @@ function getResources(categorizedDataClasses: CategorizedDataClasses) {
       nodes: nodeData,
       resourceWells: wellData,
       maxExtraction,
-      pingColor: parseColor(parseCollection(entry.mPingColor), true),
+      pingColor: parseColor(parseCollection<SerializedColor>(entry.mPingColor)!, true),
       collectionSpeed: parseFloat(entry.mCollectSpeedMultiplier),
       event: ficsmasItems.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
     };
@@ -343,10 +332,10 @@ function validateItems(items: ParsedClassInfoMap<ItemInfo>) {
   Object.entries(items).forEach(([name, data]) => {
     if (!data.slug) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Blank slug for item: [${name}]`);
+      console.warn(`WARNING: Blank slug for item: <${name}>`);
     } else if (slugs.includes(data.slug)) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Duplicate item slug: [${data.slug}] of [${name}]`);
+      console.warn(`WARNING: Duplicate item slug: <${data.slug}> of <${name}>`);
     } else {
       slugs.push(data.slug);
     }
@@ -357,7 +346,7 @@ function validateResources(resources: ParsedClassInfoMap<ResourceInfo>, items: P
   Object.entries(resources).forEach(([name, data]) => {
     if (!Object.keys(items).includes(data.itemClass)) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Resource missing item descriptor: [${name}]`);
+      console.warn(`WARNING: Resource missing item descriptor: <${name}>`);
     }
   });
 }

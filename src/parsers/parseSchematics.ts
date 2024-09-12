@@ -1,14 +1,16 @@
 import {
-  createSlugFromClassname, cleanDescription,
-  parseCollection, parseItemQuantity, ItemQuantity, parseBlueprintClassname
+  createSlugFromClassname, cleanString, parseItemQuantity,
+  ItemQuantity, parseBlueprintClassname,
+  parseUnlockType
 } from '@/utilities';
-import { ParsedClassInfoMap, DocsDataClass } from '@/types';
-import { CategorizedDataClasses } from '@/class-categorizer/types';
-import { EventType } from '@/enums';
+import { parseCollection, SerializedItemAmount } from '@/utilities/deserialization';
+import { ParsedClassInfoMap, DocsRawClass } from '@/types';
+import { CategorizedRawClasses } from '@/class-categorizer/types';
+import { EventType, UnlockType } from '@/enums';
 import { ItemInfo, ResourceInfo } from './parseItems';
-import { ProductionRecipeInfo, BuildableRecipeInfo, converterRecipes, CustomizerRecipeInfo } from './parseRecipes';
+import { ProductionRecipeInfo, BuildableRecipeInfo, CustomizerRecipeInfo } from './parseRecipes';
 
-type SchematicsEntry = DocsDataClass & { mUnlocks: any[] };
+type SchematicsEntry = DocsRawClass & { mUnlocks: any[] };
 
 type UnlockData = {
   Class: string,
@@ -19,7 +21,7 @@ export interface SchematicInfo {
   slug: string,
   name: string,
   description: string,
-  type: string,
+  type: UnlockType,
   techTier: number,
   cost: ItemQuantity[],
   timeToComplete: number,
@@ -30,17 +32,24 @@ export interface SchematicInfo {
 export interface SchematicUnlocks {
   recipes?: string[],
   schematics?: string[],
+  giveItems?: ItemQuantity[],
   scannerResources?: string[],
-  scannerObject?: boolean,
-  inventorySlots?: number,
-  equipmentHandSlots?: number,
+  scannerObjects?: string[],
   efficiencyPanel?: boolean,
   overclockPanel?: boolean,
-  map?: boolean,
-  giveItems?: ItemQuantity[],
-  emotes?: string[],
+  somersloopBoost?: boolean,
   customizer?: boolean,
-  tape?: boolean,
+  blueprints?: boolean,
+  inventorySlots?: number,
+  equipmentHandSlots?: number,
+  dimensionalStorageNewUploadPenalty?: number,
+  dimensionalStorageStackIncrease?: number,
+  dimensionalStorageSlots?: number,
+  customizations?: string[],
+  emotes?: string[],
+  tapes?: string[],
+  checkmark?: boolean,
+  map?: boolean,
 }
 
 interface SchematicDependencies {
@@ -51,27 +60,27 @@ interface SchematicDependencies {
   customizerRecipes: ParsedClassInfoMap<CustomizerRecipeInfo>,
 }
 
-const ficsmasSchematics = [
-  'Research_XMas_1_C',
-  'Research_XMas_1-1_C',
-  'Research_XMas_1-2_C',
-  'Research_XMas_2-1_C',
-  'Research_XMas_2-2_C',
-  'Research_XMas_2_C',
-  'Research_XMas_3-1_C',
-  'Research_XMas_3-2_C',
-  'Research_XMas_3_C',
-  'Research_XMas_4-1_C',
-  'Research_XMas_4-2_C',
-  'Research_XMas_4_C',
-  'Research_XMas_5_C',
+const ficsmasSchematics: string[] = [
+    'Research_XMas_1_C',
+    'Research_XMas_1-1_C',
+    'Research_XMas_1-2_C',
+    'Research_XMas_2_C',
+    'Research_XMas_2-1_C',
+    'Research_XMas_2-2_C',
+    'Research_XMas_3_C',
+    'Research_XMas_3-1_C',
+    'Research_XMas_3-2_C',
+    'Research_XMas_4_C',
+    'Research_XMas_4-1_C',
+    'Research_XMas_4-2_C',
+    'Research_XMas_5_C',
 ];
 
-const excludeSchematics = [
-  'Schematic_SaveCompatibility_C', // Some sort of compatibility schematic with removed items in it
+const excludeSchematics: string[] = [
+    'Schematic_SaveCompatibility_C', // Some sort of compatibility schematic with removed items in it
 ];
 
-export function parseSchematics(categorizedDataClasses: CategorizedDataClasses, deps: SchematicDependencies) {
+export function parseSchematics(categorizedDataClasses: CategorizedRawClasses, deps: SchematicDependencies) {
   const { items } = deps;
   const schematics: ParsedClassInfoMap<SchematicInfo> = {};
 
@@ -82,13 +91,16 @@ export function parseSchematics(categorizedDataClasses: CategorizedDataClasses, 
     }
     let cost: ItemQuantity[] = [];
     if (entry.mCost) {
-      cost = parseCollection<any[]>(entry.mCost).map((data) => parseItemQuantity(data, items));
+      cost = parseCollection<SerializedItemAmount[]>(entry.mCost)!
+        .map((data) => parseItemQuantity(data, items));
     }
+
+    const cleanName = cleanString(entry.mDisplayName);
     schematics[entry.ClassName] = {
       slug: createSlugFromClassname(entry.ClassName),
-      name: entry.mDisplayName,
-      description: cleanDescription(entry.mDescription),
-      type: entry.mType,
+      name: cleanName,
+      description: cleanString(entry.mDescription),
+      type: parseUnlockType(entry.mType),
       techTier: parseInt(entry.mTechTier, 10),
       cost,
       timeToComplete: parseFloat(entry.mTimeToComplete),
@@ -109,29 +121,32 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
   data.forEach((unlockData) => {
     switch (unlockData.Class) {
       case 'BP_UnlockRecipe_C': {
-        unlocks.recipes = parseCollection<string[]>(unlockData.mRecipes)
-          .map((r) => parseBlueprintClassname(r))
-          .filter((r) => !converterRecipes.includes(r));
+        unlocks.recipes = parseCollection<string[]>(unlockData.mRecipes)!
+          .map((r) => parseBlueprintClassname(r));
         break;
       }
       case 'BP_UnlockSchematic_C': {
-        unlocks.schematics = parseCollection<string[]>(unlockData.mSchematics).map((r) => parseBlueprintClassname(r));
+        unlocks.schematics = parseCollection<string[]>(unlockData.mSchematics)!
+          .map((r) => parseBlueprintClassname(r));
+        break;
+      }
+      case 'BP_UnlockGiveItem_C': {
+        unlocks.giveItems = parseCollection<SerializedItemAmount[]>(unlockData.mItemsToGive)!
+          .map((i) => parseItemQuantity(i, items));
         break;
       }
       case 'BP_UnlockScannableResource_C': {
-        unlocks.scannerResources = parseCollection<any[]>(unlockData.mResourcePairsToAddToScanner).map((r) => parseBlueprintClassname(r.ResourceDescriptor));
+        unlocks.scannerResources = parseCollection<{ ResourceDescriptor: string }[]>(unlockData.mResourcePairsToAddToScanner)!
+          .map((r) => parseBlueprintClassname(r.ResourceDescriptor));
         break;
       }
       case 'BP_UnlockScannableObject_C': {
-        unlocks.scannerObject = true;
+        unlocks.scannerObjects = parseCollection<{ ItemDescriptor: string }[]>(unlockData.mScannableObjects)!
+          .map((r) => parseBlueprintClassname(r.ItemDescriptor));
         break;
       }
-      case 'BP_UnlockInventorySlot_C': {
-        unlocks.inventorySlots = parseInt(unlockData.mNumInventorySlotsToUnlock, 10);
-        break;
-      }
-      case 'BP_UnlockArmEquipmentSlot_C': {
-        unlocks.equipmentHandSlots = parseInt(unlockData.mNumArmEquipmentSlotsToUnlock, 10);
+      case 'BP_UnlockMap_C': {
+        unlocks.map = true;
         break;
       }
       case 'BP_UnlockBuildEfficiency_C': {
@@ -142,39 +157,69 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
         unlocks.overclockPanel = true;
         break;
       }
-      case 'BP_UnlockMap_C': {
-        unlocks.map = true;
+      case 'BP_UnlockBuildProductionBoost_C': {
+        unlocks.overclockPanel = true;
         break;
       }
-      case 'BP_UnlockGiveItem_C': {
-        unlocks.giveItems = parseCollection<any[]>(unlockData.mItemsToGive).map((i) => parseItemQuantity(i, items));
-        break;
-      }
-      case 'BP_UnlockEmote_C': {
-        unlocks.emotes = parseCollection<string[]>(unlockData.mEmotes).map((str) => {
-          const emoteRegex = /\/Game\/FactoryGame\/Emotes\/Emote_(.+)\./;
-          const match = emoteRegex.exec(str);
-          if (match) {
-            return match[1];
-          } else {
-            // eslint-disable-next-line no-console
-            console.warn(`WARNING: Unknown emote blueprint: [${str}]`);
-            return 'UNKNOWN';
-          }
-        });
-        break;
-      }
-      case 'BP_UnlockInfoOnly_C': {
+      case 'BP_UnlockCustomizer_C': {
         unlocks.customizer = true;
         break;
       }
+      case 'BP_UnlockBlueprints_C': {
+        unlocks.customizer = true;
+        break;
+      }
+      case 'BP_UnlockInventorySlot_C': {
+        unlocks.inventorySlots = parseInt(unlockData.mNumInventorySlotsToUnlock, 10);
+        break;
+      }
+      case 'BP_UnlockArmEquipmentSlot_C': {
+        unlocks.equipmentHandSlots = parseInt(unlockData.mNumArmEquipmentSlotsToUnlock, 10);
+        break;
+      }
+      case 'BP_UnlockCentralStorageUploadSpeed_C': {
+        unlocks.dimensionalStorageNewUploadPenalty = parseFloat(unlockData.mUploadSpeedPercentageDecrease) / 100;
+        break;
+      }
+      case 'BP_UnlockCentralStorageItemLimit_C': {
+        unlocks.dimensionalStorageStackIncrease = parseInt(unlockData.mItemStackLimitIncrease, 10);
+        break;
+      }
+      case 'BP_UnlockCentralStorageUploadSlots_C': {
+        unlocks.dimensionalStorageStackIncrease = parseInt(unlockData.mNumSlotsToUnlock, 10);
+        break;
+      }
+      case 'FGUnlockCustomization': {
+        unlocks.customizations = parseCollection<string[]>(unlockData.mCustomizationUnlocks)!
+          .map((str) => {
+            return parseBlueprintClassname(str);
+          });
+        break;
+      }
+      case 'BP_UnlockEmote_C': {
+        unlocks.emotes = parseCollection<string[]>(unlockData.mEmotes)!
+          .map((str) => {
+            return parseBlueprintClassname(str);
+          });
+        break;
+      }
       case 'FGUnlockTape': {
-        unlocks.tape = true;
+        unlocks.tapes = parseCollection<string[]>(unlockData.mTapeUnlocks)!
+          .map((str) => {
+            return parseBlueprintClassname(str);
+          });
+        break;
+      }
+      case 'BP_UnlockCheckmark_C': {
+        unlocks.checkmark = true;
+        break;
+      }
+      case 'BP_UnlockInfoOnly_C': {
         break;
       }
       default: {
         // eslint-disable-next-line no-console
-        console.warn(`WARNING: Unknown schematic unlock type: [${unlockData.Class}]`);
+        console.warn(`WARNING: Unknown schematic unlock type: <${unlockData.Class}>`);
         break;
       }
     }
@@ -183,23 +228,16 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
   return unlocks;
 }
 
-// No entry for these in docs
-const SUPPRESS_SCHEMATIC_WARNING = [
-  'Schematic_XMassTree_T1_C',
-  'Schematic_XMassTree_T2_C',
-  'Schematic_XMassTree_T3_C',
-  'Schematic_XMassTree_T4_C',
-];
 function validateSchematics(schematics: ParsedClassInfoMap<SchematicInfo>, deps: SchematicDependencies) {
   const { resources, productionRecipes, buildableRecipes, customizerRecipes } = deps;
   const slugs: string[] = [];
   Object.entries(schematics).forEach(([name, data]) => {
     if (!data.slug) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Blank slug for schematic: [${name}]`);
+      console.warn(`WARNING: Blank slug for schematic: <${name}>`);
     } else if (slugs.includes(data.slug)) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Duplicate schematic slug: [${data.slug}] of [${name}]`);
+      console.warn(`WARNING: Duplicate schematic slug: <${data.slug}> of <${name}>`);
     } else {
       slugs.push(data.slug);
     }
@@ -209,16 +247,16 @@ function validateSchematics(schematics: ParsedClassInfoMap<SchematicInfo>, deps:
         const recipeMissing = !(Object.keys(productionRecipes).includes(key) || Object.keys(buildableRecipes).includes(key) || Object.keys(customizerRecipes).includes(key));
         if (recipeMissing) {
           // eslint-disable-next-line no-console
-          console.warn(`WARNING: schematic unlocks unknown recipe [${key}]`);
+          console.warn(`WARNING: schematic unlocks unknown recipe <${key}>`);
         }
       });
     }
 
     if (data.unlocks.schematics) {
       data.unlocks.schematics.forEach((key) => {
-        if (!Object.keys(schematics).includes(key) && !SUPPRESS_SCHEMATIC_WARNING.includes(key)) {
+        if (!Object.keys(schematics).includes(key)) {
           // eslint-disable-next-line no-console
-          console.warn(`WARNING: schematic unlocks unknown schematic [${key}]`);
+          console.warn(`WARNING: schematic unlocks unknown schematic <${key}>`);
         }
       });
     }
@@ -231,7 +269,7 @@ function validateSchematics(schematics: ParsedClassInfoMap<SchematicInfo>, deps:
         }
         if (!Object.keys(resources).includes(key)) {
           // eslint-disable-next-line no-console
-          console.warn(`WARNING: schematic unlocks unknown resource [${key}]`);
+          console.warn(`WARNING: schematic unlocks unknown resource <${key}>`);
         }
       });
     }

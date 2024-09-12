@@ -16,7 +16,11 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test-cli": "npm run build && node ./dist/cli.js -i data/en-US.json -o data/parsed -m",
+    "cli": "npm run build && node ./dist/cli.js -i data/en-US.json -o data/parsed",
+    "parse": "npm run cli -- -p",
+    "meta": "npm run cli -- -m",
+    "split": "npm run cli -- -s",
+    "all": "npm run cli -- -pms",
     "lint": "eslint .",
     "prepare": "ts-patch install -s && npm run build",
     "np": "np --no-tests"
