@@ -1,29 +1,14 @@
-export interface SerializedColor {
-  R: number;
-  G: number;
-  B: number;
-  A: number;
-};
-
-export interface SerializedRange {
-  Min: number;
-  Max: number;
-};
-
-export interface SerializedItemAmount {
-  ItemClass: string;
-  Amount: number;
-};
-
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 export type TokenParser = {
   regex: RegExp;
-  getValue?: (text: string) => any;
+  getValue?: (text: string) => unknown;
 };
 
 export type Token = {
   type: string;
   text: string;
-  value: any;
+  value: unknown;
 };
 
 const TOKENS = {
@@ -56,12 +41,11 @@ const PARSERS: Record<string, TokenParser> = {
   [TOKENS.STRING]: { regex: /^[a-zA-Z0-9:\\/.'"_-]+/, getValue: (text) => text },
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-export function parseCollection<T>(text: string): T | null {
+export function parseCollection(text: string): unknown {
   if (text === "") {
     return null;
   }
-  return parseTokens(tokenize(text)) as T;
+  return parseTokens(tokenize(text));
 }
 
 function tokenize(inputText: string) {
@@ -99,9 +83,9 @@ function parseTokens(tokens: Token[]) {
   let i = 0;
 
   function parseTokensRecursive(isRoot?: boolean) {
-    let key: any = null;
-    let value: any = null;
-    let collection: any = null;
+    let key: unknown = null;
+    let value: unknown = null;
+    let collection: unknown = null;
 
     function pushValue() {
       if (key !== null) {
@@ -111,7 +95,8 @@ function parseTokens(tokens: Token[]) {
         else if (Array.isArray(collection)) {
           throw new Error("Syntax error: Mixed array and object");
         }
-        collection[key] = value;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (collection as any)[key as any] = value;
         key = null;
         value = null;
       }
@@ -122,7 +107,8 @@ function parseTokens(tokens: Token[]) {
         else if (!Array.isArray(collection)) {
           throw new Error("Syntax error: Mixed array and object");
         }
-        collection.push(value);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (collection as any).push(value);
         value = null;
       }
     }

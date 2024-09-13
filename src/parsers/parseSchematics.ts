@@ -3,7 +3,8 @@ import {
   ItemQuantity, parseBlueprintClassname,
   parseUnlockType,
 } from "@/utilities";
-import { parseCollection, SerializedItemAmount } from "@/utilities/deserialization";
+import { parseCollection } from "@/deserialization/collection-parser";
+import { SerializedItemAmount } from "@/deserialization/types";
 import { ParsedClassInfoMap, DocsRawClass } from "@/types";
 import { CategorizedRawClasses } from "@/class-categorizer/types";
 import { EventType, UnlockType } from "@/enums";
@@ -11,7 +12,7 @@ import { ItemInfo, ResourceInfo } from "./parseItems";
 import { ProductionRecipeInfo, BuildableRecipeInfo, CustomizerRecipeInfo } from "./parseRecipes";
 
 type SchematicsEntry = DocsRawClass & {
-  mUnlocks: any[];
+  mUnlocks: UnlockData[];
 };
 
 type UnlockData = Record<string, string> & {
@@ -92,7 +93,7 @@ export function parseSchematics(categorizedDataClasses: CategorizedRawClasses, d
     }
     let cost: ItemQuantity[] = [];
     if (entry.mCost) {
-      cost = parseCollection<SerializedItemAmount[]>(entry.mCost)!
+      cost = (parseCollection(entry.mCost) as SerializedItemAmount[])
         .map((data) => parseItemQuantity(data, items));
     }
 
@@ -122,27 +123,27 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
   data.forEach((unlockData) => {
     switch (unlockData.Class) {
       case "BP_UnlockRecipe_C": {
-        unlocks.recipes = parseCollection<string[]>(unlockData.mRecipes)!
+        unlocks.recipes = (parseCollection(unlockData.mRecipes) as string[])
           .map((r) => parseBlueprintClassname(r));
         break;
       }
       case "BP_UnlockSchematic_C": {
-        unlocks.schematics = parseCollection<string[]>(unlockData.mSchematics)!
+        unlocks.schematics = (parseCollection(unlockData.mSchematics) as string[])
           .map((r) => parseBlueprintClassname(r));
         break;
       }
       case "BP_UnlockGiveItem_C": {
-        unlocks.giveItems = parseCollection<SerializedItemAmount[]>(unlockData.mItemsToGive)!
+        unlocks.giveItems = (parseCollection(unlockData.mItemsToGive) as SerializedItemAmount[])
           .map((i) => parseItemQuantity(i, items));
         break;
       }
       case "BP_UnlockScannableResource_C": {
-        unlocks.scannerResources = parseCollection<{ ResourceDescriptor: string }[]>(unlockData.mResourcePairsToAddToScanner)!
+        unlocks.scannerResources = (parseCollection(unlockData.mResourcePairsToAddToScanner) as { ResourceDescriptor: string }[])
           .map((r) => parseBlueprintClassname(r.ResourceDescriptor));
         break;
       }
       case "BP_UnlockScannableObject_C": {
-        unlocks.scannerObjects = parseCollection<{ ItemDescriptor: string }[]>(unlockData.mScannableObjects)!
+        unlocks.scannerObjects = (parseCollection(unlockData.mScannableObjects) as { ItemDescriptor: string }[])
           .map((r) => parseBlueprintClassname(r.ItemDescriptor));
         break;
       }
@@ -191,21 +192,21 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
         break;
       }
       case "FGUnlockCustomization": {
-        unlocks.customizations = parseCollection<string[]>(unlockData.mCustomizationUnlocks)!
+        unlocks.customizations = (parseCollection(unlockData.mCustomizationUnlocks) as string[])
           .map((str) => {
             return parseBlueprintClassname(str);
           });
         break;
       }
       case "BP_UnlockEmote_C": {
-        unlocks.emotes = parseCollection<string[]>(unlockData.mEmotes)!
+        unlocks.emotes = (parseCollection(unlockData.mEmotes) as string[])
           .map((str) => {
             return parseBlueprintClassname(str);
           });
         break;
       }
       case "FGUnlockTape": {
-        unlocks.tapes = parseCollection<string[]>(unlockData.mTapeUnlocks)!
+        unlocks.tapes = (parseCollection(unlockData.mTapeUnlocks) as string[])
           .map((str) => {
             return parseBlueprintClassname(str);
           });

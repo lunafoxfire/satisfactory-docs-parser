@@ -38,7 +38,6 @@ export default tseslint.config(
       "no-console": "error",
       "@typescript-eslint/no-unnecessary-condition": "off",
       "@typescript-eslint/consistent-type-definitions": "off",
-      "@typescript-eslint/no-non-null-assertion": "off",
     },
   },
 );

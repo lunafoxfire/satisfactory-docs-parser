@@ -20,7 +20,7 @@ const OPTIONS = {
   "unknown-options-as-args": false,
 };
 
-const args: any = yargs(hideBin(process.argv))
+const args = yargs(hideBin(process.argv))
   .parserConfiguration(OPTIONS)
   .option("input", {
     alias: "i",
@@ -53,7 +53,16 @@ const args: any = yargs(hideBin(process.argv))
   .help()
   .argv;
 
-const { input: userInputPath, output: userOutputPath, parse, parseToFile, meta, split } = args;
+interface Args {
+  input: string;
+  output: string;
+  parse: boolean;
+  parseToFile: boolean | string;
+  meta: boolean | string;
+  split: boolean | string;
+}
+
+const { input: userInputPath, output: userOutputPath, parse, parseToFile, meta, split } = args as unknown as Args;
 validateArgs();
 
 const cwd = process.cwd();
@@ -129,22 +138,22 @@ if (parse || parseToFile) {
   }
 }
 
-function writeFileSafe(filePath: string, data: any) {
+function writeFileSafe(filePath: string, data: unknown) {
   const json = JSON.stringify(data, null, 2);
   const pathInfo = path.parse(filePath);
   fs.mkdirSync(pathInfo.dir, { recursive: true });
   fs.writeFileSync(filePath, json);
 }
 
-function isString(arg: any) {
+function isString(arg: unknown) {
   return typeof arg === "string";
 }
 
-function isBool(arg: any) {
+function isBool(arg: unknown) {
   return typeof arg === "boolean";
 }
 
-function isStringOrBool(arg: any) {
+function isStringOrBool(arg: unknown) {
   return typeof arg === "boolean" || typeof arg === "string";
 }
 

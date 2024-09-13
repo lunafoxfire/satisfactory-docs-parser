@@ -2,7 +2,8 @@ import {
   createBasicSlug, cleanString, standardizeItemDescriptor, equipmentNameToDescriptorName,
   parseStackSize, parseEquipmentSlot, parseColor, Color,
 } from "@/utilities";
-import { parseCollection, SerializedColor } from "@/utilities/deserialization";
+import { parseCollection } from "@/deserialization/collection-parser";
+import { SerializedColor } from "@/deserialization/types";
 import { ParsedClassInfoMap } from "@/types";
 import { CategorizedRawClasses } from "@/class-categorizer/types";
 import { EquipmentSlotType, EventType } from "@/enums";
@@ -131,7 +132,7 @@ function getItems(categorizedDataClasses: CategorizedRawClasses) {
 
     const meta: ItemMeta = {};
     if (isFluid) {
-      meta.fluidColor = parseColor(parseCollection<SerializedColor>(entry.mFluidColor)!);
+      meta.fluidColor = parseColor(parseCollection(entry.mFluidColor) as SerializedColor);
     }
     if (isFuel) {
       meta.energyValue = energyValue;
@@ -318,7 +319,7 @@ function getResources(categorizedDataClasses: CategorizedRawClasses) {
       nodes: nodeData,
       resourceWells: wellData,
       maxExtraction,
-      pingColor: parseColor(parseCollection<SerializedColor>(entry.mPingColor)!, true),
+      pingColor: parseColor(parseCollection(entry.mPingColor) as SerializedColor, true),
       collectionSpeed: parseFloat(entry.mCollectSpeedMultiplier),
       event: ficsmasItems.includes(entry.ClassName) ? "FICSMAS" : "NONE",
     };

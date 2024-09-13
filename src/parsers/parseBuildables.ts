@@ -2,7 +2,8 @@ import {
   createBasicSlug, createBuildableSlug, cleanString, buildableNameToDescriptorName,
   parseBlueprintClassname, ItemRate,
 } from "@/utilities";
-import { parseCollection, SerializedRange } from "@/utilities/deserialization";
+import { parseCollection } from "@/deserialization/collection-parser";
+import { SerializedRange } from "@/deserialization/types";
 import { ParsedClassInfoMap } from "@/types";
 import { CategorizedRawClasses } from "@/class-categorizer/types";
 import { EventType } from "@/enums";
@@ -172,7 +173,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, {
     let buildMenuPriority = 0;
     const descriptorInfo = categorizedDataClasses.buildableDescriptors.find((desc) => desc.ClassName === descriptorName);
     if (descriptorInfo) {
-      categories = parseCollection<string[]>(descriptorInfo.mSubCategories)!
+      categories = (parseCollection(descriptorInfo.mSubCategories) as string[])
         .map((data) => parseBlueprintClassname(data));
       buildMenuPriority = parseFloat(descriptorInfo.mBuildMenuPriority);
     }
@@ -234,7 +235,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, {
     // Extractor
     if (entry.mAllowedResourceForms) {
       isResourceExtractor = true;
-      const allowedResourceForms = parseCollection<string[]>(entry.mAllowedResourceForms)!;
+      const allowedResourceForms = parseCollection(entry.mAllowedResourceForms) as string[];
 
       let allowedResources: string[];
       if (entry.mAllowedResources === "") {
@@ -246,7 +247,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, {
         }
       }
       else {
-        allowedResources = parseCollection<string[]>(entry.mAllowedResources)!
+        allowedResources = (parseCollection(entry.mAllowedResources) as string[])
           .map((data) => parseBlueprintClassname(data));
       }
 
@@ -413,7 +414,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, {
 function addVehicles(categorizedDataClasses: CategorizedRawClasses, buildables: ParsedClassInfoMap<BuildableInfo>) {
   categorizedDataClasses.vehicles.forEach((entry) => {
     let isPowered = false;
-    const categories = parseCollection<string[]>(entry.mSubCategories)!
+    const categories = (parseCollection(entry.mSubCategories) as string[])
       .map((data) => parseBlueprintClassname(data));
     const buildMenuPriority = parseFloat(entry.mBuildMenuPriority);
 
@@ -431,7 +432,7 @@ function addVehicles(categorizedDataClasses: CategorizedRawClasses, buildables: 
     }
     if (entry.mPowerConsumption) {
       isPowered = true;
-      const powerConsumption = parseCollection<SerializedRange>(entry.mPowerConsumption)!;
+      const powerConsumption = parseCollection(entry.mPowerConsumption) as SerializedRange;
       meta.powerInfo = {
         consumption: (powerConsumption.Min + powerConsumption.Max) / 2,
         variableConsumption: {

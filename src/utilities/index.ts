@@ -2,7 +2,7 @@ import { ParsedClassInfoMap } from "@/types";
 import { ItemInfo } from "@/parsers/parseItems";
 import { BuildableInfo } from "@/parsers/parseBuildables";
 import { EquipmentSlotType, UnlockType } from "@/enums";
-import { SerializedColor, SerializedItemAmount } from "./deserialization";
+import { SerializedColor, SerializedItemAmount } from "@/deserialization/types";
 
 export type Color = {
   r: number;

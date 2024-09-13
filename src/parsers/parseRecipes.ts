@@ -3,7 +3,8 @@ import {
   createCustomizerSlug, buildableNameToDescriptorName, createRecipeSlug, createBuildableRecipeSlug,
   cleanString,
 } from "@/utilities";
-import { parseCollection, SerializedItemAmount } from "@/utilities/deserialization";
+import { parseCollection } from "@/deserialization/collection-parser";
+import { SerializedItemAmount } from "@/deserialization/types";
 import { ParsedClassInfoMap } from "@/types";
 import { CategorizedRawClasses } from "@/class-categorizer/types";
 import { EventType } from "@/enums";
@@ -98,7 +99,7 @@ function getMainRecipes(categorizedDataClasses: CategorizedRawClasses, { items, 
       return;
     }
 
-    const producedIn = parseCollection<string[]>(entry.mProducedIn)!
+    const producedIn = (parseCollection(entry.mProducedIn) as string[])
       .map((data) => parseClassnameFromPath(data));
 
     let isBuildRecipe = false;
@@ -127,12 +128,12 @@ function getMainRecipes(categorizedDataClasses: CategorizedRawClasses, { items, 
       console.warn(`WARNING: Recipe <${entry.ClassName}> can be produced in multiple machines, which is not supported! Machines: <${machines.join(", ")}>`);
     }
 
-    const ingredients = parseCollection<SerializedItemAmount[]>(entry.mIngredients)
+    const ingredients = (parseCollection(entry.mIngredients) as SerializedItemAmount[] | null)
       ?.map((data) => parseItemQuantity(data, items))
       ?? [];
 
     if (isBuildRecipe) {
-      const product = parseBuildableQuantity(parseCollection<SerializedItemAmount[]>(entry.mProduct)![0], buildables);
+      const product = parseBuildableQuantity((parseCollection(entry.mProduct) as SerializedItemAmount[])[0], buildables);
       const cleanName = cleanString(entry.mDisplayName);
       buildableRecipes[entry.ClassName] = {
         slug: createBuildableRecipeSlug(entry.ClassName, cleanName),
@@ -144,7 +145,7 @@ function getMainRecipes(categorizedDataClasses: CategorizedRawClasses, { items, 
     }
     else {
       const isAlternate = entry.mDisplayName.startsWith("Alternate:") || entry.ClassName.startsWith("Recipe_Alternate");
-      const products = parseCollection<SerializedItemAmount[]>(entry.mProduct)!
+      const products = (parseCollection(entry.mProduct) as SerializedItemAmount[])
         .map((data) => parseItemQuantity(data, items));
 
       const cleanName = cleanString(entry.mDisplayName);
@@ -177,7 +178,7 @@ function getCustomizerRecipes(categorizedDataClasses: CategorizedRawClasses, { i
     let isPatternRemover = false;
 
     if (entry.mIngerdients) {
-      ingredients = parseCollection<SerializedItemAmount[]>(entry.mIngredients)!
+      ingredients = (parseCollection(entry.mIngredients) as SerializedItemAmount[])
         .map((data) => parseItemQuantity(data, items));
     }
     else {
