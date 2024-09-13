@@ -1,54 +1,54 @@
 #!/usr/bin/env node
-import fs from 'fs';
-import path from 'path';
-import yargs from 'yargs/yargs';
-import { hideBin } from 'yargs/helpers';
-import { parseDocs, parseDocsMetaOnly, readTheDocs } from './index';
+import fs from "fs";
+import path from "path";
+import yargs from "yargs/yargs";
+import { hideBin } from "yargs/helpers";
+import { parseDocs, parseDocsMetaOnly, readTheDocs } from "./index";
 
 const OPTIONS = {
-  'short-option-groups': true,
-  'camel-case-expansion': true,
-  'dot-notation': false,
-  'parse-numbers': false,
-  'boolean-negation': false,
-  'duplicate-arguments-array': false,
-  'greedy-arrays': false,
-  'nargs-eats-options': false,
-  'halt-at-non-option': true,
-  'strip-aliased': true,
-  'strip-dashed': true,
-  'unknown-options-as-args': false,
+  "short-option-groups": true,
+  "camel-case-expansion": true,
+  "dot-notation": false,
+  "parse-numbers": false,
+  "boolean-negation": false,
+  "duplicate-arguments-array": false,
+  "greedy-arrays": false,
+  "nargs-eats-options": false,
+  "halt-at-non-option": true,
+  "strip-aliased": true,
+  "strip-dashed": true,
+  "unknown-options-as-args": false,
 };
 
 const args: any = yargs(hideBin(process.argv))
   .parserConfiguration(OPTIONS)
-  .option('input', {
-    alias: 'i',
-    describe: 'Path to the Docs file.',
+  .option("input", {
+    alias: "i",
+    describe: "Path to the Docs file.",
     nargs: 1,
     demandOption: true,
   })
-  .option('output', {
-    alias: 'o',
-    describe: 'Directory to output parsed files to.',
+  .option("output", {
+    alias: "o",
+    describe: "Directory to output parsed files to.",
     nargs: 1,
     demandOption: true,
   })
-  .option('parse', {
-    alias: 'p',
-    describe: 'Parses the Docs file and writes one file per category to the output directory.',
+  .option("parse", {
+    alias: "p",
+    describe: "Parses the Docs file and writes one file per category to the output directory.",
   })
-  .option('parse-to-file', {
-    alias: 'f',
-    describe: 'Outputs a single data.json file instead of individual files. Optionally a filename may be provided.',
+  .option("parse-to-file", {
+    alias: "f",
+    describe: "Outputs a single data.json file instead of individual files. Optionally a filename may be provided.",
   })
-  .option('meta', {
-    alias: 'm',
-    describe: 'Outputs metadata to <output-directory>/meta. Optionally a path may be provided. Relative paths are relative to output directory.',
+  .option("meta", {
+    alias: "m",
+    describe: "Outputs metadata to <output-directory>/meta. Optionally a path may be provided. Relative paths are relative to output directory.",
   })
-  .option('split', {
-    alias: 's',
-    describe: 'Splits the docs file into one file per superclass to <output-directory>/docs. Optionally a path may be provided. Relative paths are relative to output directory.',
+  .option("split", {
+    alias: "s",
+    describe: "Splits the docs file into one file per superclass to <output-directory>/docs. Optionally a path may be provided. Relative paths are relative to output directory.",
   })
   .help()
   .argv;
@@ -66,12 +66,13 @@ if (split) {
   let splitPath: string;
   if (isString(split)) {
     splitPath = path.isAbsolute(split) ? split : path.join(outputPath, split);
-  } else {
-    splitPath = path.join(outputPath, './docs');
+  }
+  else {
+    splitPath = path.join(outputPath, "./docs");
   }
 
   // eslint-disable-next-line no-console
-  console.log('Splitting docs...');
+  console.log("Splitting docs...");
   const classMap = readTheDocs(docsFile);
 
   // eslint-disable-next-line no-console
@@ -85,12 +86,13 @@ if (meta) {
   let metaPath: string;
   if (isString(meta)) {
     metaPath = path.isAbsolute(meta) ? meta : path.join(outputPath, meta);
-  } else {
-    metaPath = path.join(outputPath, './meta');
+  }
+  else {
+    metaPath = path.join(outputPath, "./meta");
   }
 
   // eslint-disable-next-line no-console
-  console.log('Parsing metadata...');
+  console.log("Parsing metadata...");
   const metadata = parseDocsMetaOnly(docsFile);
   const superclassMetadata = {
     superclassCount: metadata.superclassCount,
@@ -100,7 +102,7 @@ if (meta) {
 
   // eslint-disable-next-line no-console
   console.log(`Writing metadata to ${metaPath}`);
-  writeFileSafe(path.join(metaPath, 'superclasses.json'), superclassMetadata);
+  writeFileSafe(path.join(metaPath, "superclasses.json"), superclassMetadata);
   Object.entries(metadata.superclasses).forEach(([key, data]) => {
     writeFileSafe(path.join(metaPath, `superclasses/${key}.json`), data);
   });
@@ -109,18 +111,18 @@ if (meta) {
   });
 }
 
-
 if (parse || parseToFile) {
   // eslint-disable-next-line no-console
-  console.log('Parsing docs...');
+  console.log("Parsing docs...");
   const data = parseDocs(docsFile);
 
   // eslint-disable-next-line no-console
   console.log(`Writing data to ${outputPath}`);
   if (parseToFile) {
-    const dataFilename = isString(parseToFile) ? parseToFile : 'data.json';
+    const dataFilename = isString(parseToFile) ? parseToFile : "data.json";
     writeFileSafe(path.join(outputPath, dataFilename), data);
-  } else {
+  }
+  else {
     Object.entries(data).forEach(([key, data]) => {
       writeFileSafe(path.join(outputPath, `${key}.json`), data);
     });
@@ -135,37 +137,37 @@ function writeFileSafe(filePath: string, data: any) {
 }
 
 function isString(arg: any) {
-  return typeof arg === 'string';
+  return typeof arg === "string";
 }
 
 function isBool(arg: any) {
-  return typeof arg === 'boolean';
+  return typeof arg === "boolean";
 }
 
 function isStringOrBool(arg: any) {
-  return typeof arg === 'boolean' || typeof arg === 'string';
+  return typeof arg === "boolean" || typeof arg === "string";
 }
 
 function validateArgs() {
   if (!isString(userInputPath)) {
-    throw new Error('Invalid value for option: input');
+    throw new Error("Invalid value for option: input");
   }
   if (!isString(userOutputPath)) {
-    throw new Error('Invalid value for option: output');
+    throw new Error("Invalid value for option: output");
   }
   if (parse && !isBool(parse)) {
-    throw new Error('Invalid value for option: parse');
+    throw new Error("Invalid value for option: parse");
   }
   if (parseToFile && !isStringOrBool(parseToFile)) {
-    throw new Error('Invalid value for option: single-file');
+    throw new Error("Invalid value for option: single-file");
   }
   if (meta && !isStringOrBool(meta)) {
-    throw new Error('Invalid value for option: meta');
+    throw new Error("Invalid value for option: meta");
   }
   if (split && !isStringOrBool(split)) {
-    throw new Error('Invalid value for option: split');
+    throw new Error("Invalid value for option: split");
   }
   if (!(parse || parseToFile || meta || split)) {
-    throw new Error('At least one of --parse, --parse-to-file, --meta, or --split must be specified or there will be no output.');
+    throw new Error("At least one of --parse, --parse-to-file, --meta, or --split must be specified or there will be no output.");
   }
 }

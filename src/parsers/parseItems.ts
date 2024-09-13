@@ -1,98 +1,98 @@
 import {
   createBasicSlug, cleanString, standardizeItemDescriptor, equipmentNameToDescriptorName,
-  parseStackSize, parseEquipmentSlot, parseColor, Color
-} from '@/utilities';
-import { parseCollection, SerializedColor } from '@/utilities/deserialization';
-import { ParsedClassInfoMap } from '@/types';
-import { CategorizedRawClasses } from '@/class-categorizer/types';
-import { EquipmentSlotType, EventType } from '@/enums';
+  parseStackSize, parseEquipmentSlot, parseColor, Color,
+} from "@/utilities";
+import { parseCollection, SerializedColor } from "@/utilities/deserialization";
+import { ParsedClassInfoMap } from "@/types";
+import { CategorizedRawClasses } from "@/class-categorizer/types";
+import { EquipmentSlotType, EventType } from "@/enums";
 
 export interface ItemInfo {
-  slug: string,
-  name: string,
-  description: string,
-  stackSize: number,
-  sinkPoints: number,
-  isFluid: boolean,
-  isFuel: boolean,
-  isBiomass: boolean,
-  isRadioactive: boolean,
-  isEquipment: boolean,
-  meta: ItemMeta,
-  event: EventType,
+  slug: string;
+  name: string;
+  description: string;
+  stackSize: number;
+  sinkPoints: number;
+  isFluid: boolean;
+  isFuel: boolean;
+  isBiomass: boolean;
+  isRadioactive: boolean;
+  isEquipment: boolean;
+  meta: ItemMeta;
+  event: EventType;
 }
 
 export interface ItemMeta {
-  fluidColor?: Color,
-  energyValue?: number,
-  radioactiveDecay?: number,
-  equipmentInfo?: EquipmentMeta,
+  fluidColor?: Color;
+  energyValue?: number;
+  radioactiveDecay?: number;
+  equipmentInfo?: EquipmentMeta;
 }
 
 export interface EquipmentMeta {
-  slot: EquipmentSlotType,
-  healthGain?: number,
-  energyConsumption?: number,
-  sawDownTreeTime?: number,
-  damage?: number,
-  magazineSize?: number,
-  reloadTime?: number,
-  fireRate?: number,
-  attackDistance?: number,
-  filterDuration?: number,
-  sprintSpeedFactor?: number,
-  jumpSpeedFactor?: number,
-  explosionDamage?: number,
-  explosionRadius?: number,
-  detectionRange?: number,
+  slot: EquipmentSlotType;
+  healthGain?: number;
+  energyConsumption?: number;
+  sawDownTreeTime?: number;
+  damage?: number;
+  magazineSize?: number;
+  reloadTime?: number;
+  fireRate?: number;
+  attackDistance?: number;
+  filterDuration?: number;
+  sprintSpeedFactor?: number;
+  jumpSpeedFactor?: number;
+  explosionDamage?: number;
+  explosionRadius?: number;
+  detectionRange?: number;
 }
 
 export interface ResourceInfo {
-  itemClass: string,
-  form: string,
-  nodes?: NodeCounts,
-  resourceWells?: WellCounts,
-  maxExtraction: number,
-  pingColor: Color,
-  collectionSpeed: number,
-  event: EventType,
+  itemClass: string;
+  form: string;
+  nodes?: NodeCounts;
+  resourceWells?: WellCounts;
+  maxExtraction: number;
+  pingColor: Color;
+  collectionSpeed: number;
+  event: EventType;
 }
 
 export interface NodeCounts {
-  impure: number,
-  normal: number,
-  pure: number,
+  impure: number;
+  normal: number;
+  pure: number;
 }
 
 export interface WellCounts {
-  impure: number,
-  normal: number,
-  pure: number,
-  wells: number,
+  impure: number;
+  normal: number;
+  pure: number;
+  wells: number;
 }
 
 const ficsmasItems: string[] = [
-    'BP_EquipmentDescriptorCandyCane_C',
-    'Desc_CandyCane_C',
-    'Desc_Gift_C',
-    'Desc_Snow_C',
-    'Desc_SnowballProjectile_C',
-    'Desc_XmasBall1_C',
-    'Desc_XmasBall2_C',
-    'Desc_XmasBall3_C',
-    'Desc_XmasBall4_C',
-    'Desc_XmasBallCluster_C',
-    'Desc_XmasBow_C',
-    'Desc_XmasBranch_C',
-    'Desc_XmasStar_C',
-    'Desc_XmasWreath_C',
-    'Desc_CandyCaneDecor_C',
-    'Desc_Snowman_C',
-    'Desc_WreathDecor_C',
+  "BP_EquipmentDescriptorCandyCane_C",
+  "Desc_CandyCane_C",
+  "Desc_Gift_C",
+  "Desc_Snow_C",
+  "Desc_SnowballProjectile_C",
+  "Desc_XmasBall1_C",
+  "Desc_XmasBall2_C",
+  "Desc_XmasBall3_C",
+  "Desc_XmasBall4_C",
+  "Desc_XmasBallCluster_C",
+  "Desc_XmasBow_C",
+  "Desc_XmasBranch_C",
+  "Desc_XmasStar_C",
+  "Desc_XmasWreath_C",
+  "Desc_CandyCaneDecor_C",
+  "Desc_Snowman_C",
+  "Desc_WreathDecor_C",
 ];
 
 const ficsmasEquip: string[] = [
-    'Equip_CandyCaneBasher_C',
+  "Equip_CandyCaneBasher_C",
 ];
 
 const excludeItems: string[] = [];
@@ -114,7 +114,6 @@ export function parseItems(categorizedDataClasses: CategorizedRawClasses) {
   };
 }
 
-
 function getItems(categorizedDataClasses: CategorizedRawClasses) {
   const items: ParsedClassInfoMap<ItemInfo> = {};
 
@@ -126,7 +125,7 @@ function getItems(categorizedDataClasses: CategorizedRawClasses) {
     const energyValue = parseFloat(entry.mEnergyValue);
     const radioactiveDecay = parseFloat(entry.mRadioactiveDecay);
 
-    const isFluid = entry.mForm === 'RF_LIQUID' || entry.mForm === 'RF_GAS';
+    const isFluid = entry.mForm === "RF_LIQUID" || entry.mForm === "RF_GAS";
     const isFuel = energyValue > 0;
     const isRadioactive = radioactiveDecay > 0;
 
@@ -154,7 +153,7 @@ function getItems(categorizedDataClasses: CategorizedRawClasses) {
       isRadioactive,
       isEquipment: false,
       meta,
-      event: ficsmasItems.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
+      event: ficsmasItems.includes(entry.ClassName) ? "FICSMAS" : "NONE",
     };
   });
 
@@ -179,7 +178,7 @@ function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedData
       return;
     }
 
-    if (entry.ClassName === 'BP_ConsumeableEquipment_C') {
+    if (entry.ClassName === "BP_ConsumeableEquipment_C") {
       categorizedDataClasses.consumables.forEach((consumableInfo) => {
         const key = standardizeItemDescriptor(consumableInfo.ClassName);
         const item = items[key];
@@ -192,7 +191,7 @@ function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedData
         item.isEquipment = true;
         item.meta.equipmentInfo = ({} as EquipmentMeta);
         item.meta.equipmentInfo.slot = parseEquipmentSlot(entry.mEquipmentSlot);
-        item.event = ficsmasItems.includes(consumableInfo.ClassName) ? 'FICSMAS' : 'NONE';
+        item.event = ficsmasItems.includes(consumableInfo.ClassName) ? "FICSMAS" : "NONE";
 
         if (consumableInfo.mHealthGain) {
           item.meta.equipmentInfo.healthGain = parseFloat(consumableInfo.mHealthGain);
@@ -212,7 +211,7 @@ function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedData
     item.isEquipment = true;
     item.meta.equipmentInfo = ({} as EquipmentMeta);
     item.meta.equipmentInfo.slot = parseEquipmentSlot(entry.mEquipmentSlot);
-    item.event = ficsmasEquip.includes(entry.ClassName) ? 'FICSMAS' : 'NONE';
+    item.event = ficsmasEquip.includes(entry.ClassName) ? "FICSMAS" : "NONE";
 
     if (entry.mEnergyConsumption) {
       item.meta.equipmentInfo.energyConsumption = parseFloat(entry.mEnergyConsumption);
@@ -254,7 +253,7 @@ function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedData
 }
 
 // TODO: This is now out of date
-const RESOURCE_NODE_DATA: { [key: string]: NodeCounts } = {
+const RESOURCE_NODE_DATA: Record<string, NodeCounts> = {
   // 'Desc_OreIron_C': { impure: 33, normal: 41, pure: 46 },
   // 'Desc_OreCopper_C': { impure: 9, normal: 28, pure: 12 },
   // 'Desc_Stone_C': { impure: 12, normal: 47, pure: 27 },
@@ -267,7 +266,7 @@ const RESOURCE_NODE_DATA: { [key: string]: NodeCounts } = {
   // 'Desc_LiquidOil_C': { impure: 10, normal: 12, pure: 8 },
 };
 
-const RESOURCE_WELL_DATA: { [key: string]: WellCounts } = {
+const RESOURCE_WELL_DATA: Record<string, WellCounts> = {
   // 'Desc_Water_C': { impure: 5, normal: 8, pure: 42, wells: 8 },
   // 'Desc_LiquidOil_C': { impure: 6, normal: 3, pure: 3, wells: 2 },
   // 'Desc_NitrogenGas_C': { impure: 2, normal: 7, pure: 36, wells: 6 },
@@ -283,30 +282,31 @@ function getResources(categorizedDataClasses: CategorizedRawClasses) {
     const wellData = RESOURCE_WELL_DATA[entry.ClassName];
     let maxExtraction = 0;
 
-    if (entry.ClassName === 'Desc_Water_C') {
+    if (entry.ClassName === "Desc_Water_C") {
       maxExtraction = Infinity;
-    } else {
+    }
+    else {
       if (nodeData) {
         let multiplier = 1;
         let maxThroughput = Infinity;
-        if (entry.mForm === 'RF_SOLID') {
+        if (entry.mForm === "RF_SOLID") {
           multiplier = 4;
           maxThroughput = 780;
         }
-        if (entry.ClassName === 'Desc_LiquidOil_C') {
+        if (entry.ClassName === "Desc_LiquidOil_C") {
           multiplier = 2;
           maxThroughput = 600;
         }
-        maxExtraction +=
-          Math.min(30 * multiplier * MAX_OVERCLOCK, maxThroughput) * nodeData.impure
+        maxExtraction
+          += Math.min(30 * multiplier * MAX_OVERCLOCK, maxThroughput) * nodeData.impure
           + Math.min(60 * multiplier * MAX_OVERCLOCK, maxThroughput) * nodeData.normal
           + Math.min(120 * multiplier * MAX_OVERCLOCK, maxThroughput) * nodeData.pure;
       }
       if (wellData) {
         const multiplier = 1;
         const maxThroughput = 600;
-        maxExtraction +=
-          Math.min(30 * multiplier * MAX_OVERCLOCK, maxThroughput) * wellData.impure
+        maxExtraction
+          += Math.min(30 * multiplier * MAX_OVERCLOCK, maxThroughput) * wellData.impure
           + Math.min(60 * multiplier * MAX_OVERCLOCK, maxThroughput) * wellData.normal
           + Math.min(120 * multiplier * MAX_OVERCLOCK, maxThroughput) * wellData.pure;
       }
@@ -320,7 +320,7 @@ function getResources(categorizedDataClasses: CategorizedRawClasses) {
       maxExtraction,
       pingColor: parseColor(parseCollection<SerializedColor>(entry.mPingColor)!, true),
       collectionSpeed: parseFloat(entry.mCollectSpeedMultiplier),
-      event: ficsmasItems.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
+      event: ficsmasItems.includes(entry.ClassName) ? "FICSMAS" : "NONE",
     };
   });
 
@@ -333,10 +333,12 @@ function validateItems(items: ParsedClassInfoMap<ItemInfo>) {
     if (!data.slug) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Blank slug for item: <${name}>`);
-    } else if (slugs.includes(data.slug)) {
+    }
+    else if (slugs.includes(data.slug)) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Duplicate item slug: <${data.slug}> of <${name}>`);
-    } else {
+    }
+    else {
       slugs.push(data.slug);
     }
   });

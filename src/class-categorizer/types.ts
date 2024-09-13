@@ -1,29 +1,21 @@
-import { DocsRawClass } from '@/types';
+import { DocsRawClass } from "@/types";
 
 export type CategoryKey =
-  'itemDescriptors'
-  | 'resources'
-  | 'biomass'
-  | 'consumables'
-  | 'equipment'
+  "itemDescriptors"
+  | "resources"
+  | "biomass"
+  | "consumables"
+  | "equipment"
 
-  | 'buildableDescriptors'
-  | 'buildables'
-  | 'vehicles'
+  | "buildableDescriptors"
+  | "buildables"
+  | "vehicles"
 
-  | 'recipes'
-  | 'customizerRecipes'
+  | "recipes"
+  | "customizerRecipes"
 
-  | 'schematics';
+  | "schematics";
 
-export type ClassCategories = {
-  [key: string]: CategoryKey[],
-};
-
-export type CategorizedClasses = {
-  [key in CategoryKey]: string[];
-};
-
-export type CategorizedRawClasses = {
-  [key in CategoryKey]: DocsRawClass[];
-};
+export type ClassCategories = Record<string, CategoryKey[]>;
+export type CategorizedClasses = Record<CategoryKey, string[]>;
+export type CategorizedRawClasses = Record<CategoryKey, DocsRawClass[]>;

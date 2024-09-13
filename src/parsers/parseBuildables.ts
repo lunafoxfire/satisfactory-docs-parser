@@ -1,122 +1,122 @@
 import {
   createBasicSlug, createBuildableSlug, cleanString, buildableNameToDescriptorName,
   parseBlueprintClassname, ItemRate,
-} from '@/utilities';
-import { parseCollection, SerializedRange } from '@/utilities/deserialization';
-import { ParsedClassInfoMap } from '@/types';
-import { CategorizedRawClasses } from '@/class-categorizer/types';
-import { EventType } from '@/enums';
-import { ItemInfo, ResourceInfo } from './parseItems';
+} from "@/utilities";
+import { parseCollection, SerializedRange } from "@/utilities/deserialization";
+import { ParsedClassInfoMap } from "@/types";
+import { CategorizedRawClasses } from "@/class-categorizer/types";
+import { EventType } from "@/enums";
+import { ItemInfo, ResourceInfo } from "./parseItems";
 
 export interface BuildableInfo {
-  slug: string,
-  name: string,
-  description: string,
-  categories: string[],
-  buildMenuPriority: number,
-  isPowered: boolean,
-  isOverclockable: boolean,
-  isProduction: boolean,
-  isResourceExtractor: boolean,
-  isGenerator: boolean,
-  isVehicle: boolean,
-  meta: BuildableMeta,
-  event: EventType,
+  slug: string;
+  name: string;
+  description: string;
+  categories: string[];
+  buildMenuPriority: number;
+  isPowered: boolean;
+  isOverclockable: boolean;
+  isProduction: boolean;
+  isResourceExtractor: boolean;
+  isGenerator: boolean;
+  isVehicle: boolean;
+  meta: BuildableMeta;
+  event: EventType;
 }
 
 export interface BuildableMeta {
-  powerInfo?: PoweredMeta,
-  overclockInfo?: OverclockMeta,
-  extractorInfo?: ResourceExtractorMeta,
-  generatorInfo?: GeneratorMeta,
-  vehicleInfo?: VehicleMeta,
-  size?: BuildableSize,
-  beltSpeed?: number,
-  inventorySize?: number,
-  powerStorageCapacity?: number,
-  flowLimit?: number,
-  headLift?: number,
-  headLiftMax?: number,
-  fluidStorageCapacity?: number,
-  radarInfo?: RadarTowerMeta,
+  powerInfo?: PoweredMeta;
+  overclockInfo?: OverclockMeta;
+  extractorInfo?: ResourceExtractorMeta;
+  generatorInfo?: GeneratorMeta;
+  vehicleInfo?: VehicleMeta;
+  size?: BuildableSize;
+  beltSpeed?: number;
+  inventorySize?: number;
+  powerStorageCapacity?: number;
+  flowLimit?: number;
+  headLift?: number;
+  headLiftMax?: number;
+  fluidStorageCapacity?: number;
+  radarInfo?: RadarTowerMeta;
 }
 
 export interface PoweredMeta {
-  consumption: number,
-  variableConsumption?: VariablePower,
+  consumption: number;
+  variableConsumption?: VariablePower;
 }
 
 export interface OverclockMeta {
-  exponent: number,
+  exponent: number;
 }
 
 export interface ResourceExtractorMeta {
-  allowedResourceForms: string[],
-  allowedResources: string[],
-  resourceExtractSpeed: number,
+  allowedResourceForms: string[];
+  allowedResources: string[];
+  resourceExtractSpeed: number;
 }
 
 export interface GeneratorMeta {
-  powerProduction: number,
-  variablePowerProduction?: VariablePower,
-  fuels: FuelConsumption[],
+  powerProduction: number;
+  variablePowerProduction?: VariablePower;
+  fuels: FuelConsumption[];
 }
 
 export interface VehicleMeta {
-  fuelConsumption: number,
+  fuelConsumption: number;
 }
 
 export interface RadarTowerMeta {
-  minRevealRadius: number,
-  maxRevealRadius: number,
-  expansionSteps: number,
-  expansionInterval: number,
+  minRevealRadius: number;
+  maxRevealRadius: number;
+  expansionSteps: number;
+  expansionInterval: number;
 }
 
 export interface BuildableSize {
-  length: number,
-  width: number,
-  height: number,
+  length: number;
+  width: number;
+  height: number;
 }
 
 export interface VariablePower {
-  cycleTime: number,
-  minimum: number,
-  maximum: number,
+  cycleTime: number;
+  minimum: number;
+  maximum: number;
 }
 
 export interface FuelConsumption {
-  fuel: ItemRate,
-  supplement?: ItemRate,
-  byproduct?: ItemRate,
+  fuel: ItemRate;
+  supplement?: ItemRate;
+  byproduct?: ItemRate;
 }
 
 interface BuildableDependencies {
-  items: ParsedClassInfoMap<ItemInfo>,
-  resources: ParsedClassInfoMap<ResourceInfo>,
+  items: ParsedClassInfoMap<ItemInfo>;
+  resources: ParsedClassInfoMap<ResourceInfo>;
 }
 
 const ficsmasBuildables: string[] = [
-    'Build_XmassTree_C',
-    'Build_WreathDecor_C',
-    'Build_CandyCaneDecor_C',
-    'Build_Snowman_C',
-    'Build_TreeGiftProducer_C',
-    'Build_SnowDispenser_C',
-    'Build_XmassLightsLine_C',
+  "Build_XmassTree_C",
+  "Build_WreathDecor_C",
+  "Build_CandyCaneDecor_C",
+  "Build_Snowman_C",
+  "Build_TreeGiftProducer_C",
+  "Build_SnowDispenser_C",
+  "Build_XmassLightsLine_C",
 ];
 
 const excludeBuildables: string[] = [
   // Old buildables with no recipe
-  'Build_JumpPad_C',
-  'Build_JumpPadTilted_C',
-  'Build_PillarTop_C',
-  'Build_SteelWall_8x4_C',
+  "Build_JumpPad_C",
+  "Build_JumpPadTilted_C",
+  "Build_PillarTop_C",
+  "Build_SteelWall_8x4_C",
 ];
 
 // From the wiki, not in the docs :c
 // TODO: Make this up-to-date
-const BUILDABLE_SIZES: { [key: string]: BuildableSize } = {
+const BUILDABLE_SIZES: Record<string, BuildableSize> = {
   //   'Desc_TradingPost_C': { width: 14, length: 26, height: 28 },
   //   'Desc_Mam_C': { width: 5, length: 9, height: 6 },
   //   'Desc_SpaceElevator_C': { width: 54, length: 54, height: 118 },
@@ -175,7 +175,8 @@ export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, {
       categories = parseCollection<string[]>(descriptorInfo.mSubCategories)!
         .map((data) => parseBlueprintClassname(data));
       buildMenuPriority = parseFloat(descriptorInfo.mBuildMenuPriority);
-    } else {
+    }
+    else {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Buildable descriptor missing for buildable: <${entry.ClassName}>`);
     }
@@ -196,7 +197,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, {
         };
       }
     }
-    if (entry.ClassName === 'Build_HadronCollider_C') {
+    if (entry.ClassName === "Build_HadronCollider_C") {
       isPowered = true;
       const min = parseFloat(entry.mEstimatedMininumPowerConsumption);
       const max = parseFloat(entry.mEstimatedMaximumPowerConsumption);
@@ -211,13 +212,14 @@ export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, {
     }
 
     // Overclock
-    if (entry.mCanChangePotential === 'True') {
+    if (entry.mCanChangePotential === "True") {
       isOverclockable = true;
       if (entry.mPowerProductionExponent) {
         meta.overclockInfo = {
           exponent: parseFloat(entry.mPowerProductionExponent),
         };
-      } else {
+      }
+      else {
         meta.overclockInfo = {
           exponent: parseFloat(entry.mPowerConsumptionExponent),
         };
@@ -235,14 +237,15 @@ export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, {
       const allowedResourceForms = parseCollection<string[]>(entry.mAllowedResourceForms)!;
 
       let allowedResources: string[];
-      if (entry.mAllowedResources === '') {
+      if (entry.mAllowedResources === "") {
         allowedResources = [];
         for (const [resourceName, resourceInfo] of Object.entries(resources)) {
           if (allowedResourceForms.includes(resourceInfo.form)) {
             allowedResources.push(resourceName);
           }
         }
-      } else {
+      }
+      else {
         allowedResources = parseCollection<string[]>(entry.mAllowedResources)!
           .map((data) => parseBlueprintClassname(data));
       }
@@ -251,7 +254,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, {
       if (entry.mItemsPerCycle && entry.mExtractCycleTime) {
         let itemsPerCycle = parseInt(entry.mItemsPerCycle, 10);
         const extractCycleTime = parseFloat(entry.mExtractCycleTime);
-        if (allowedResourceForms.includes('RF_LIQUID') || allowedResourceForms.includes('RF_GAS')) {
+        if (allowedResourceForms.includes("RF_LIQUID") || allowedResourceForms.includes("RF_GAS")) {
           itemsPerCycle /= 1000;
         }
         resourceExtractSpeed = 60 * itemsPerCycle / extractCycleTime;
@@ -272,7 +275,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, {
 
       if (entry.mFuel && Array.isArray(entry.mFuel)) {
         entry.mFuel.forEach((fuelEntry) => {
-          if (fuelEntry.mFuelClass === 'FGItemDescriptorBiomass') {
+          if (fuelEntry.mFuelClass === "FGItemDescriptorBiomass") {
             Object.entries(items).forEach(([itemKey, itemInfo]) => {
               if (!itemInfo.isBiomass || !itemInfo.meta.energyValue) return;
               const scale = itemInfo.isFluid ? 1 / 1000 : 1;
@@ -374,7 +377,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, {
     if (entry.mPowerStoreCapacity) {
       meta.powerStorageCapacity = parseFloat(entry.mPowerStoreCapacity);
     }
-    if (entry.ClassName === 'Build_RadarTower_C') {
+    if (entry.ClassName === "Build_RadarTower_C") {
       meta.radarInfo = {
         minRevealRadius: parseFloat(entry.mMinRevealRadius),
         maxRevealRadius: parseFloat(entry.mMaxRevealRadius),
@@ -397,7 +400,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, {
       isGenerator,
       isVehicle: false,
       meta,
-      event: ficsmasBuildables.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
+      event: ficsmasBuildables.includes(entry.ClassName) ? "FICSMAS" : "NONE",
     };
   });
 
@@ -435,7 +438,7 @@ function addVehicles(categorizedDataClasses: CategorizedRawClasses, buildables: 
           cycleTime: 0,
           minimum: powerConsumption.Min,
           maximum: powerConsumption.Max,
-        }
+        },
       };
     }
 
@@ -453,7 +456,7 @@ function addVehicles(categorizedDataClasses: CategorizedRawClasses, buildables: 
       isGenerator: false,
       isVehicle: true,
       meta,
-      event: ficsmasBuildables.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
+      event: ficsmasBuildables.includes(entry.ClassName) ? "FICSMAS" : "NONE",
     };
   });
 }
@@ -464,10 +467,12 @@ function validateBuildables(buildables: ParsedClassInfoMap<BuildableInfo>) {
     if (!data.slug) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Blank slug for buildable: <${name}>`);
-    } else if (slugs.includes(data.slug)) {
+    }
+    else if (slugs.includes(data.slug)) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Duplicate buildable slug: <${data.slug}> of <${name}>`);
-    } else {
+    }
+    else {
       slugs.push(data.slug);
     }
   });

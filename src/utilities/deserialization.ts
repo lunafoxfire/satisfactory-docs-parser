@@ -1,39 +1,39 @@
-export type SerializedColor = {
-  R: number,
-  G: number,
-  B: number,
-  A: number,
+export interface SerializedColor {
+  R: number;
+  G: number;
+  B: number;
+  A: number;
 };
 
-export type SerializedRange = {
-  Min: number,
-  Max: number,
+export interface SerializedRange {
+  Min: number;
+  Max: number;
 };
 
-export type SerializedItemAmount = {
-  ItemClass: string,
+export interface SerializedItemAmount {
+  ItemClass: string;
   Amount: number;
 };
 
 export type TokenParser = {
-  regex: RegExp,
-  getValue?: (text: string) => any
+  regex: RegExp;
+  getValue?: (text: string) => any;
 };
 
 export type Token = {
-  type: string,
-  text: string,
-  value: any
+  type: string;
+  text: string;
+  value: any;
 };
 
 const TOKENS = {
-  OPEN_BRACE: 'OPEN_BRACE',
-  CLOSING_BRACE: 'CLOSING_BRACE',
-  SEPARATOR: 'SEPARATOR',
-  KEY: 'KEY',
-  FLOAT: 'FLOAT',
-  INTEGER: 'INTEGER',
-  STRING: 'STRING',
+  OPEN_BRACE: "OPEN_BRACE",
+  CLOSING_BRACE: "CLOSING_BRACE",
+  SEPARATOR: "SEPARATOR",
+  KEY: "KEY",
+  FLOAT: "FLOAT",
+  INTEGER: "INTEGER",
+  STRING: "STRING",
 };
 
 const ORDERED_TOKENS = [
@@ -46,7 +46,7 @@ const ORDERED_TOKENS = [
   TOKENS.STRING,
 ];
 
-const PARSERS: { [key: string]: TokenParser } = {
+const PARSERS: Record<string, TokenParser> = {
   [TOKENS.OPEN_BRACE]: { regex: /^\(/ },
   [TOKENS.CLOSING_BRACE]: { regex: /^\)/ },
   [TOKENS.SEPARATOR]: { regex: /^,/ },
@@ -56,11 +56,12 @@ const PARSERS: { [key: string]: TokenParser } = {
   [TOKENS.STRING]: { regex: /^[a-zA-Z0-9:\\/.'"_-]+/, getValue: (text) => text },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export function parseCollection<T>(text: string): T | null {
   if (text === "") {
     return null;
   }
-  return parseTokens(tokenize(text));
+  return parseTokens(tokenize(text)) as T;
 }
 
 function tokenize(inputText: string) {
@@ -71,7 +72,7 @@ function tokenize(inputText: string) {
     for (const key of ORDERED_TOKENS) {
       const parser = PARSERS[key];
       const match = parser.regex.exec(remainingText);
-      if (match && match[0]) {
+      if (match?.[0]) {
         const text = match[0];
         const value = parser.getValue ? parser.getValue(text) : null;
         token = {
@@ -106,17 +107,20 @@ function parseTokens(tokens: Token[]) {
       if (key !== null) {
         if (collection === null) {
           collection = {};
-        } else if (Array.isArray(collection)) {
-          throw new Error('Syntax error: Mixed array and object');
+        }
+        else if (Array.isArray(collection)) {
+          throw new Error("Syntax error: Mixed array and object");
         }
         collection[key] = value;
         key = null;
         value = null;
-      } else {
+      }
+      else {
         if (collection === null) {
           collection = [];
-        } else if (!Array.isArray(collection)) {
-          throw new Error('Syntax error: Mixed array and object');
+        }
+        else if (!Array.isArray(collection)) {
+          throw new Error("Syntax error: Mixed array and object");
         }
         collection.push(value);
         value = null;
@@ -128,7 +132,7 @@ function parseTokens(tokens: Token[]) {
       switch (token.type) {
         case TOKENS.OPEN_BRACE: {
           if (value) {
-            throw new Error('Syntax error: Unexpected open brace');
+            throw new Error("Syntax error: Unexpected open brace");
           }
           i++;
           value = parseTokensRecursive();
@@ -137,7 +141,7 @@ function parseTokens(tokens: Token[]) {
 
         case TOKENS.SEPARATOR: {
           if (value === null) {
-            throw new Error('Syntax error: Unexpected separator');
+            throw new Error("Syntax error: Unexpected separator");
           }
           i++;
           pushValue();
@@ -146,7 +150,7 @@ function parseTokens(tokens: Token[]) {
 
         case TOKENS.CLOSING_BRACE: {
           if (value === null) {
-            throw new Error('Syntax error: Unexpected closing brace');
+            throw new Error("Syntax error: Unexpected closing brace");
           }
           i++;
           pushValue();
@@ -155,7 +159,7 @@ function parseTokens(tokens: Token[]) {
 
         case TOKENS.KEY: {
           if (key !== null) {
-            throw new Error('Syntax error: Unexpected object key');
+            throw new Error("Syntax error: Unexpected object key");
           }
           i++;
           key = token.value;
@@ -164,7 +168,7 @@ function parseTokens(tokens: Token[]) {
 
         case TOKENS.FLOAT: {
           if (value !== null) {
-            throw new Error('Syntax error: Unexpected float');
+            throw new Error("Syntax error: Unexpected float");
           }
           i++;
           value = token.value;
@@ -173,7 +177,7 @@ function parseTokens(tokens: Token[]) {
 
         case TOKENS.INTEGER: {
           if (value !== null) {
-            throw new Error('Syntax error: Unexpected integer');
+            throw new Error("Syntax error: Unexpected integer");
           }
           i++;
           value = token.value;
@@ -182,7 +186,7 @@ function parseTokens(tokens: Token[]) {
 
         case TOKENS.STRING: {
           if (value !== null) {
-            throw new Error('Syntax error: Unexpected string');
+            throw new Error("Syntax error: Unexpected string");
           }
           i++;
           value = token.value;
@@ -190,13 +194,13 @@ function parseTokens(tokens: Token[]) {
         }
 
         default: {
-          throw new Error('A cosmic bit flip broke the script, sorry');
+          throw new Error("A cosmic bit flip broke the script, sorry");
         }
       }
     }
 
     if (key !== null || collection !== null || (value !== null && !isRoot)) {
-      throw new Error('Syntax error: Unexpected end of input');
+      throw new Error("Syntax error: Unexpected end of input");
     }
     return value;
   }

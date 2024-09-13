@@ -1,8 +1,8 @@
-import util from 'util';
-import { DocsRawClassMap, ParsedDocs, ParsedDocsWithMeta, DocsMeta, DocsRaw } from '@/types';
-import { parseItems, parseBuildables, parseRecipes, parseSchematics } from '@/parsers';
-import { categorizeDataClasses, categorizedClassnames, validateClassList } from '@/class-categorizer';
-import { CategorizedRawClasses, CategoryKey } from '@/class-categorizer/types';
+import util from "util";
+import { DocsRawClassMap, ParsedDocs, ParsedDocsWithMeta, DocsMeta, DocsRaw } from "@/types";
+import { parseItems, parseBuildables, parseRecipes, parseSchematics } from "@/parsers";
+import { categorizeDataClasses, categorizedClassnames, validateClassList } from "@/class-categorizer";
+import { CategorizedRawClasses, CategoryKey } from "@/class-categorizer/types";
 
 export function parseDocs(input: Buffer | string): ParsedDocs {
   const classMap = readTheDocs(input);
@@ -30,32 +30,35 @@ export function parseDocsWithMeta(input: Buffer | string): ParsedDocsWithMeta {
 export function readTheDocs(input: Buffer | string): DocsRawClassMap {
   if (Buffer.isBuffer(input)) {
     try {
-      const decoder = new util.TextDecoder('utf-16le');
+      const decoder = new util.TextDecoder("utf-16le");
       return readTheDocsString(decoder.decode(input));
-    } catch (err) {
+    }
+    catch (err) {
+      // eslint-disable-next-line no-console
       console.error("-------------------\nCould not parse Docs file. It may be using an invalid text encoding. Expected encoding: <utf-16le>");
       throw err;
     }
-  } else {
+  }
+  else {
     return readTheDocsString(input);
   }
 }
 
 const superclassRegex = /FactoryGame\.(.+)'$/;
 function readTheDocsString(input: string): DocsRawClassMap {
-  const docs = (JSON.parse(input) as DocsRaw);
+  const docs = JSON.parse(input) as DocsRaw;
 
   if (!Array.isArray(docs)) {
-    throw new Error('Invalid Docs file -- not an array');
+    throw new Error("Invalid Docs file -- not an array");
   }
 
   const dataClassMap: DocsRawClassMap = {};
   for (const entry of docs) {
-    if (!Object.prototype.hasOwnProperty.call(entry, 'NativeClass') || !Object.prototype.hasOwnProperty.call(entry, 'Classes')) {
-      throw new Error('Invalid Docs file -- missing required keys');
+    if (!Object.prototype.hasOwnProperty.call(entry, "NativeClass") || !Object.prototype.hasOwnProperty.call(entry, "Classes")) {
+      throw new Error("Invalid Docs file -- missing required keys");
     }
     const match = superclassRegex.exec(entry.NativeClass);
-    if (!match || !match[1]) {
+    if (!match?.[1]) {
       throw new Error(`Could not parse top-level class ${entry.NativeClass}`);
     }
     const superclassName = match[1];
@@ -110,7 +113,9 @@ function createMeta(classMap: DocsRawClassMap, categorizedClasses: CategorizedRa
     subclasses.forEach((subclass) => {
       globalSubclassCount += 1;
       Object.keys(subclass).forEach((key) => {
-        if (key === "ClassName") { return; }
+        if (key === "ClassName") {
+          return;
+        }
         if (!globalPropertyCounter[key]) {
           globalPropertyCounter[key] = 0;
         }
@@ -137,7 +142,9 @@ function createMeta(classMap: DocsRawClassMap, categorizedClasses: CategorizedRa
     subclasses.forEach((subclass) => {
       subclassList.push(subclass.ClassName);
       Object.keys(subclass).forEach((key) => {
-        if (key === "ClassName" || globalPropertiesSet.has(key)) { return; }
+        if (key === "ClassName" || globalPropertiesSet.has(key)) {
+          return;
+        }
         if (!propertyCounter[key]) {
           propertyCounter[key] = 0;
         }
@@ -148,7 +155,8 @@ function createMeta(classMap: DocsRawClassMap, categorizedClasses: CategorizedRa
     Object.entries(propertyCounter).forEach(([key, count]) => {
       if (count === subclassList.length) {
         sharedProperties.push(key);
-      } else {
+      }
+      else {
         uniqueProperties.push(key);
       }
     });
@@ -172,7 +180,9 @@ function createMeta(classMap: DocsRawClassMap, categorizedClasses: CategorizedRa
     subclasses.forEach((subclass) => {
       subclassList.push(subclass.ClassName);
       Object.keys(subclass).forEach((key) => {
-        if (key === "ClassName" || globalPropertiesSet.has(key)) { return; }
+        if (key === "ClassName" || globalPropertiesSet.has(key)) {
+          return;
+        }
         if (!propertyCounter[key]) {
           propertyCounter[key] = 0;
         }
@@ -183,7 +193,8 @@ function createMeta(classMap: DocsRawClassMap, categorizedClasses: CategorizedRa
     Object.entries(propertyCounter).forEach(([key, count]) => {
       if (count === subclassList.length) {
         sharedProperties.push(key);
-      } else {
+      }
+      else {
         uniqueProperties.push(key);
       }
     });
@@ -214,7 +225,8 @@ function validateSlugs(data: any) {
         if (slugs.includes(classData.slug)) {
           // eslint-disable-next-line no-console
           console.warn(`WARNING: Duplicate global slug: <${classData.slug}> of <${className}> from <${category}>`);
-        } else {
+        }
+        else {
           slugs.push(classData.slug);
         }
       }

@@ -2,80 +2,80 @@ import {
   parseClassnameFromPath, parseItemQuantity, parseBuildableQuantity, ItemQuantity,
   createCustomizerSlug, buildableNameToDescriptorName, createRecipeSlug, createBuildableRecipeSlug,
   cleanString,
-} from '@/utilities';
-import { parseCollection, SerializedItemAmount } from '@/utilities/deserialization';
-import { ParsedClassInfoMap } from '@/types';
-import { CategorizedRawClasses } from '@/class-categorizer/types';
-import { EventType } from '@/enums';
-import { ItemInfo } from './parseItems';
-import { BuildableInfo } from './parseBuildables';
+} from "@/utilities";
+import { parseCollection, SerializedItemAmount } from "@/utilities/deserialization";
+import { ParsedClassInfoMap } from "@/types";
+import { CategorizedRawClasses } from "@/class-categorizer/types";
+import { EventType } from "@/enums";
+import { ItemInfo } from "./parseItems";
+import { BuildableInfo } from "./parseBuildables";
 
 export interface ProductionRecipeInfo {
-  slug: string,
-  name: string,
-  craftTime: number,
-  manualCraftMultiplier: number,
-  isAlternate: boolean,
-  handCraftable: boolean,
-  workshopCraftable: boolean,
-  machineCraftable: boolean,
-  ingredients: ItemQuantity[],
-  products: ItemQuantity[],
-  producedIn: string,
-  event: EventType,
+  slug: string;
+  name: string;
+  craftTime: number;
+  manualCraftMultiplier: number;
+  isAlternate: boolean;
+  handCraftable: boolean;
+  workshopCraftable: boolean;
+  machineCraftable: boolean;
+  ingredients: ItemQuantity[];
+  products: ItemQuantity[];
+  producedIn: string;
+  event: EventType;
 }
 
 export interface BuildableRecipeInfo {
-  slug: string,
-  name: string,
-  ingredients: ItemQuantity[],
-  product: string,
-  event: EventType,
+  slug: string;
+  name: string;
+  ingredients: ItemQuantity[];
+  product: string;
+  event: EventType;
 }
 
 export interface CustomizerRecipeInfo {
-  slug: string,
-  isSwatch: boolean,
-  isPatternRemover: boolean,
-  ingredients: ItemQuantity[],
-  event: EventType,
+  slug: string;
+  isSwatch: boolean;
+  isPatternRemover: boolean;
+  ingredients: ItemQuantity[];
+  event: EventType;
 }
 
 interface RecipeDependencies {
-  items: ParsedClassInfoMap<ItemInfo>,
-  buildables: ParsedClassInfoMap<BuildableInfo>,
+  items: ParsedClassInfoMap<ItemInfo>;
+  buildables: ParsedClassInfoMap<BuildableInfo>;
 }
 
 const ficsmasRecipes: string[] = [
-    'Recipe_XMassTree_C',
-    'Recipe_XmasBranch_C',
-    'Recipe_CandyCane_C',
-    'Recipe_CandyCaneBasher_C',
-    'Recipe_CandyCaneDecor_C',
-    'Recipe_XmasBow_C',
-    'Recipe_Snowman_C',
-    'Recipe_Snow_C',
-    'Recipe_XmasBall3_C',
-    'Recipe_XmasBall4_C',
-    'Recipe_TreeGiftProducer_C',
-    'Recipe_XmasBall1_C',
-    'Recipe_XmasBall2_C',
-    'Recipe_xmassLights_C',
-    'Recipe_XmasBallCluster_C',
-    'Recipe_SnowDispenser_C',
-    'Recipe_XmasWreath_C',
-    'Recipe_WreathDecor_C',
-    'Recipe_XmasStar_C',
-    'Recipe_Snowball_C',
+  "Recipe_XMassTree_C",
+  "Recipe_XmasBranch_C",
+  "Recipe_CandyCane_C",
+  "Recipe_CandyCaneBasher_C",
+  "Recipe_CandyCaneDecor_C",
+  "Recipe_XmasBow_C",
+  "Recipe_Snowman_C",
+  "Recipe_Snow_C",
+  "Recipe_XmasBall3_C",
+  "Recipe_XmasBall4_C",
+  "Recipe_TreeGiftProducer_C",
+  "Recipe_XmasBall1_C",
+  "Recipe_XmasBall2_C",
+  "Recipe_xmassLights_C",
+  "Recipe_XmasBallCluster_C",
+  "Recipe_SnowDispenser_C",
+  "Recipe_XmasWreath_C",
+  "Recipe_WreathDecor_C",
+  "Recipe_XmasStar_C",
+  "Recipe_Snowball_C",
 ];
 
 const excludeRecipes: string[] = [
-    // Old recipes that are not produced anywhere
-    'Recipe_Wall_Window_8x4_03_Steel_C',
-    'Recipe_JumpPad_C',
-    'Recipe_JumpPadTilted_C',
-    'Recipe_PillarTop_C',
-    'Recipe_SteelWall_8x4_C',
+  // Old recipes that are not produced anywhere
+  "Recipe_Wall_Window_8x4_03_Steel_C",
+  "Recipe_JumpPad_C",
+  "Recipe_JumpPadTilted_C",
+  "Recipe_PillarTop_C",
+  "Recipe_SteelWall_8x4_C",
 ];
 
 export function parseRecipes(categorizedDataClasses: CategorizedRawClasses, deps: RecipeDependencies) {
@@ -107,13 +107,16 @@ function getMainRecipes(categorizedDataClasses: CategorizedRawClasses, { items, 
     let machineCraftable = false;
     const machines = [];
     for (const producer of producedIn) {
-      if (producer === 'BP_BuildGun_C' || producer === 'FGBuildGun') {
+      if (producer === "BP_BuildGun_C" || producer === "FGBuildGun") {
         isBuildRecipe = true;
-      } else if (producer === 'BP_WorkshopComponent_C') {
+      }
+      else if (producer === "BP_WorkshopComponent_C") {
         workshopCraftable = true;
-      } else if (producer === 'BP_WorkBenchComponent_C' || producer === 'FGBuildableAutomatedWorkBench' || producer === 'Build_AutomatedWorkBench_C') {
+      }
+      else if (producer === "BP_WorkBenchComponent_C" || producer === "FGBuildableAutomatedWorkBench" || producer === "Build_AutomatedWorkBench_C") {
         handCraftable = true;
-      } else {
+      }
+      else {
         machineCraftable = true;
         machines.push(buildableNameToDescriptorName(producer));
       }
@@ -121,7 +124,7 @@ function getMainRecipes(categorizedDataClasses: CategorizedRawClasses, { items, 
 
     if (machineCraftable && machines.length > 1) {
       // eslint-disable-next-line no-console
-      console.warn(`WARNING: Recipe <${entry.ClassName}> can be produced in multiple machines, which is not supported! Machines: <${machines.join(', ')}>`);
+      console.warn(`WARNING: Recipe <${entry.ClassName}> can be produced in multiple machines, which is not supported! Machines: <${machines.join(", ")}>`);
     }
 
     const ingredients = parseCollection<SerializedItemAmount[]>(entry.mIngredients)
@@ -129,17 +132,18 @@ function getMainRecipes(categorizedDataClasses: CategorizedRawClasses, { items, 
       ?? [];
 
     if (isBuildRecipe) {
-      const product = parseBuildableQuantity(parseCollection<SerializedItemAmount[]>(entry.mProduct)![0]!, buildables);
+      const product = parseBuildableQuantity(parseCollection<SerializedItemAmount[]>(entry.mProduct)![0], buildables);
       const cleanName = cleanString(entry.mDisplayName);
       buildableRecipes[entry.ClassName] = {
         slug: createBuildableRecipeSlug(entry.ClassName, cleanName),
         name: cleanName,
         ingredients,
         product,
-        event: ficsmasRecipes.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
+        event: ficsmasRecipes.includes(entry.ClassName) ? "FICSMAS" : "NONE",
       };
-    } else {
-      const isAlternate = entry.mDisplayName.startsWith('Alternate:') || entry.ClassName.startsWith('Recipe_Alternate');
+    }
+    else {
+      const isAlternate = entry.mDisplayName.startsWith("Alternate:") || entry.ClassName.startsWith("Recipe_Alternate");
       const products = parseCollection<SerializedItemAmount[]>(entry.mProduct)!
         .map((data) => parseItemQuantity(data, items));
 
@@ -155,8 +159,8 @@ function getMainRecipes(categorizedDataClasses: CategorizedRawClasses, { items, 
         machineCraftable,
         ingredients,
         products,
-        producedIn: machines.length ? machines[0] : '',
-        event: ficsmasRecipes.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
+        producedIn: machines.length ? machines[0] : "",
+        event: ficsmasRecipes.includes(entry.ClassName) ? "FICSMAS" : "NONE",
       };
     }
   });
@@ -175,11 +179,12 @@ function getCustomizerRecipes(categorizedDataClasses: CategorizedRawClasses, { i
     if (entry.mIngerdients) {
       ingredients = parseCollection<SerializedItemAmount[]>(entry.mIngredients)!
         .map((data) => parseItemQuantity(data, items));
-    } else {
-      if (entry.ClassName.includes('_Swatch')) {
+    }
+    else {
+      if (entry.ClassName.includes("_Swatch")) {
         isSwatch = true;
       }
-      if (entry.ClassName.includes('_Pattern_Remover')) {
+      if (entry.ClassName.includes("_Pattern_Remover")) {
         isPatternRemover = true;
       }
     }
@@ -189,7 +194,7 @@ function getCustomizerRecipes(categorizedDataClasses: CategorizedRawClasses, { i
       isSwatch,
       isPatternRemover,
       ingredients,
-      event: ficsmasRecipes.includes(entry.ClassName) ? 'FICSMAS' : 'NONE',
+      event: ficsmasRecipes.includes(entry.ClassName) ? "FICSMAS" : "NONE",
     };
   });
 
@@ -212,10 +217,12 @@ function validateProductionRecipes(productionRecipes: ParsedClassInfoMap<Product
     if (!data.slug) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Blank slug for recipe: <${name}>`);
-    } else if (slugs.includes(data.slug)) {
+    }
+    else if (slugs.includes(data.slug)) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Duplicate recipe slug: <${data.slug}> of <${name}>`);
-    } else {
+    }
+    else {
       slugs.push(data.slug);
     }
   });
@@ -232,17 +239,20 @@ function validateBuildableRecipes(buildableRecipes: ParsedClassInfoMap<Buildable
       }
     });
     if (!hasRecipe) {
-      console.warn(`WARNING: Buildable <${buildableName}> has no recipe!`)
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Buildable <${buildableName}> has no recipe!`);
     }
   });
   Object.entries(buildableRecipes).forEach(([name, data]) => {
     if (!data.slug) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Blank slug for recipe: <${name}>`);
-    } else if (slugs.includes(data.slug)) {
+    }
+    else if (slugs.includes(data.slug)) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Duplicate recipe slug: <${data.slug}> of <${name}>`);
-    } else {
+    }
+    else {
       slugs.push(data.slug);
     }
   });
@@ -254,10 +264,12 @@ function validateCustomizerRecipes(customizerRecipes: ParsedClassInfoMap<Customi
     if (!data.slug) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Blank slug for customizer recipe: <${name}>`);
-    } else if (slugs.includes(data.slug)) {
+    }
+    else if (slugs.includes(data.slug)) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: Duplicate customizer recipe slug: <${data.slug}> of <${name}>`);
-    } else {
+    }
+    else {
       slugs.push(data.slug);
     }
   });
