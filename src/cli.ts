@@ -145,15 +145,15 @@ function writeFileSafe(filePath: string, data: unknown) {
   fs.writeFileSync(filePath, json);
 }
 
-function isString(arg: unknown) {
+function isString(arg: unknown): arg is string {
   return typeof arg === "string";
 }
 
-function isBool(arg: unknown) {
+function isBool(arg: unknown): arg is boolean {
   return typeof arg === "boolean";
 }
 
-function isStringOrBool(arg: unknown) {
+function isStringOrBool(arg: unknown): arg is string | boolean {
   return typeof arg === "boolean" || typeof arg === "string";
 }
 
