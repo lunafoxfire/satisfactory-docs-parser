@@ -21,7 +21,6 @@
     "meta": "npm run cli -- -m",
     "split": "npm run cli -- -s",
     "all": "npm run cli -- -pms",
-    "lint": "eslint .",
     "prepare": "ts-patch install -s && npm run build",
     "np": "np --no-tests"
   },
@@ -31,12 +30,6 @@
   "devDependencies": {
     "@types/node": "^15.0.3",
     "@types/yargs": "^16.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.48.1",
-    "eslint": "^8.31.0",
-    "eslint-config-standard-with-typescript": "^26.0.0",
-    "eslint-plugin-import": "^2.27.2",
-    "eslint-plugin-n": "^15.6.1",
-    "eslint-plugin-promise": "^6.1.1",
     "np": "^10.0.7",
     "ts-patch": "^2.1.0",
     "typescript": "^4.9.4",
