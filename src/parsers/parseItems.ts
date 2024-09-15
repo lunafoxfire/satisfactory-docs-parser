@@ -72,6 +72,28 @@ export interface WellCounts {
   wells: number;
 }
 
+const RESOURCE_NODE_DATA: Record<string, NodeCounts> = {
+  Desc_OreIron_C: { impure: 39, normal: 42, pure: 46 },
+  Desc_OreCopper_C: { impure: 12, normal: 29, pure: 13 },
+  Desc_Stone_C: { impure: 15, normal: 49, pure: 30 },
+  Desc_Coal_C: { impure: 12, normal: 31, pure: 16 },
+  Desc_OreGold_C: { impure: 0, normal: 9, pure: 8 },
+  Desc_RawQuartz_C: { impure: 3, normal: 7, pure: 7 },
+  Desc_Sulfur_C: { impure: 6, normal: 5, pure: 5 },
+  Desc_OreUranium_C: { impure: 3, normal: 2, pure: 0 },
+  Desc_OreBauxite_C: { impure: 5, normal: 6, pure: 6 },
+  Desc_SAM_C: { impure: 10, normal: 6, pure: 3 },
+  Desc_LiquidOil_C: { impure: 10, normal: 12, pure: 8 },
+};
+
+const RESOURCE_WELL_DATA: Record<string, WellCounts> = {
+  Desc_Water_C: { impure: 7, normal: 12, pure: 36, wells: 8 },
+  Desc_LiquidOil_C: { impure: 6, normal: 3, pure: 3, wells: 2 },
+  Desc_NitrogenGas_C: { impure: 2, normal: 7, pure: 36, wells: 6 },
+};
+
+const MAX_OVERCLOCK = 2.5;
+
 const ficsmasItems: string[] = [
   "BP_EquipmentDescriptorCandyCane_C",
   "Desc_CandyCane_C",
@@ -252,28 +274,6 @@ function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedData
     }
   });
 }
-
-// TODO: This is now out of date
-const RESOURCE_NODE_DATA: Record<string, NodeCounts> = {
-  // 'Desc_OreIron_C': { impure: 33, normal: 41, pure: 46 },
-  // 'Desc_OreCopper_C': { impure: 9, normal: 28, pure: 12 },
-  // 'Desc_Stone_C': { impure: 12, normal: 47, pure: 27 },
-  // 'Desc_Coal_C': { impure: 6, normal: 29, pure: 15 },
-  // 'Desc_OreGold_C': { impure: 0, normal: 8, pure: 8 },
-  // 'Desc_RawQuartz_C': { impure: 0, normal: 11, pure: 5 },
-  // 'Desc_Sulfur_C': { impure: 1, normal: 7, pure: 3 },
-  // 'Desc_OreUranium_C': { impure: 1, normal: 3, pure: 0 },
-  // 'Desc_OreBauxite_C': { impure: 5, normal: 6, pure: 6 },
-  // 'Desc_LiquidOil_C': { impure: 10, normal: 12, pure: 8 },
-};
-
-const RESOURCE_WELL_DATA: Record<string, WellCounts> = {
-  // 'Desc_Water_C': { impure: 5, normal: 8, pure: 42, wells: 8 },
-  // 'Desc_LiquidOil_C': { impure: 6, normal: 3, pure: 3, wells: 2 },
-  // 'Desc_NitrogenGas_C': { impure: 2, normal: 7, pure: 36, wells: 6 },
-};
-
-const MAX_OVERCLOCK = 2.5;
 
 function getResources(categorizedDataClasses: CategorizedRawClasses) {
   const resources: ParsedClassInfoMap<ResourceInfo> = {};
