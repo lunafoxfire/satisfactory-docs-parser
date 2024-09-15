@@ -213,10 +213,10 @@ function createMeta(classMap: DocsRawClassMap, categorizedClasses: CategorizedRa
 }
 
 const slugRegex = /^[a-z0-9-]+$/;
-function validateSlugs(data: any) {
+function validateSlugs(data: ParsedDocs) {
   const slugs: string[] = [];
-  Object.entries<any>(data).forEach(([category, entries]) => {
-    Object.entries<any>(entries).forEach(([className, classData]) => {
+  Object.entries(data).forEach(([category, entries]) => {
+    Object.entries(entries).forEach(([className, classData]: [string, { slug: string }]) => {
       if (!slugRegex.exec(classData.slug)) {
         // eslint-disable-next-line no-console
         console.warn(`WARNING: Invalid slug format: <${classData.slug}> of <${className}> from <${category}>`);
