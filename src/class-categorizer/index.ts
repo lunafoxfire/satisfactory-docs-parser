@@ -1,5 +1,5 @@
-import { DocsRawClass, DocsRawClassMap } from "@/types";
-import { ClassCategories, CategorizedClasses, CategorizedRawClasses, CategoryKey } from "./types";
+import { NativeSubclassesBySuperclass, NativeSubclass } from "@/native-defs/types";
+import { ClassCategories, CategorizedClasses, CategorizedNativeClasses, CategoryKey } from "./types";
 
 export const categorizedClassnames: CategorizedClasses = {
   itemDescriptors: [
@@ -152,12 +152,12 @@ export function validateClassList(classListFromDocs: string[]) {
   });
 }
 
-export function categorizeDataClasses(dataClassMap: DocsRawClassMap): CategorizedRawClasses {
-  const categorizedClasses: CategorizedRawClasses = {} as CategorizedRawClasses;
+export function categorizeDataClasses(dataClassMap: NativeSubclassesBySuperclass): CategorizedNativeClasses {
+  const categorizedClasses: CategorizedNativeClasses = {} as CategorizedNativeClasses;
   Object.entries(categorizedClassnames).forEach(([category, classnames]) => {
-    const categoryDocsClasses: DocsRawClass[] = [];
+    const categoryDocsClasses: NativeSubclass[] = [];
     classnames.forEach((className) => {
-      const docsClasses: DocsRawClass[] = dataClassMap[className];
+      const docsClasses: NativeSubclass[] = dataClassMap[className];
       if (!docsClasses) {
         // eslint-disable-next-line no-console
         console.warn(`WARNING: Expected to find class <${className}> for category <${category}> in the docs but it does not exist!`);

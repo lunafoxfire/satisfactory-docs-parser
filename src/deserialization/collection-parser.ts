@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-export type TokenParser = {
+export interface TokenParser {
   regex: RegExp;
   getValue?: (text: string) => unknown;
-};
+}
 
-export type Token = {
+export interface Token {
   type: string;
   text: string;
   value: unknown;
-};
+}
 
 const TOKENS = {
   OPEN_BRACE: "OPEN_BRACE",

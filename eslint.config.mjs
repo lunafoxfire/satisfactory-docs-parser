@@ -37,7 +37,6 @@ export default tseslint.config(
     rules: {
       "no-console": "error",
       "@typescript-eslint/no-unnecessary-condition": "off",
-      "@typescript-eslint/consistent-type-definitions": "off",
     },
   },
 );

@@ -1,4 +1,4 @@
-import { DocsRawClass } from "@/types";
+import { NativeSubclass } from "@/native-defs/types";
 
 export type CategoryKey =
   "itemDescriptors"
@@ -18,4 +18,4 @@ export type CategoryKey =
 
 export type ClassCategories = Record<string, CategoryKey[]>;
 export type CategorizedClasses = Record<CategoryKey, string[]>;
-export type CategorizedRawClasses = Record<CategoryKey, DocsRawClass[]>;
+export type CategorizedNativeClasses = Record<CategoryKey, NativeSubclass[]>;

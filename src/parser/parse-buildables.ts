@@ -1,13 +1,13 @@
+import { ClassInfoMap } from "@/types";
+import { EventType } from "@/native-defs/enums";
+import { CategorizedNativeClasses } from "@/class-categorizer/types";
 import {
   createBasicSlug, createBuildableSlug, cleanString, buildableNameToDescriptorName,
   parseBlueprintClassname, ItemRate,
 } from "@/utilities";
 import { parseCollection } from "@/deserialization/collection-parser";
 import { SerializedRange } from "@/deserialization/types";
-import { ParsedClassInfoMap } from "@/types";
-import { CategorizedRawClasses } from "@/class-categorizer/types";
-import { EventType } from "@/enums";
-import { ItemInfo, ResourceInfo } from "./parseItems";
+import { ItemInfo, ResourceInfo } from "./parse-items";
 
 export interface BuildableInfo {
   slug: string;
@@ -93,8 +93,8 @@ export interface FuelConsumption {
 }
 
 interface BuildableDependencies {
-  items: ParsedClassInfoMap<ItemInfo>;
-  resources: ParsedClassInfoMap<ResourceInfo>;
+  items: ClassInfoMap<ItemInfo>;
+  resources: ClassInfoMap<ResourceInfo>;
 }
 
 const ficsmasBuildables: string[] = [
@@ -176,8 +176,8 @@ const BUILDABLE_SIZES: Record<string, BuildableSize> = {
   Desc_RadarTower_C: { width: 10, length: 10, height: 118 },
 };
 
-export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, { items, resources }: BuildableDependencies) {
-  const buildables: ParsedClassInfoMap<BuildableInfo> = {};
+export function parseBuildables(categorizedDataClasses: CategorizedNativeClasses, { items, resources }: BuildableDependencies) {
+  const buildables: ClassInfoMap<BuildableInfo> = {};
 
   categorizedDataClasses.buildables.forEach((entry) => {
     if (excludeBuildables.includes(entry.ClassName)) {
@@ -427,7 +427,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedRawClasses, {
   return buildables;
 }
 
-function addVehicles(categorizedDataClasses: CategorizedRawClasses, buildables: ParsedClassInfoMap<BuildableInfo>) {
+function addVehicles(categorizedDataClasses: CategorizedNativeClasses, buildables: ClassInfoMap<BuildableInfo>) {
   categorizedDataClasses.vehicles.forEach((entry) => {
     let isPowered = false;
     const categories = (parseCollection(entry.mSubCategories) as string[])
@@ -478,7 +478,7 @@ function addVehicles(categorizedDataClasses: CategorizedRawClasses, buildables: 
   });
 }
 
-function validateBuildables(buildables: ParsedClassInfoMap<BuildableInfo>) {
+function validateBuildables(buildables: ClassInfoMap<BuildableInfo>) {
   const slugs: string[] = [];
   Object.entries(buildables).forEach(([name, data]) => {
     if (!data.slug) {

@@ -1,55 +1,41 @@
-import { BuildableInfo } from "./parsers/parseBuildables";
-import { ItemInfo, ResourceInfo } from "./parsers/parseItems";
-import { BuildableRecipeInfo, CustomizerRecipeInfo, ProductionRecipeInfo } from "./parsers/parseRecipes";
-import { SchematicInfo } from "./parsers/parseSchematics";
+import { BuildableInfo } from "./parser/parse-buildables";
+import { ItemInfo, ResourceInfo } from "./parser/parse-items";
+import { ProductionRecipeInfo, BuildableRecipeInfo, CustomizerRecipeInfo } from "./parser/parse-recipes";
+import { SchematicInfo } from "./parser/parse-schematics";
 
-export type DocsRaw = DocsRawSuperclass[];
+export type ClassInfoMap<T> = Record<string, T>;
 
-export type DocsRawSuperclass = {
-  NativeClass: string;
-  Classes: DocsRawClass[];
-};
+export interface ParsedDocs {
+  items: ClassInfoMap<ItemInfo>;
+  resources: ClassInfoMap<ResourceInfo>;
+  buildables: ClassInfoMap<BuildableInfo>;
+  productionRecipes: ClassInfoMap<ProductionRecipeInfo>;
+  buildableRecipes: ClassInfoMap<BuildableRecipeInfo>;
+  customizerRecipes: ClassInfoMap<CustomizerRecipeInfo>;
+  schematics: ClassInfoMap<SchematicInfo>;
+}
 
-export type DocsRawClass = {
-  ClassName: string;
-  [key: string]: string;
-};
-
-export type DocsRawClassMap = Record<string, DocsRawClass[]>;
-
-export type ParsedClassInfoMap<T> = Record<string, T>;
-
-export type ParsedDocs = {
-  items: ParsedClassInfoMap<ItemInfo>;
-  resources: ParsedClassInfoMap<ResourceInfo>;
-  buildables: ParsedClassInfoMap<BuildableInfo>;
-  productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo>;
-  buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo>;
-  customizerRecipes: ParsedClassInfoMap<CustomizerRecipeInfo>;
-  schematics: ParsedClassInfoMap<SchematicInfo>;
-};
-
-export type ParsedDocsWithMeta = ParsedDocs & {
+export interface ParsedDocsWithMeta extends ParsedDocs {
   meta: DocsMeta;
 };
 
-export type DocsMeta = {
+export interface DocsMeta {
   superclassCount: number;
   superclassList: string[];
   superclasses: Record<string, DocsSuperclassMeta>;
   categories: Record<string, DocsCategoryMeta>;
-};
+}
 
-export type DocsSuperclassMeta = {
+export interface DocsSuperclassMeta {
   subclassCount: number;
   subclasses: string[];
   universalProps: string[];
   specializedProps: string[];
   singleClassProps: string[];
   staticProps: string[];
-};
+}
 
-export type DocsCategoryMeta = {
+export interface DocsCategoryMeta {
   superclassCount: number;
   superclasses: string[];
   subclassCount: number;
@@ -58,4 +44,4 @@ export type DocsCategoryMeta = {
   specializedProps: string[];
   singleClassProps: string[];
   staticProps: string[];
-};
+}

@@ -1,12 +1,13 @@
-export interface BuildableDescriptorProps {
-  ClassName: string;
+import { NativeSubclass } from "./types";
+
+export interface NativeBuildableDescriptor extends NativeSubclass {
   mSmallIcon: string;
   mPersistentBigIcon: string;
   mSubCategories: string;
   mMenuPriority: string;
 }
 
-export interface VehicleDescriptorProps {
+export interface NativeVehicleDescriptor extends NativeSubclass {
   mDisplayName: string;
   mDescription: string;
   mSmallIcon: string;
@@ -18,7 +19,7 @@ export interface VehicleDescriptorProps {
   mPowerConsumption?: string; // train power consumption range
 }
 
-export interface BuildableProps {
+export interface NativeBuildable extends NativeSubclass {
   mDisplayName: string;
   mDescription: string;
   mAllowColoring: string;
@@ -55,7 +56,7 @@ export interface BuildableProps {
   mInventorySizeY?: string;
 }
 
-export interface ItemDescriptorProps {
+export interface NativeItemDescriptor extends NativeSubclass {
   mDisplayName: string;
   mDescription: string;
   mStackSize: string;
@@ -101,7 +102,7 @@ export interface ItemDescriptorProps {
   mPingColor?: string;
 }
 
-export interface EquipmentProps {
+export interface NativeEquipment extends NativeSubclass {
   mEquipmentSlot: string;
   // mAllowedAmmoClasses?: string;
   // mReloadTime?: string;
@@ -111,7 +112,7 @@ export interface EquipmentProps {
   mAllowedFuelTypes?: string; // jetpack fuel types
 }
 
-export interface RecipeProps {
+export interface NativeRecipe extends NativeSubclass {
   ClassName: string;
   // FullName: string;
   mDisplayName: string;
@@ -126,12 +127,12 @@ export interface RecipeProps {
   // mVariablePowerConsumptionFactor: string;
 }
 
-export interface CustomizerRecipeProps {
+export interface NativeCustomizerRecipe extends NativeSubclass {
   mDisplayName: string;
   mIngredients: string;
 }
 
-export interface SchematicProps {
+export interface NativeSchematic extends NativeSubclass {
   mType: string;
   mDisplayName: string;
   mDescription: string; // awesomeshop description or developer note not shown ingame

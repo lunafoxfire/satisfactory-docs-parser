@@ -1,3 +1,6 @@
+import { ClassInfoMap } from "@/types";
+import { EventType } from "@/native-defs/enums";
+import { CategorizedNativeClasses } from "@/class-categorizer/types";
 import {
   parseClassnameFromPath, parseItemQuantity, parseBuildableQuantity, ItemQuantity,
   createCustomizerSlug, buildableNameToDescriptorName, createRecipeSlug, createBuildableRecipeSlug,
@@ -5,11 +8,8 @@ import {
 } from "@/utilities";
 import { parseCollection } from "@/deserialization/collection-parser";
 import { SerializedItemAmount } from "@/deserialization/types";
-import { ParsedClassInfoMap } from "@/types";
-import { CategorizedRawClasses } from "@/class-categorizer/types";
-import { EventType } from "@/enums";
-import { ItemInfo } from "./parseItems";
-import { BuildableInfo } from "./parseBuildables";
+import { ItemInfo } from "./parse-items";
+import { BuildableInfo } from "./parse-buildables";
 
 export interface ProductionRecipeInfo {
   slug: string;
@@ -43,8 +43,8 @@ export interface CustomizerRecipeInfo {
 }
 
 interface RecipeDependencies {
-  items: ParsedClassInfoMap<ItemInfo>;
-  buildables: ParsedClassInfoMap<BuildableInfo>;
+  items: ClassInfoMap<ItemInfo>;
+  buildables: ClassInfoMap<BuildableInfo>;
 }
 
 const ficsmasRecipes: string[] = [
@@ -79,7 +79,7 @@ const excludeRecipes: string[] = [
   "Recipe_SteelWall_8x4_C",
 ];
 
-export function parseRecipes(categorizedDataClasses: CategorizedRawClasses, deps: RecipeDependencies) {
+export function parseRecipes(categorizedDataClasses: CategorizedNativeClasses, deps: RecipeDependencies) {
   const { productionRecipes, buildableRecipes } = getMainRecipes(categorizedDataClasses, deps);
   const customizerRecipes = getCustomizerRecipes(categorizedDataClasses, deps);
 
@@ -90,9 +90,9 @@ export function parseRecipes(categorizedDataClasses: CategorizedRawClasses, deps
   return { productionRecipes, buildableRecipes, customizerRecipes };
 }
 
-function getMainRecipes(categorizedDataClasses: CategorizedRawClasses, { items, buildables }: RecipeDependencies) {
-  const productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo> = {};
-  const buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo> = {};
+function getMainRecipes(categorizedDataClasses: CategorizedNativeClasses, { items, buildables }: RecipeDependencies) {
+  const productionRecipes: ClassInfoMap<ProductionRecipeInfo> = {};
+  const buildableRecipes: ClassInfoMap<BuildableRecipeInfo> = {};
 
   categorizedDataClasses.recipes.forEach((entry) => {
     if (!entry.mProducedIn || excludeRecipes.includes(entry.ClassName)) {
@@ -169,8 +169,8 @@ function getMainRecipes(categorizedDataClasses: CategorizedRawClasses, { items, 
   return { productionRecipes, buildableRecipes };
 }
 
-function getCustomizerRecipes(categorizedDataClasses: CategorizedRawClasses, { items }: RecipeDependencies) {
-  const customizerRecipes: ParsedClassInfoMap<CustomizerRecipeInfo> = {};
+function getCustomizerRecipes(categorizedDataClasses: CategorizedNativeClasses, { items }: RecipeDependencies) {
+  const customizerRecipes: ClassInfoMap<CustomizerRecipeInfo> = {};
 
   categorizedDataClasses.customizerRecipes.forEach((entry) => {
     let ingredients: ItemQuantity[] = [];
@@ -202,7 +202,7 @@ function getCustomizerRecipes(categorizedDataClasses: CategorizedRawClasses, { i
   return customizerRecipes;
 }
 
-function validateProductionRecipes(productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo>, { buildables }: RecipeDependencies) {
+function validateProductionRecipes(productionRecipes: ClassInfoMap<ProductionRecipeInfo>, { buildables }: RecipeDependencies) {
   const slugs: string[] = [];
   Object.entries(productionRecipes).forEach(([name, data]) => {
     if (!data.handCraftable && !data.workshopCraftable && !data.machineCraftable) {
@@ -229,7 +229,7 @@ function validateProductionRecipes(productionRecipes: ParsedClassInfoMap<Product
   });
 }
 
-function validateBuildableRecipes(buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo>, { buildables }: RecipeDependencies) {
+function validateBuildableRecipes(buildableRecipes: ClassInfoMap<BuildableRecipeInfo>, { buildables }: RecipeDependencies) {
   const slugs: string[] = [];
   Object.keys(buildables).forEach((buildableName) => {
     let hasRecipe = false;
@@ -259,7 +259,7 @@ function validateBuildableRecipes(buildableRecipes: ParsedClassInfoMap<Buildable
   });
 }
 
-function validateCustomizerRecipes(customizerRecipes: ParsedClassInfoMap<CustomizerRecipeInfo>) {
+function validateCustomizerRecipes(customizerRecipes: ClassInfoMap<CustomizerRecipeInfo>) {
   const slugs: string[] = [];
   Object.entries(customizerRecipes).forEach(([name, data]) => {
     if (!data.slug) {

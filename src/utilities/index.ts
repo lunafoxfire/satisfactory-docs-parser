@@ -1,24 +1,24 @@
-import { ParsedClassInfoMap } from "@/types";
-import { ItemInfo } from "@/parsers/parseItems";
-import { BuildableInfo } from "@/parsers/parseBuildables";
-import { EquipmentSlotType, UnlockType } from "@/enums";
+import { ClassInfoMap } from "@/types";
+import { EquipmentSlotType, UnlockType } from "@/native-defs/enums";
 import { SerializedColor, SerializedItemAmount } from "@/deserialization/types";
+import { BuildableInfo } from "@/parser/parse-buildables";
+import { ItemInfo } from "@/parser/parse-items";
 
-export type Color = {
+export interface Color {
   r: number;
   g: number;
   b: number;
-};
+}
 
-export type ItemQuantity = {
+export interface ItemQuantity {
   itemClass: string;
   quantity: number;
-};
+}
 
-export type ItemRate = {
+export interface ItemRate {
   itemClass: string;
   rate: number;
-};
+}
 
 const SLUG_OVERRIDES: Record<string, string> = {
   Recipe_CartridgeChaos_Packaged_C: "packaged-turbo-rifle-ammo-recipe",
@@ -339,7 +339,7 @@ const SUPRESS_ITEM_WARNINGS = [
   "BP_EquipmentDescriptorCupGold_C",
   "Desc_BoomBox_C",
 ];
-export function parseItemQuantity(data: SerializedItemAmount, itemData: ParsedClassInfoMap<ItemInfo>): ItemQuantity {
+export function parseItemQuantity(data: SerializedItemAmount, itemData: ClassInfoMap<ItemInfo>): ItemQuantity {
   const className = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
   const itemInfo = itemData[className];
   if (!itemInfo && !SUPRESS_ITEM_WARNINGS.includes(className)) {
@@ -353,7 +353,7 @@ export function parseItemQuantity(data: SerializedItemAmount, itemData: ParsedCl
   };
 }
 
-export function parseBuildableQuantity(data: SerializedItemAmount, buildableData: ParsedClassInfoMap<BuildableInfo>): string {
+export function parseBuildableQuantity(data: SerializedItemAmount, buildableData: ClassInfoMap<BuildableInfo>): string {
   const className = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
   const buildableInfo = buildableData[className];
   if (!buildableInfo) {

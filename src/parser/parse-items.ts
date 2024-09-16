@@ -1,12 +1,12 @@
+import { ClassInfoMap } from "@/types";
+import { EventType, EquipmentSlotType } from "@/native-defs/enums";
+import { CategorizedNativeClasses } from "@/class-categorizer/types";
 import {
   createBasicSlug, cleanString, standardizeItemDescriptor, equipmentNameToDescriptorName,
   parseStackSize, parseEquipmentSlot, parseColor, Color,
 } from "@/utilities";
 import { parseCollection } from "@/deserialization/collection-parser";
 import { SerializedColor } from "@/deserialization/types";
-import { ParsedClassInfoMap } from "@/types";
-import { CategorizedRawClasses } from "@/class-categorizer/types";
-import { EquipmentSlotType, EventType } from "@/enums";
 
 export interface ItemInfo {
   slug: string;
@@ -122,7 +122,7 @@ const excludeItems: string[] = [];
 
 const excludeEquip: string[] = [];
 
-export function parseItems(categorizedDataClasses: CategorizedRawClasses) {
+export function parseItems(categorizedDataClasses: CategorizedNativeClasses) {
   const items = getItems(categorizedDataClasses);
   mergeBiomassInfo(items, categorizedDataClasses);
   mergeEquipmentInfo(items, categorizedDataClasses);
@@ -137,8 +137,8 @@ export function parseItems(categorizedDataClasses: CategorizedRawClasses) {
   };
 }
 
-function getItems(categorizedDataClasses: CategorizedRawClasses) {
-  const items: ParsedClassInfoMap<ItemInfo> = {};
+function getItems(categorizedDataClasses: CategorizedNativeClasses) {
+  const items: ClassInfoMap<ItemInfo> = {};
 
   categorizedDataClasses.itemDescriptors.forEach((entry) => {
     if (excludeItems.includes(entry.ClassName)) {
@@ -183,7 +183,7 @@ function getItems(categorizedDataClasses: CategorizedRawClasses) {
   return items;
 }
 
-function mergeBiomassInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedDataClasses: CategorizedRawClasses) {
+function mergeBiomassInfo(items: ClassInfoMap<ItemInfo>, categorizedDataClasses: CategorizedNativeClasses) {
   categorizedDataClasses.biomass.forEach((entry) => {
     const key = standardizeItemDescriptor(entry.ClassName);
     const item = items[key];
@@ -195,7 +195,7 @@ function mergeBiomassInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedDataCl
   });
 }
 
-function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedDataClasses: CategorizedRawClasses) {
+function mergeEquipmentInfo(items: ClassInfoMap<ItemInfo>, categorizedDataClasses: CategorizedNativeClasses) {
   categorizedDataClasses.equipment.forEach((entry) => {
     if (excludeEquip.includes(entry.ClassName)) {
       return;
@@ -275,8 +275,8 @@ function mergeEquipmentInfo(items: ParsedClassInfoMap<ItemInfo>, categorizedData
   });
 }
 
-function getResources(categorizedDataClasses: CategorizedRawClasses) {
-  const resources: ParsedClassInfoMap<ResourceInfo> = {};
+function getResources(categorizedDataClasses: CategorizedNativeClasses) {
+  const resources: ClassInfoMap<ResourceInfo> = {};
 
   categorizedDataClasses.resources.forEach((entry) => {
     const nodeData = RESOURCE_NODE_DATA[entry.ClassName];
@@ -328,7 +328,7 @@ function getResources(categorizedDataClasses: CategorizedRawClasses) {
   return resources;
 }
 
-function validateItems(items: ParsedClassInfoMap<ItemInfo>) {
+function validateItems(items: ClassInfoMap<ItemInfo>) {
   const slugs: string[] = [];
   Object.entries(items).forEach(([name, data]) => {
     if (!data.slug) {
@@ -345,7 +345,7 @@ function validateItems(items: ParsedClassInfoMap<ItemInfo>) {
   });
 }
 
-function validateResources(resources: ParsedClassInfoMap<ResourceInfo>, items: ParsedClassInfoMap<ItemInfo>) {
+function validateResources(resources: ClassInfoMap<ResourceInfo>, items: ClassInfoMap<ItemInfo>) {
   Object.entries(resources).forEach(([name, data]) => {
     if (!Object.keys(items).includes(data.itemClass)) {
       // eslint-disable-next-line no-console

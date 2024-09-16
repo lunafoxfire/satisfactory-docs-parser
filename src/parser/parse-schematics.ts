@@ -1,3 +1,7 @@
+import { ClassInfoMap } from "@/types";
+import { NativeSubclass } from "@/native-defs/types";
+import { UnlockType, EventType } from "@/native-defs/enums";
+import { CategorizedNativeClasses } from "@/class-categorizer/types";
 import {
   createSlugFromClassname, cleanString, parseItemQuantity,
   ItemQuantity, parseBlueprintClassname,
@@ -5,13 +9,10 @@ import {
 } from "@/utilities";
 import { parseCollection } from "@/deserialization/collection-parser";
 import { SerializedItemAmount } from "@/deserialization/types";
-import { ParsedClassInfoMap, DocsRawClass } from "@/types";
-import { CategorizedRawClasses } from "@/class-categorizer/types";
-import { EventType, UnlockType } from "@/enums";
-import { ItemInfo, ResourceInfo } from "./parseItems";
-import { ProductionRecipeInfo, BuildableRecipeInfo, CustomizerRecipeInfo } from "./parseRecipes";
+import { ItemInfo, ResourceInfo } from "./parse-items";
+import { ProductionRecipeInfo, BuildableRecipeInfo, CustomizerRecipeInfo } from "./parse-recipes";
 
-type SchematicsEntry = DocsRawClass & {
+type SchematicsEntry = NativeSubclass & {
   mUnlocks: UnlockData[];
 };
 
@@ -55,11 +56,11 @@ export interface SchematicUnlocks {
 }
 
 interface SchematicDependencies {
-  items: ParsedClassInfoMap<ItemInfo>;
-  resources: ParsedClassInfoMap<ResourceInfo>;
-  productionRecipes: ParsedClassInfoMap<ProductionRecipeInfo>;
-  buildableRecipes: ParsedClassInfoMap<BuildableRecipeInfo>;
-  customizerRecipes: ParsedClassInfoMap<CustomizerRecipeInfo>;
+  items: ClassInfoMap<ItemInfo>;
+  resources: ClassInfoMap<ResourceInfo>;
+  productionRecipes: ClassInfoMap<ProductionRecipeInfo>;
+  buildableRecipes: ClassInfoMap<BuildableRecipeInfo>;
+  customizerRecipes: ClassInfoMap<CustomizerRecipeInfo>;
 }
 
 const ficsmasSchematics: string[] = [
@@ -82,9 +83,9 @@ const excludeSchematics: string[] = [
   "Schematic_SaveCompatibility_C", // Some sort of compatibility schematic with removed items in it
 ];
 
-export function parseSchematics(categorizedDataClasses: CategorizedRawClasses, deps: SchematicDependencies) {
+export function parseSchematics(categorizedDataClasses: CategorizedNativeClasses, deps: SchematicDependencies) {
   const { items } = deps;
-  const schematics: ParsedClassInfoMap<SchematicInfo> = {};
+  const schematics: ClassInfoMap<SchematicInfo> = {};
 
   categorizedDataClasses.schematics.forEach((e) => {
     const entry = e as SchematicsEntry;
@@ -230,7 +231,7 @@ function parseUnlocks(data: UnlockData[], deps: SchematicDependencies): Schemati
   return unlocks;
 }
 
-function validateSchematics(schematics: ParsedClassInfoMap<SchematicInfo>, deps: SchematicDependencies) {
+function validateSchematics(schematics: ClassInfoMap<SchematicInfo>, deps: SchematicDependencies) {
   const { resources, productionRecipes, buildableRecipes, customizerRecipes } = deps;
   const slugs: string[] = [];
   Object.entries(schematics).forEach(([name, data]) => {
