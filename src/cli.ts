@@ -106,7 +106,6 @@ if (meta) {
   const superclassMetadata = {
     superclassCount: metadata.superclassCount,
     superclassList: metadata.superclassList,
-    globalProperties: metadata.globalProperties,
   };
 
   // eslint-disable-next-line no-console

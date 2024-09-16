@@ -94,78 +94,88 @@ function createParsedDocs(categorizedClasses: CategorizedRawClasses): ParsedDocs
   return data;
 }
 
+interface TrackedPropertyInfo {
+  count: number;
+  firstValue: string;
+  isStatic: boolean;
+}
 function createMeta(classMap: DocsRawClassMap, categorizedClasses: CategorizedRawClasses): DocsMeta {
   const meta: DocsMeta = {
     superclassCount: 0,
     superclassList: [],
-    globalProperties: [],
     superclasses: {},
     categories: {},
   };
 
-  const globalPropertiesSet = new Set();
-
   // Superclass metadata
-  let globalSubclassCount = 0;
-  const globalPropertyCounter: Record<string, number> = {};
   Object.entries(classMap).forEach(([superclass, subclasses]) => {
     meta.superclassList.push(superclass);
     subclasses.forEach((subclass) => {
-      globalSubclassCount += 1;
       Object.keys(subclass).forEach((key) => {
         if (key === "ClassName") {
           return;
         }
-        if (!globalPropertyCounter[key]) {
-          globalPropertyCounter[key] = 0;
-        }
-        globalPropertyCounter[key] += 1;
       });
     });
-  });
-
-  Object.entries(globalPropertyCounter).forEach(([key, count]) => {
-    if (count === globalSubclassCount) {
-      meta.globalProperties.push(key);
-      globalPropertiesSet.add(key);
-    }
   });
   meta.superclassCount = meta.superclassList.length;
 
   // Metadata per superclass
   Object.entries(classMap).forEach(([superclass, subclasses]) => {
     const subclassList: string[] = [];
-    const sharedProperties: string[] = [];
-    const uniqueProperties: string[] = [];
+    const universalProps: string[] = [];
+    const specializedProps: string[] = [];
+    const singleClassProps: string[] = [];
+    const staticProps: string[] = [];
 
-    const propertyCounter: Record<string, number> = {};
+    const propertyTracker: Record<string, TrackedPropertyInfo> = {};
     subclasses.forEach((subclass) => {
       subclassList.push(subclass.ClassName);
-      Object.keys(subclass).forEach((key) => {
-        if (key === "ClassName" || globalPropertiesSet.has(key)) {
+      Object.entries(subclass).forEach(([key, val]) => {
+        if (key === "ClassName") {
           return;
         }
-        if (!propertyCounter[key]) {
-          propertyCounter[key] = 0;
+        if (!propertyTracker[key]) {
+          propertyTracker[key] = {
+            count: 1,
+            firstValue: val,
+            isStatic: true,
+          };
         }
-        propertyCounter[key] += 1;
+        else {
+          const propInfo = propertyTracker[key];
+          propInfo.count += 1;
+          if (propInfo.isStatic && propInfo.firstValue !== val) {
+            propInfo.isStatic = false;
+          }
+        }
       });
     });
 
-    Object.entries(propertyCounter).forEach(([key, count]) => {
-      if (count === subclassList.length) {
-        sharedProperties.push(key);
+    Object.entries(propertyTracker).forEach(([key, propInfo]) => {
+      if (propInfo.count === 1) {
+        singleClassProps.push(key);
+        return;
+      }
+      if (propInfo.isStatic) {
+        staticProps.push(key);
+        return;
+      }
+      if (propInfo.count === subclassList.length) {
+        universalProps.push(key);
       }
       else {
-        uniqueProperties.push(key);
+        specializedProps.push(key);
       }
     });
 
     meta.superclasses[superclass] = {
       subclassCount: subclassList.length,
       subclasses: subclassList,
-      sharedProperties,
-      uniqueProperties,
+      universalProps,
+      specializedProps,
+      singleClassProps,
+      staticProps,
     };
   });
 
@@ -173,29 +183,49 @@ function createMeta(classMap: DocsRawClassMap, categorizedClasses: CategorizedRa
   Object.entries(categorizedClasses).forEach(([category, subclasses]) => {
     const superclassList = categorizedClassnames[category as CategoryKey];
     const subclassList: string[] = [];
-    const sharedProperties: string[] = [];
-    const uniqueProperties: string[] = [];
+    const universalProps: string[] = [];
+    const specializedProps: string[] = [];
+    const singleClassProps: string[] = [];
+    const staticProps: string[] = [];
 
-    const propertyCounter: Record<string, number> = {};
+    const propertyTracker: Record<string, TrackedPropertyInfo> = {};
     subclasses.forEach((subclass) => {
       subclassList.push(subclass.ClassName);
-      Object.keys(subclass).forEach((key) => {
-        if (key === "ClassName" || globalPropertiesSet.has(key)) {
+      Object.entries(subclass).forEach(([key, val]) => {
+        if (key === "ClassName") {
           return;
         }
-        if (!propertyCounter[key]) {
-          propertyCounter[key] = 0;
+        if (!propertyTracker[key]) {
+          propertyTracker[key] = {
+            count: 1,
+            firstValue: val,
+            isStatic: true,
+          };
         }
-        propertyCounter[key] += 1;
+        else {
+          const propInfo = propertyTracker[key];
+          propInfo.count += 1;
+          if (propInfo.isStatic && propInfo.firstValue !== val) {
+            propInfo.isStatic = false;
+          }
+        }
       });
     });
 
-    Object.entries(propertyCounter).forEach(([key, count]) => {
-      if (count === subclassList.length) {
-        sharedProperties.push(key);
+    Object.entries(propertyTracker).forEach(([key, propInfo]) => {
+      if (propInfo.count === 1) {
+        singleClassProps.push(key);
+        return;
+      }
+      if (propInfo.isStatic) {
+        staticProps.push(key);
+        return;
+      }
+      if (propInfo.count === subclassList.length) {
+        universalProps.push(key);
       }
       else {
-        uniqueProperties.push(key);
+        specializedProps.push(key);
       }
     });
 
@@ -204,8 +234,10 @@ function createMeta(classMap: DocsRawClassMap, categorizedClasses: CategorizedRa
       superclasses: superclassList,
       subclassCount: subclassList.length,
       subclasses: subclassList,
-      sharedProperties,
-      uniqueProperties,
+      universalProps,
+      specializedProps,
+      singleClassProps,
+      staticProps,
     };
   });
 

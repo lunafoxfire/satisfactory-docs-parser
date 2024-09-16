@@ -39,7 +39,6 @@ data = {
 meta = {
   superclassCount, // Number of superclasses (top level categories, basically) in the Docs file
   superclassList, // List of the names of all the superclasses
-  globalProperties, // List of all properties shared by every class. Currently none.
   superclasses, // Map of each superclass to a list of its subclasses, and properties present on those subclasses
   categories, // Map of each category to a list of superclasses in that category, a list of subclasses within those superclasses, and properties present on those subclasses
 },

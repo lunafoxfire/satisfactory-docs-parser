@@ -36,7 +36,6 @@ export type ParsedDocsWithMeta = ParsedDocs & {
 export type DocsMeta = {
   superclassCount: number;
   superclassList: string[];
-  globalProperties: string[];
   superclasses: Record<string, DocsSuperclassMeta>;
   categories: Record<string, DocsCategoryMeta>;
 };
@@ -44,8 +43,10 @@ export type DocsMeta = {
 export type DocsSuperclassMeta = {
   subclassCount: number;
   subclasses: string[];
-  sharedProperties: string[];
-  uniqueProperties: string[];
+  universalProps: string[];
+  specializedProps: string[];
+  singleClassProps: string[];
+  staticProps: string[];
 };
 
 export type DocsCategoryMeta = {
@@ -53,6 +54,8 @@ export type DocsCategoryMeta = {
   superclasses: string[];
   subclassCount: number;
   subclasses: string[];
-  sharedProperties: string[];
-  uniqueProperties: string[];
+  universalProps: string[];
+  specializedProps: string[];
+  singleClassProps: string[];
+  staticProps: string[];
 };
