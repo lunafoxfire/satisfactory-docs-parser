@@ -1,4 +1,5 @@
 export type SatisfactoryDocs = NativeSuperclass[];
+export type SatisfactoryDocsMapped = Record<string, NativeSubclass[]>;
 
 export interface NativeSuperclass {
   NativeClass: string;
@@ -9,5 +10,3 @@ export interface NativeSubclass {
   ClassName: string;
   [key: string]: unknown;
 };
-
-export type NativeSubclassesBySuperclass = Record<string, NativeSubclass[]>;

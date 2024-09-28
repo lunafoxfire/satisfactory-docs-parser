@@ -166,10 +166,6 @@ export function cleanString(desc: string) {
     .replace(/\r\n/g, "\n");
 }
 
-export function standardizeItemDescriptor(className: string) {
-  return className;
-}
-
 const EQUIP_DESC_OVERRIDES: Record<string, string> = {
   Equip_Chainsaw_C: "Desc_Chainsaw_C",
   Equip_MedKit_C: "Desc_Medkit_C",
@@ -340,7 +336,7 @@ const SUPRESS_ITEM_WARNINGS = [
   "Desc_BoomBox_C",
 ];
 export function parseItemQuantity(data: SerializedItemAmount, itemData: ClassInfoMap<ItemInfo>): ItemQuantity {
-  const className = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
+  const className = parseBlueprintClassname(data.ItemClass);
   const itemInfo = itemData[className];
   if (!itemInfo && !SUPRESS_ITEM_WARNINGS.includes(className)) {
     // eslint-disable-next-line no-console
@@ -354,7 +350,7 @@ export function parseItemQuantity(data: SerializedItemAmount, itemData: ClassInf
 }
 
 export function parseBuildableQuantity(data: SerializedItemAmount, buildableData: ClassInfoMap<BuildableInfo>): string {
-  const className = standardizeItemDescriptor(parseBlueprintClassname(data.ItemClass));
+  const className = parseBlueprintClassname(data.ItemClass);
   const buildableInfo = buildableData[className];
   if (!buildableInfo) {
     // eslint-disable-next-line no-console

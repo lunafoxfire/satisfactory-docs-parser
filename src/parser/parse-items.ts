@@ -1,8 +1,8 @@
 import { ClassInfoMap } from "@/types";
 import { EventType, EquipmentSlotType } from "@/native-defs/enums";
-import { CategorizedNativeClasses } from "@/class-categorizer/types";
+import { CategorizedSubclasses } from "@/class-categorizer/types";
 import {
-  createBasicSlug, cleanString, standardizeItemDescriptor, equipmentNameToDescriptorName,
+  createBasicSlug, cleanString, equipmentNameToDescriptorName,
   parseStackSize, parseEquipmentSlot, parseColor, Color,
 } from "@/utilities";
 import { parseCollection } from "@/deserialization/collection-parser";
@@ -120,11 +120,8 @@ const ficsmasEquip: string[] = [
 
 const excludeItems: string[] = [];
 
-const excludeEquip: string[] = [];
-
-export function parseItems(categorizedDataClasses: CategorizedNativeClasses) {
+export function parseItems(categorizedDataClasses: CategorizedSubclasses) {
   const items = getItems(categorizedDataClasses);
-  mergeBiomassInfo(items, categorizedDataClasses);
   mergeEquipmentInfo(items, categorizedDataClasses);
   const resources = getResources(categorizedDataClasses);
 
@@ -137,14 +134,14 @@ export function parseItems(categorizedDataClasses: CategorizedNativeClasses) {
   };
 }
 
-function getItems(categorizedDataClasses: CategorizedNativeClasses) {
+function getItems(categorizedDataClasses: CategorizedSubclasses) {
   const items: ClassInfoMap<ItemInfo> = {};
 
-  categorizedDataClasses.itemDescriptors.forEach((entry) => {
+  categorizedDataClasses.itemDescriptors.forEach(({ data: entry, subcategory }) => {
     if (excludeItems.includes(entry.ClassName)) {
       return;
     }
-    const key = standardizeItemDescriptor(entry.ClassName);
+    const key = entry.ClassName;
     const energyValue = parseFloat(entry.mEnergyValue);
     const radioactiveDecay = parseFloat(entry.mRadioactiveDecay);
 
@@ -164,6 +161,7 @@ function getItems(categorizedDataClasses: CategorizedNativeClasses) {
     }
 
     const cleanName = cleanString(entry.mDisplayName);
+
     items[key] = {
       slug: createBasicSlug(entry.ClassName, cleanName),
       name: cleanName,
@@ -172,9 +170,9 @@ function getItems(categorizedDataClasses: CategorizedNativeClasses) {
       sinkPoints: parseInt(entry.mResourceSinkPoints, 10),
       isFluid,
       isFuel,
-      isBiomass: false,
+      isBiomass: subcategory === "biomass",
       isRadioactive,
-      isEquipment: false,
+      isEquipment: subcategory === "equipment",
       meta,
       event: ficsmasItems.includes(entry.ClassName) ? "FICSMAS" : "NONE",
     };
@@ -183,45 +181,29 @@ function getItems(categorizedDataClasses: CategorizedNativeClasses) {
   return items;
 }
 
-function mergeBiomassInfo(items: ClassInfoMap<ItemInfo>, categorizedDataClasses: CategorizedNativeClasses) {
-  categorizedDataClasses.biomass.forEach((entry) => {
-    const key = standardizeItemDescriptor(entry.ClassName);
-    const item = items[key];
-    if (!item) {
-      // eslint-disable-next-line no-console
-      console.warn(`WARNING: Biomass missing item descriptor: <${entry.ClassName}>`);
-    }
-    item.isBiomass = true;
-  });
-}
+function mergeEquipmentInfo(items: ClassInfoMap<ItemInfo>, categorizedDataClasses: CategorizedSubclasses) {
+  categorizedDataClasses.equipment.forEach(({ data: entry }) => {
+    // if (entry.ClassName === "BP_ConsumeableEquipment_C") {
+    //   categorizedDataClasses.consumables.forEach((consumableInfo) => {
+    //     const key = standardizeItemDescriptor(consumableInfo.ClassName);
+    //     const item = items[key];
+    //     if (!item) {
+    //       // eslint-disable-next-line no-console
+    //       console.warn(`WARNING: Equipment missing item descriptor: <${entry.ClassName}>`);
+    //       return;
+    //     }
 
-function mergeEquipmentInfo(items: ClassInfoMap<ItemInfo>, categorizedDataClasses: CategorizedNativeClasses) {
-  categorizedDataClasses.equipment.forEach((entry) => {
-    if (excludeEquip.includes(entry.ClassName)) {
-      return;
-    }
+    //     item.isEquipment = true;
+    //     item.meta.equipmentInfo = ({} as EquipmentMeta);
+    //     item.meta.equipmentInfo.slot = parseEquipmentSlot(entry.mEquipmentSlot);
+    //     item.event = ficsmasItems.includes(consumableInfo.ClassName) ? "FICSMAS" : "NONE";
 
-    if (entry.ClassName === "BP_ConsumeableEquipment_C") {
-      categorizedDataClasses.consumables.forEach((consumableInfo) => {
-        const key = standardizeItemDescriptor(consumableInfo.ClassName);
-        const item = items[key];
-        if (!item) {
-          // eslint-disable-next-line no-console
-          console.warn(`WARNING: Equipment missing item descriptor: <${entry.ClassName}>`);
-          return;
-        }
-
-        item.isEquipment = true;
-        item.meta.equipmentInfo = ({} as EquipmentMeta);
-        item.meta.equipmentInfo.slot = parseEquipmentSlot(entry.mEquipmentSlot);
-        item.event = ficsmasItems.includes(consumableInfo.ClassName) ? "FICSMAS" : "NONE";
-
-        if (consumableInfo.mHealthGain) {
-          item.meta.equipmentInfo.healthGain = parseFloat(consumableInfo.mHealthGain);
-        }
-      });
-      return;
-    }
+    //     if (consumableInfo.mHealthGain) {
+    //       item.meta.equipmentInfo.healthGain = parseFloat(consumableInfo.mHealthGain);
+    //     }
+    //   });
+    //   return;
+    // }
 
     const key = equipmentNameToDescriptorName(entry.ClassName);
     const item = items[key];
@@ -275,10 +257,13 @@ function mergeEquipmentInfo(items: ClassInfoMap<ItemInfo>, categorizedDataClasse
   });
 }
 
-function getResources(categorizedDataClasses: CategorizedNativeClasses) {
+function getResources(categorizedDataClasses: CategorizedSubclasses) {
   const resources: ClassInfoMap<ResourceInfo> = {};
 
-  categorizedDataClasses.resources.forEach((entry) => {
+  categorizedDataClasses.itemDescriptors.forEach(({ data: entry, subcategory }) => {
+    if (subcategory !== "resources") {
+      return;
+    }
     const nodeData = RESOURCE_NODE_DATA[entry.ClassName];
     const wellData = RESOURCE_WELL_DATA[entry.ClassName];
     let maxExtraction = 0;

@@ -1,7 +1,7 @@
-import { NativeSubclassesBySuperclass, NativeSubclass } from "@/native-defs/types";
-import { ClassCategories, CategorizedClasses, CategorizedNativeClasses, CategoryKey } from "./types";
+import { SatisfactoryDocsMapped } from "@/native-defs/types";
+import { SuperclassCategories, SuperclassSubcategories, CategoryKey, SubcategoryKey, CategorizedSubclasses } from "./types";
 
-export const categorizedClassnames: CategorizedClasses = {
+export const superclassCategories: SuperclassCategories = {
   itemDescriptors: [
     "FGAmmoTypeInstantHit",
     "FGAmmoTypeProjectile",
@@ -15,9 +15,6 @@ export const categorizedClassnames: CategorizedClasses = {
     "FGPowerShardDescriptor",
     "FGResourceDescriptor",
   ],
-  resources: ["FGResourceDescriptor"],
-  biomass: ["FGItemDescriptorBiomass"],
-  consumables: ["FGConsumableDescriptor"],
   equipment: [
     "FGChainsaw",
     "FGChargedWeapon",
@@ -39,7 +36,6 @@ export const categorizedClassnames: CategorizedClasses = {
     "FGBuildingDescriptor",
     "FGPoleDescriptor",
   ],
-  vehicles: ["FGVehicleDescriptor"],
   buildables: [
     "FGBuildable",
     "FGBuildableAttachmentMerger",
@@ -114,57 +110,89 @@ export const categorizedClassnames: CategorizedClasses = {
     "FGBuildableRampLightweight",
     "FGCentralStorageContainer",
   ],
+  vehicles: ["FGVehicleDescriptor"],
   recipes: ["FGRecipe"],
   customizerRecipes: ["FGCustomizationRecipe"],
   schematics: ["FGSchematic"],
 };
 
-export const classnameCategories: ClassCategories = {};
-Object.entries(categorizedClassnames).forEach(([category, classnames]) => {
-  classnames.forEach((classname) => {
-    if (!classnameCategories[classname]) {
-      classnameCategories[classname] = [];
-    }
-    classnameCategories[classname].push(category as CategoryKey);
+export const superclassSubcategories: SuperclassSubcategories = {
+  resources: ["FGResourceDescriptor"],
+  biomass: ["FGItemDescriptorBiomass"],
+  equipment: ["FGEquipmentDescriptor"],
+  ammo: [
+    "FGAmmoTypeInstantHit",
+    "FGAmmoTypeProjectile",
+    "FGAmmoTypeSpreadshot",
+  ],
+  consumables: ["FGConsumableDescriptor"],
+};
+
+export const subcategoryBySuperclass: Record<string, SubcategoryKey> = {};
+Object.entries(superclassSubcategories).forEach(([subcategory, superclasses]) => {
+  superclasses.forEach((superclass) => {
+    subcategoryBySuperclass[superclass] = subcategory as SubcategoryKey;
   });
 });
 
-export const globalClassnameList: string[] = Object.keys(classnameCategories);
+export function categorizeClasses(docs: SatisfactoryDocsMapped): CategorizedSubclasses {
+  validateClasses(docs);
 
-export function validateClassList(classListFromDocs: string[]) {
-  classListFromDocs.forEach((className) => {
-    if (!globalClassnameList.includes(className)) {
+  const categorizedSubclasses = {} as CategorizedSubclasses;
+  Object.entries(superclassCategories).forEach(([category, superclassList]) => {
+    categorizedSubclasses[category as CategoryKey] = [];
+    superclassList.forEach((superclass) => {
+      const subclasses = docs[superclass];
+      const subcategory: string | undefined = undefined;
+      subclasses.forEach((subclass) => {
+        categorizedSubclasses[category as CategoryKey].push({
+          parentClass: superclass,
+          category: category as CategoryKey,
+          subcategory,
+          data: subclass,
+        });
+      });
+    });
+  });
+  return categorizedSubclasses;
+}
+
+function validateClasses(docs: SatisfactoryDocsMapped) {
+  const docsClassList: string[] = Object.keys(docs);
+  const categoryClassList: string[] = Object.values(superclassCategories).flat(1);
+  const subcategoryClassList: string[] = Object.values(superclassSubcategories).flat(1);
+
+  const classSet = new Set();
+  categoryClassList.forEach((className) => {
+    if (classSet.has(className)) {
+    // eslint-disable-next-line no-console
+      console.warn(`WARNING: <${className}> is assigned to multiple categories!`);
+    }
+    else {
+      classSet.add(className);
+    }
+
+    if (!docsClassList.includes(className)) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: <${className}> was assigned to a category but does not exist in the docs!`);
+    }
+  });
+
+  classSet.clear();
+  subcategoryClassList.forEach((className) => {
+    if (classSet.has(className)) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: <${className}> is assigned to multiple subcategories!`);
+    }
+    else {
+      classSet.add(className);
+    }
+  });
+
+  docsClassList.forEach((className) => {
+    if (!categoryClassList.includes(className)) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: <${className}> is found in the docs, but not assigned to a category!`);
     }
   });
-
-  globalClassnameList.forEach((className) => {
-    const categories = classnameCategories[className];
-    if (!categories.length) {
-      // eslint-disable-next-line no-console
-      console.warn(`WARNING: <${className}> is not assigned to a category!`);
-    }
-    if (!classListFromDocs.includes(className)) {
-      // eslint-disable-next-line no-console
-      console.warn(`WARNING: <${className}> was categorized as <${categories.join(", ")}> but does not exist in the docs`);
-    }
-  });
-}
-
-export function categorizeDataClasses(dataClassMap: NativeSubclassesBySuperclass): CategorizedNativeClasses {
-  const categorizedClasses: CategorizedNativeClasses = {} as CategorizedNativeClasses;
-  Object.entries(categorizedClassnames).forEach(([category, classnames]) => {
-    const categoryDocsClasses: NativeSubclass[] = [];
-    classnames.forEach((className) => {
-      const docsClasses: NativeSubclass[] = dataClassMap[className];
-      if (!docsClasses) {
-        // eslint-disable-next-line no-console
-        console.warn(`WARNING: Expected to find class <${className}> for category <${category}> in the docs but it does not exist!`);
-      }
-      categoryDocsClasses.push(...docsClasses);
-    });
-    categorizedClasses[category as CategoryKey] = categoryDocsClasses;
-  });
-  return categorizedClasses;
 }

@@ -1,6 +1,6 @@
 import { ClassInfoMap } from "@/types";
 import { EventType } from "@/native-defs/enums";
-import { CategorizedNativeClasses } from "@/class-categorizer/types";
+import { CategorizedSubclasses } from "@/class-categorizer/types";
 import {
   parseClassnameFromPath, parseItemQuantity, parseBuildableQuantity, ItemQuantity,
   createCustomizerSlug, buildableNameToDescriptorName, createRecipeSlug, createBuildableRecipeSlug,
@@ -79,7 +79,7 @@ const excludeRecipes: string[] = [
   "Recipe_SteelWall_8x4_C",
 ];
 
-export function parseRecipes(categorizedDataClasses: CategorizedNativeClasses, deps: RecipeDependencies) {
+export function parseRecipes(categorizedDataClasses: CategorizedSubclasses, deps: RecipeDependencies) {
   const { productionRecipes, buildableRecipes } = getMainRecipes(categorizedDataClasses, deps);
   const customizerRecipes = getCustomizerRecipes(categorizedDataClasses, deps);
 
@@ -90,11 +90,11 @@ export function parseRecipes(categorizedDataClasses: CategorizedNativeClasses, d
   return { productionRecipes, buildableRecipes, customizerRecipes };
 }
 
-function getMainRecipes(categorizedDataClasses: CategorizedNativeClasses, { items, buildables }: RecipeDependencies) {
+function getMainRecipes(categorizedDataClasses: CategorizedSubclasses, { items, buildables }: RecipeDependencies) {
   const productionRecipes: ClassInfoMap<ProductionRecipeInfo> = {};
   const buildableRecipes: ClassInfoMap<BuildableRecipeInfo> = {};
 
-  categorizedDataClasses.recipes.forEach((entry) => {
+  categorizedDataClasses.recipes.forEach(({ data: entry }) => {
     if (!entry.mProducedIn || excludeRecipes.includes(entry.ClassName)) {
       return;
     }
@@ -169,10 +169,10 @@ function getMainRecipes(categorizedDataClasses: CategorizedNativeClasses, { item
   return { productionRecipes, buildableRecipes };
 }
 
-function getCustomizerRecipes(categorizedDataClasses: CategorizedNativeClasses, { items }: RecipeDependencies) {
+function getCustomizerRecipes(categorizedDataClasses: CategorizedSubclasses, { items }: RecipeDependencies) {
   const customizerRecipes: ClassInfoMap<CustomizerRecipeInfo> = {};
 
-  categorizedDataClasses.customizerRecipes.forEach((entry) => {
+  categorizedDataClasses.customizerRecipes.forEach(({ data: entry }) => {
     let ingredients: ItemQuantity[] = [];
     let isSwatch = false;
     let isPatternRemover = false;

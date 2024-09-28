@@ -1,8 +1,7 @@
 import util from "util";
 import { ParsedDocs, DocsMeta, ParsedDocsWithMeta } from "@/types";
-import { NativeSubclassesBySuperclass, SatisfactoryDocs } from "@/native-defs/types";
-import { categorizeDataClasses, validateClassList } from "@/class-categorizer";
-import { CategorizedNativeClasses } from "@/class-categorizer/types";
+import { SatisfactoryDocsMapped, SatisfactoryDocs } from "@/native-defs/types";
+import { categorizeClasses } from "@/class-categorizer";
 import { createParsedDocs } from "@/parser";
 import { createMeta } from "@/meta/parser";
 
@@ -29,7 +28,7 @@ export function parseDocsWithMeta(input: Buffer | string): ParsedDocsWithMeta {
   };
 }
 
-export function readTheDocs(input: Buffer | string): NativeSubclassesBySuperclass {
+export function readTheDocs(input: Buffer | string): SatisfactoryDocsMapped {
   if (Buffer.isBuffer(input)) {
     try {
       const decoder = new util.TextDecoder("utf-16le");
@@ -47,14 +46,14 @@ export function readTheDocs(input: Buffer | string): NativeSubclassesBySuperclas
 }
 
 const superclassRegex = /FactoryGame\.(.+)'$/;
-function readTheDocsString(input: string): NativeSubclassesBySuperclass {
+function readTheDocsString(input: string): SatisfactoryDocsMapped {
   const docs = JSON.parse(input) as SatisfactoryDocs;
 
   if (!Array.isArray(docs)) {
     throw new Error("Invalid Docs file -- not an array");
   }
 
-  const dataClassMap: NativeSubclassesBySuperclass = {};
+  const dataClassMap: SatisfactoryDocsMapped = {};
   for (const entry of docs) {
     if (!Object.prototype.hasOwnProperty.call(entry, "NativeClass") || !Object.prototype.hasOwnProperty.call(entry, "Classes")) {
       throw new Error("Invalid Docs file -- missing required keys");
@@ -68,10 +67,4 @@ function readTheDocsString(input: string): NativeSubclassesBySuperclass {
   }
 
   return dataClassMap;
-}
-
-function categorizeClasses(classMap: NativeSubclassesBySuperclass): CategorizedNativeClasses {
-  const topLevelClassList = Object.keys(classMap).sort();
-  validateClassList(topLevelClassList);
-  return categorizeDataClasses(classMap);
 }

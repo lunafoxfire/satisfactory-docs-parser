@@ -1,7 +1,7 @@
 import { DocsMeta } from "@/types";
-import { NativeSubclassesBySuperclass } from "@/native-defs/types";
-import { categorizedClassnames } from "@/class-categorizer";
-import { CategorizedNativeClasses, CategoryKey } from "@/class-categorizer/types";
+import { SatisfactoryDocsMapped } from "@/native-defs/types";
+import { superclassCategories } from "@/class-categorizer";
+import { CategorizedSubclasses, CategoryKey } from "@/class-categorizer/types";
 
 interface TrackedPropertyInfo {
   count: number;
@@ -9,7 +9,7 @@ interface TrackedPropertyInfo {
   isStatic: boolean;
 }
 
-export function createMeta(classMap: NativeSubclassesBySuperclass, categorizedClasses: CategorizedNativeClasses): DocsMeta {
+export function createMeta(docs: SatisfactoryDocsMapped, categorizedSubclasses: CategorizedSubclasses): DocsMeta {
   const meta: DocsMeta = {
     superclassCount: 0,
     superclassList: [],
@@ -18,7 +18,7 @@ export function createMeta(classMap: NativeSubclassesBySuperclass, categorizedCl
   };
 
   // Superclass metadata
-  Object.entries(classMap).forEach(([superclass, subclasses]) => {
+  Object.entries(docs).forEach(([superclass, subclasses]) => {
     meta.superclassList.push(superclass);
     subclasses.forEach((subclass) => {
       Object.keys(subclass).forEach((key) => {
@@ -31,7 +31,7 @@ export function createMeta(classMap: NativeSubclassesBySuperclass, categorizedCl
   meta.superclassCount = meta.superclassList.length;
 
   // Metadata per superclass
-  Object.entries(classMap).forEach(([superclass, subclasses]) => {
+  Object.entries(docs).forEach(([superclass, subclasses]) => {
     const subclassList: string[] = [];
     const universalProps: string[] = [];
     const specializedProps: string[] = [];
@@ -90,8 +90,8 @@ export function createMeta(classMap: NativeSubclassesBySuperclass, categorizedCl
   });
 
   // Metadata per category
-  Object.entries(categorizedClasses).forEach(([category, subclasses]) => {
-    const superclassList = categorizedClassnames[category as CategoryKey];
+  Object.entries(categorizedSubclasses).forEach(([category, subclasses]) => {
+    const superclassList = superclassCategories[category as CategoryKey];
     const subclassList: string[] = [];
     const universalProps: string[] = [];
     const specializedProps: string[] = [];
@@ -100,7 +100,7 @@ export function createMeta(classMap: NativeSubclassesBySuperclass, categorizedCl
 
     const propertyTracker: Record<string, TrackedPropertyInfo> = {};
     subclasses.forEach((subclass) => {
-      subclassList.push(subclass.ClassName);
+      subclassList.push(subclass.data.ClassName);
       Object.entries(subclass).forEach(([key, val]) => {
         if (key === "ClassName") {
           return;

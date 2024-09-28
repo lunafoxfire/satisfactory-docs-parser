@@ -1,7 +1,7 @@
 import { ClassInfoMap } from "@/types";
 import { NativeSubclass } from "@/native-defs/types";
 import { UnlockType, EventType } from "@/native-defs/enums";
-import { CategorizedNativeClasses } from "@/class-categorizer/types";
+import { CategorizedSubclasses } from "@/class-categorizer/types";
 import {
   createSlugFromClassname, cleanString, parseItemQuantity,
   ItemQuantity, parseBlueprintClassname,
@@ -83,12 +83,12 @@ const excludeSchematics: string[] = [
   "Schematic_SaveCompatibility_C", // Some sort of compatibility schematic with removed items in it
 ];
 
-export function parseSchematics(categorizedDataClasses: CategorizedNativeClasses, deps: SchematicDependencies) {
+export function parseSchematics(categorizedDataClasses: CategorizedSubclasses, deps: SchematicDependencies) {
   const { items } = deps;
   const schematics: ClassInfoMap<SchematicInfo> = {};
 
   categorizedDataClasses.schematics.forEach((e) => {
-    const entry = e as SchematicsEntry;
+    const entry = e.data as SchematicsEntry;
     if (excludeSchematics.includes(entry.ClassName)) {
       return;
     }

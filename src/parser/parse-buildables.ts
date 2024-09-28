@@ -1,6 +1,6 @@
 import { ClassInfoMap } from "@/types";
 import { EventType } from "@/native-defs/enums";
-import { CategorizedNativeClasses } from "@/class-categorizer/types";
+import { CategorizedSubclasses } from "@/class-categorizer/types";
 import {
   createBasicSlug, createBuildableSlug, cleanString, buildableNameToDescriptorName,
   parseBlueprintClassname, ItemRate,
@@ -176,10 +176,10 @@ const BUILDABLE_SIZES: Record<string, BuildableSize> = {
   Desc_RadarTower_C: { width: 10, length: 10, height: 118 },
 };
 
-export function parseBuildables(categorizedDataClasses: CategorizedNativeClasses, { items, resources }: BuildableDependencies) {
+export function parseBuildables(categorizedDataClasses: CategorizedSubclasses, { items, resources }: BuildableDependencies) {
   const buildables: ClassInfoMap<BuildableInfo> = {};
 
-  categorizedDataClasses.buildables.forEach((entry) => {
+  categorizedDataClasses.buildables.forEach(({ data: entry }) => {
     if (excludeBuildables.includes(entry.ClassName)) {
       return;
     }
@@ -187,7 +187,7 @@ export function parseBuildables(categorizedDataClasses: CategorizedNativeClasses
 
     let categories: string[] = [];
     let buildMenuPriority = 0;
-    const descriptorInfo = categorizedDataClasses.buildableDescriptors.find((desc) => desc.ClassName === descriptorName);
+    const descriptorInfo = categorizedDataClasses.buildableDescriptors.find(({ data: desc }) => desc.ClassName === descriptorName);
     if (descriptorInfo) {
       categories = (parseCollection(descriptorInfo.mSubCategories) as string[])
         .map((data) => parseBlueprintClassname(data));
@@ -427,8 +427,8 @@ export function parseBuildables(categorizedDataClasses: CategorizedNativeClasses
   return buildables;
 }
 
-function addVehicles(categorizedDataClasses: CategorizedNativeClasses, buildables: ClassInfoMap<BuildableInfo>) {
-  categorizedDataClasses.vehicles.forEach((entry) => {
+function addVehicles(categorizedDataClasses: CategorizedSubclasses, buildables: ClassInfoMap<BuildableInfo>) {
+  categorizedDataClasses.vehicles.forEach(({ data: entry }) => {
     let isPowered = false;
     const categories = (parseCollection(entry.mSubCategories) as string[])
       .map((data) => parseBlueprintClassname(data));

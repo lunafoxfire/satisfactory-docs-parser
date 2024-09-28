@@ -1,11 +1,11 @@
 import { ClassInfoMap, ParsedDocs } from "@/types";
-import { CategorizedNativeClasses } from "@/class-categorizer/types";
+import { CategorizedSubclasses } from "@/class-categorizer/types";
 import { parseItems } from "./parse-items";
 import { parseBuildables } from "./parse-buildables";
 import { parseRecipes } from "./parse-recipes";
 import { parseSchematics } from "./parse-schematics";
 
-export function createParsedDocs(categorizedClasses: CategorizedNativeClasses): ParsedDocs {
+export function createParsedDocs(categorizedClasses: CategorizedSubclasses): ParsedDocs {
   const { items, resources } = parseItems(categorizedClasses);
   const buildables = parseBuildables(categorizedClasses, { items, resources });
   const { productionRecipes, buildableRecipes, customizerRecipes } = parseRecipes(categorizedClasses, { items, buildables });
