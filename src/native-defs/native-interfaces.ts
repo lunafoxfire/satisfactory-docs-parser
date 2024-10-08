@@ -24,14 +24,15 @@ export interface NativeBuildable extends NativeSubclass {
   mDescription: string;
   mAllowColoring: string;
   mAllowPatterning: string;
-  mInteractionRegisterPlayerWithCircuit: string;
-  mIsUseable: string;
+  mInteractionRegisterPlayerWithCircuit: string; // allows power connections
   // mClearanceData: string; // might be parsable to find building sizes
   mSpeed?: string; // belt speed
   mStorageSizeX?: string; // station storage only
   mStorageSizeY?: string;
   mPowerConsumption?: string;
   mPowerConsumptionExponent?: string;
+  mAllowedResourceForms?: string; // resource extractor
+  mManufacturingSpeed?: string; // is production building
   mCanEverMonitorProductivity?: string; // can overclock?
   // mCanChangePotential?: string; // unsure... includes overclockable buildings + drone port
   mCanChangeProductionBoost?: string; // can somersloop
@@ -42,18 +43,25 @@ export interface NativeBuildable extends NativeSubclass {
   // mIsFrame?: string; // is frame foundation
   // mExtractCycleTime?: string; // calculates miner speed
   // mDefaultFuelClasses?: string; // superceded by mFuel
-  mFuel?: string; // generator fuel
-  mSupplementalLoadAmount?: string; // supplemental = water
-  mSupplementalToPowerRatio?: string;
+  mFuel?: NativeFuelType[]; // generator fuel
+  mSupplementalToPowerRatio?: string; // supplemental = water
+  // mSupplementalLoadAmount?: string;
   mPowerProduction?: string;
   mEstimatedMininumPowerConsumption?: string; // variable power consumption
   mEstimatedMaximumPowerConsumption?: string;
   mStorageCapacity?: string; // only for fluid buffers
   mFlowLimit?: string; // calculates pipe throughput
-  mMaxPressure?: string; // pump actual headlift
   mDesignPressure?: string; // pump displayed headlift
+  mMaxPressure?: string; // pump actual headlift
   mInventorySizeX?: string; // container storage size
   mInventorySizeY?: string;
+}
+
+export interface NativeFuelType {
+  mFuelClass: string;
+  mSupplementalResourceClass: string;
+  mByproduct: string;
+  mByproductAmount: string;
 }
 
 export interface NativeItemDescriptor extends NativeSubclass {

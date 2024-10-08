@@ -10,20 +10,20 @@ export type CategoryKey =
   | "customizerRecipes"
   | "schematics";
 
-export type SubcategoryKey =
-  "resources"
-  | "biomass"
-  | "equipment"
-  | "ammo"
-  | "consumables";
+// export type SubcategoryKey =
+//   "resources"
+//   | "biomass"
+//   | "equipment"
+//   | "ammo"
+//   | "consumables";
 
 export type SuperclassCategories = Record<CategoryKey, string[]>;
-export type SuperclassSubcategories = Record<SubcategoryKey, string[]>;
+// export type SuperclassSubcategories = Record<SubcategoryKey, string[]>;
 
 export interface SubclassInfo {
   parentClass: string;
-  category: CategoryKey;
-  subcategory?: SubcategoryKey;
+  // category: CategoryKey;
+  // subcategory?: SubcategoryKey;
   data: NativeSubclass;
 }
 

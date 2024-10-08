@@ -1,5 +1,5 @@
 import { SatisfactoryDocsMapped } from "@/native-defs/types";
-import { SuperclassCategories, SuperclassSubcategories, CategoryKey, SubcategoryKey, CategorizedSubclasses } from "./types";
+import { SuperclassCategories, CategoryKey, CategorizedSubclasses } from "./types";
 
 export const superclassCategories: SuperclassCategories = {
   itemDescriptors: [
@@ -116,24 +116,17 @@ export const superclassCategories: SuperclassCategories = {
   schematics: ["FGSchematic"],
 };
 
-export const superclassSubcategories: SuperclassSubcategories = {
-  resources: ["FGResourceDescriptor"],
-  biomass: ["FGItemDescriptorBiomass"],
-  equipment: ["FGEquipmentDescriptor"],
-  ammo: [
-    "FGAmmoTypeInstantHit",
-    "FGAmmoTypeProjectile",
-    "FGAmmoTypeSpreadshot",
-  ],
-  consumables: ["FGConsumableDescriptor"],
-};
-
-export const subcategoryBySuperclass: Record<string, SubcategoryKey> = {};
-Object.entries(superclassSubcategories).forEach(([subcategory, superclasses]) => {
-  superclasses.forEach((superclass) => {
-    subcategoryBySuperclass[superclass] = subcategory as SubcategoryKey;
-  });
-});
+// export const superclassSubcategories: SuperclassSubcategories = {
+//   resources: ["FGResourceDescriptor"],
+//   biomass: ["FGItemDescriptorBiomass"],
+//   equipment: ["FGEquipmentDescriptor"],
+//   ammo: [
+//     "FGAmmoTypeInstantHit",
+//     "FGAmmoTypeProjectile",
+//     "FGAmmoTypeSpreadshot",
+//   ],
+//   consumables: ["FGConsumableDescriptor"],
+// };
 
 export function categorizeClasses(docs: SatisfactoryDocsMapped): CategorizedSubclasses {
   validateClasses(docs);
@@ -143,12 +136,9 @@ export function categorizeClasses(docs: SatisfactoryDocsMapped): CategorizedSubc
     categorizedSubclasses[category as CategoryKey] = [];
     superclassList.forEach((superclass) => {
       const subclasses = docs[superclass];
-      const subcategory: string | undefined = undefined;
       subclasses.forEach((subclass) => {
         categorizedSubclasses[category as CategoryKey].push({
           parentClass: superclass,
-          category: category as CategoryKey,
-          subcategory,
           data: subclass,
         });
       });
@@ -160,7 +150,7 @@ export function categorizeClasses(docs: SatisfactoryDocsMapped): CategorizedSubc
 function validateClasses(docs: SatisfactoryDocsMapped) {
   const docsClassList: string[] = Object.keys(docs);
   const categoryClassList: string[] = Object.values(superclassCategories).flat(1);
-  const subcategoryClassList: string[] = Object.values(superclassSubcategories).flat(1);
+  // const subcategoryClassList: string[] = Object.values(superclassSubcategories).flat(1);
 
   const classSet = new Set();
   categoryClassList.forEach((className) => {
@@ -175,17 +165,6 @@ function validateClasses(docs: SatisfactoryDocsMapped) {
     if (!docsClassList.includes(className)) {
       // eslint-disable-next-line no-console
       console.warn(`WARNING: <${className}> was assigned to a category but does not exist in the docs!`);
-    }
-  });
-
-  classSet.clear();
-  subcategoryClassList.forEach((className) => {
-    if (classSet.has(className)) {
-      // eslint-disable-next-line no-console
-      console.warn(`WARNING: <${className}> is assigned to multiple subcategories!`);
-    }
-    else {
-      classSet.add(className);
     }
   });
 

@@ -1,24 +1,7 @@
 import { ClassInfoMap } from "@/types";
-import { EquipmentSlotType, UnlockType } from "@/native-defs/enums";
+import { EquipmentSlotType, UnlockType } from "@/parser/enums";
 import { SerializedColor, SerializedItemAmount } from "@/deserialization/types";
-import { BuildableInfo } from "@/parser/parse-buildables";
-import { ItemInfo } from "@/parser/parse-items";
-
-export interface Color {
-  r: number;
-  g: number;
-  b: number;
-}
-
-export interface ItemQuantity {
-  itemClass: string;
-  quantity: number;
-}
-
-export interface ItemRate {
-  itemClass: string;
-  rate: number;
-}
+import { BuildableInfo, Color, ItemInfo, ItemQuantity } from "@/parser/types";
 
 const SLUG_OVERRIDES: Record<string, string> = {
   Recipe_CartridgeChaos_Packaged_C: "packaged-turbo-rifle-ammo-recipe",
@@ -319,6 +302,10 @@ export function parseColor(data: SerializedColor, scaleTo255 = false): Color {
     g: Math.round(scaleFactor * data.G),
     b: Math.round(scaleFactor * data.B),
   };
+}
+
+export function parseBoolean(data: string): boolean {
+  return data === "True";
 }
 
 const SUPRESS_ITEM_WARNINGS = [

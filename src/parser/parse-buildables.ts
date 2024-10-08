@@ -1,96 +1,14 @@
 import { ClassInfoMap } from "@/types";
-import { EventType } from "@/native-defs/enums";
 import { CategorizedSubclasses } from "@/class-categorizer/types";
 import {
-  createBasicSlug, createBuildableSlug, cleanString, buildableNameToDescriptorName,
-  parseBlueprintClassname, ItemRate,
+  createBasicSlug, createBuildableSlug, cleanString, buildableNameToDescriptorName, parseBlueprintClassname,
+  parseBoolean,
 } from "@/utilities";
 import { parseCollection } from "@/deserialization/collection-parser";
 import { SerializedRange } from "@/deserialization/types";
+import { NativeBuildable, NativeBuildableDescriptor } from "@/native-defs/native-interfaces";
+import { BeltMeta, BuildableInfo, BuildableSize, FluidBufferMeta, GeneratorMeta, GeneratorMetaFuelType, InventoryMeta, OverclockMeta, PipeMeta, PowerConsumptionMeta, PumpMeta, SomersloopAugmentMeta, StorageMeta } from "./types";
 import { ItemInfo, ResourceInfo } from "./parse-items";
-
-export interface BuildableInfo {
-  slug: string;
-  name: string;
-  description: string;
-  categories: string[];
-  buildMenuPriority: number;
-  isPowered: boolean;
-  isOverclockable: boolean;
-  isProduction: boolean;
-  isResourceExtractor: boolean;
-  isGenerator: boolean;
-  isVehicle: boolean;
-  meta: BuildableMeta;
-  event: EventType;
-}
-
-export interface BuildableMeta {
-  powerInfo?: PoweredMeta;
-  overclockInfo?: OverclockMeta;
-  extractorInfo?: ResourceExtractorMeta;
-  generatorInfo?: GeneratorMeta;
-  vehicleInfo?: VehicleMeta;
-  size?: BuildableSize;
-  beltSpeed?: number;
-  inventorySize?: number;
-  powerStorageCapacity?: number;
-  flowLimit?: number;
-  headLift?: number;
-  headLiftMax?: number;
-  fluidStorageCapacity?: number;
-  radarInfo?: RadarTowerMeta;
-}
-
-export interface PoweredMeta {
-  consumption: number;
-  variableConsumption?: VariablePower;
-}
-
-export interface OverclockMeta {
-  exponent: number;
-}
-
-export interface ResourceExtractorMeta {
-  allowedResourceForms: string[];
-  allowedResources: string[];
-  resourceExtractSpeed: number;
-}
-
-export interface GeneratorMeta {
-  powerProduction: number;
-  variablePowerProduction?: VariablePower;
-  fuels: FuelConsumption[];
-}
-
-export interface VehicleMeta {
-  fuelConsumption: number;
-}
-
-export interface RadarTowerMeta {
-  minRevealRadius: number;
-  maxRevealRadius: number;
-  expansionSteps: number;
-  expansionInterval: number;
-}
-
-export interface BuildableSize {
-  length: number;
-  width: number;
-  height: number;
-}
-
-export interface VariablePower {
-  cycleTime: number;
-  minimum: number;
-  maximum: number;
-}
-
-export interface FuelConsumption {
-  fuel: ItemRate;
-  supplement?: ItemRate;
-  byproduct?: ItemRate;
-}
 
 interface BuildableDependencies {
   items: ClassInfoMap<ItemInfo>;
@@ -179,245 +97,232 @@ const BUILDABLE_SIZES: Record<string, BuildableSize> = {
 export function parseBuildables(categorizedDataClasses: CategorizedSubclasses, { items, resources }: BuildableDependencies) {
   const buildables: ClassInfoMap<BuildableInfo> = {};
 
-  categorizedDataClasses.buildables.forEach(({ data: entry }) => {
-    if (excludeBuildables.includes(entry.ClassName)) {
+  categorizedDataClasses.buildables.forEach((entry) => {
+    const native = entry.data as NativeBuildable;
+    if (excludeBuildables.includes(native.ClassName)) {
       return;
     }
-    const descriptorName = buildableNameToDescriptorName(entry.ClassName);
+    const descriptorName = buildableNameToDescriptorName(native.ClassName);
 
-    let categories: string[] = [];
-    let buildMenuPriority = 0;
-    const descriptorInfo = categorizedDataClasses.buildableDescriptors.find(({ data: desc }) => desc.ClassName === descriptorName);
-    if (descriptorInfo) {
-      categories = (parseCollection(descriptorInfo.mSubCategories) as string[])
-        .map((data) => parseBlueprintClassname(data));
-      buildMenuPriority = parseFloat(descriptorInfo.mBuildMenuPriority);
+    let iconPath = "";
+    let imgPath = "";
+    let subcategory = "";
+    let menuPriority = 0;
+
+    const nativeDescriptor = categorizedDataClasses.buildableDescriptors.find(({ data: desc }) => desc.ClassName === descriptorName) as NativeBuildableDescriptor | undefined;
+    if (!nativeDescriptor) {
+      // eslint-disable-next-line no-console
+      console.warn(`WARNING: Buildable descriptor missing for buildable: <${native.ClassName}>`);
     }
     else {
-      // eslint-disable-next-line no-console
-      console.warn(`WARNING: Buildable descriptor missing for buildable: <${entry.ClassName}>`);
+      iconPath = nativeDescriptor.mSmallIcon;
+      imgPath = nativeDescriptor.mPersistentBigIcon;
+      const nativeCategories = (parseCollection(nativeDescriptor.mSubCategories) as string[])
+        .map((data) => parseBlueprintClassname(data));
+      if (nativeCategories.length !== 1) {
+        // eslint-disable-next-line no-console
+        console.warn(`WARNING: Buildable does not have exactly one subcategory: <${descriptorName}>`);
+      }
+      else {
+        subcategory = nativeCategories[0];
+      }
+      menuPriority = parseFloat(nativeDescriptor.mMenuPriority);
     }
 
-    const meta: BuildableMeta = {};
-    let isPowered = false;
-    let isOverclockable = false;
-    let isProduction = false;
-    let isResourceExtractor = false;
-    let isGenerator = false;
+    let belt: BeltMeta | undefined = undefined;
+    if (native.mSpeed) {
+      belt = {
+        speed: parseFloat(native.mSpeed) / 2,
+      };
+    }
 
-    // Power
-    if (entry.mPowerConsumption) {
-      if (parseFloat(entry.mPowerConsumption) > 0) {
-        isPowered = true;
-        meta.powerInfo = {
-          consumption: parseFloat(entry.mPowerConsumption),
+    let inventory: InventoryMeta | undefined = undefined;
+    if (native.mStorageSizeX && native.mStorageSizeY) {
+      const x = parseInt(native.mStorageSizeX, 10);
+      const y = parseInt(native.mStorageSizeY, 10);
+      inventory = {
+        totalSlots: x * y,
+        sizeX: x,
+        sizeY: y,
+      };
+    }
+    else if (native.mInventorySizeX && native.mInventorySizeY) {
+      const x = parseInt(native.mInventorySizeX, 10);
+      const y = parseInt(native.mInventorySizeY, 10);
+      inventory = {
+        totalSlots: x * y,
+        sizeX: x,
+        sizeY: y,
+      };
+    }
+
+    let powerConsumption: PowerConsumptionMeta | undefined = undefined;
+    if (native.mPowerConsumption) {
+      const value = parseFloat(native.mPowerConsumption);
+      if (value > 0) {
+        powerConsumption = {
+          value: value,
         };
       }
     }
-    if (entry.ClassName === "Build_HadronCollider_C") {
-      isPowered = true;
-      const min = parseFloat(entry.mEstimatedMininumPowerConsumption);
-      const max = parseFloat(entry.mEstimatedMaximumPowerConsumption);
-      meta.powerInfo = {
-        consumption: (min + max) / 2,
-        variableConsumption: {
-          cycleTime: parseFloat(entry.mSequenceDuration),
-          minimum: min,
-          maximum: max,
+    else if (native.mEstimatedMininumPowerConsumption && native.mEstimatedMaximumPowerConsumption) {
+      const min = parseFloat(native.mEstimatedMininumPowerConsumption);
+      const max = parseFloat(native.mEstimatedMaximumPowerConsumption);
+      powerConsumption = {
+        value: (min + max) / 2,
+        range: {
+          min,
+          max,
         },
       };
     }
 
-    // Overclock
-    if (entry.mCanChangePotential === "True") {
-      isOverclockable = true;
-      if (entry.mPowerProductionExponent) {
-        meta.overclockInfo = {
-          exponent: parseFloat(entry.mPowerProductionExponent),
-        };
-      }
-      else {
-        meta.overclockInfo = {
-          exponent: parseFloat(entry.mPowerConsumptionExponent),
-        };
-      }
-    }
-
-    // Manufacturer
-    if (entry.mManufacturingSpeed) {
-      isProduction = true;
-    }
-
-    // Extractor
-    if (entry.mAllowedResourceForms) {
-      isResourceExtractor = true;
-      const allowedResourceForms = parseCollection(entry.mAllowedResourceForms) as string[];
-
-      let allowedResources: string[];
-      if (entry.mAllowedResources === "") {
-        allowedResources = [];
-        for (const [resourceName, resourceInfo] of Object.entries(resources)) {
-          if (allowedResourceForms.includes(resourceInfo.form)) {
-            allowedResources.push(resourceName);
-          }
-        }
-      }
-      else {
-        allowedResources = (parseCollection(entry.mAllowedResources) as string[])
-          .map((data) => parseBlueprintClassname(data));
-      }
-
-      let resourceExtractSpeed = 0;
-      if (entry.mItemsPerCycle && entry.mExtractCycleTime) {
-        let itemsPerCycle = parseInt(entry.mItemsPerCycle, 10);
-        const extractCycleTime = parseFloat(entry.mExtractCycleTime);
-        if (allowedResourceForms.includes("RF_LIQUID") || allowedResourceForms.includes("RF_GAS")) {
-          itemsPerCycle /= 1000;
-        }
-        resourceExtractSpeed = 60 * itemsPerCycle / extractCycleTime;
-      }
-
-      meta.extractorInfo = {
-        allowedResourceForms,
-        allowedResources,
-        resourceExtractSpeed,
+    let overclock: OverclockMeta | undefined = undefined;
+    if (native.mCanEverMonitorProductivity && native.mPowerConsumptionExponent) {
+      overclock = {
+        powerExponent: parseFloat(native.mPowerConsumptionExponent),
       };
     }
 
-    // Generator
-    if (entry.mPowerProduction) {
-      isGenerator = true;
-      const powerProduction = parseFloat(entry.mPowerProduction);
-      const fuels: FuelConsumption[] = [];
-
-      if (entry.mFuel && Array.isArray(entry.mFuel)) {
-        entry.mFuel.forEach((fuelEntry) => {
-          if (fuelEntry.mFuelClass === "FGItemDescriptorBiomass") {
-            Object.entries(items).forEach(([itemKey, itemInfo]) => {
-              if (!itemInfo.isBiomass || !itemInfo.meta.energyValue) return;
-              const scale = itemInfo.isFluid ? 1 / 1000 : 1;
-              const burnRate = scale * 60 * powerProduction / itemInfo.meta.energyValue;
-              fuels.push({ fuel: { itemClass: itemKey, rate: burnRate } });
-            });
-            return;
-          }
-
-          const fuelItemInfo = items[fuelEntry.mFuelClass];
-          if (!fuelItemInfo) {
-            // eslint-disable-next-line no-console
-            console.warn(`WARNING: No item info for generator fuel: <${fuelEntry.mFuelClass}>`);
-            return;
-          }
-          if (!fuelItemInfo.meta.energyValue) {
-            // eslint-disable-next-line no-console
-            console.warn(`WARNING: Generator fuel <${fuelEntry.mFuelClass}> has no energy value!`);
-            return;
-          }
-
-          const scale = fuelItemInfo.isFluid ? 1 / 1000 : 1;
-          const burnRate = scale * 60 * powerProduction / fuelItemInfo.meta.energyValue;
-          const fuelInfo: FuelConsumption = {
-            fuel: { itemClass: fuelEntry.mFuelClass, rate: burnRate },
+    let somersloopAugment: SomersloopAugmentMeta | undefined = undefined;
+    if (native.mCanChangeProductionBoost && native.mProductionShardSlotSize && native.mOverrideProductionShardSlotSize) {
+      if (parseBoolean(native.mCanChangeProductionBoost)) {
+        const slotSize = parseBoolean(native.mOverrideProductionShardSlotSize) ? 1 : parseInt(native.mProductionShardSlotSize, 10);
+        if (slotSize > 0) {
+          somersloopAugment = {
+            slotSize,
+            boostPerSloop: 2.0 / slotSize,
           };
-
-          if (fuelEntry.mSupplementalResourceClass) {
-            const supplementItemInfo = items[fuelEntry.mSupplementalResourceClass];
-            if (!supplementItemInfo) {
-              // eslint-disable-next-line no-console
-              console.warn(`WARNING: No item info for generator supplement: <${fuelEntry.mFuelClass}>`);
-              return;
-            }
-
-            const supplementalRatio = parseFloat(entry.mSupplementalToPowerRatio);
-            const supplementalItemRate = powerProduction * supplementalRatio * (3 / 50);
-            fuelInfo.supplement = { itemClass: fuelEntry.mSupplementalResourceClass, rate: supplementalItemRate };
-          }
-
-          if (fuelEntry.mByproduct) {
-            const byproductItemInfo = items[fuelEntry.mByproduct];
-            if (!byproductItemInfo) {
-              // eslint-disable-next-line no-console
-              console.warn(`WARNING: No item info for generator byproduct: <${fuelEntry.mFuelClass}>`);
-              return;
-            }
-
-            const byproductAmount = parseFloat(fuelEntry.mByproductAmount);
-            const byproductRate = byproductAmount * burnRate;
-            fuelInfo.byproduct = { itemClass: fuelEntry.mByproduct, rate: byproductRate };
-          }
-
-          fuels.push(fuelInfo);
-        });
-      }
-
-      meta.generatorInfo = {
-        powerProduction,
-        fuels,
-      };
-
-      if (entry.mVariablePowerProductionFactor) {
-        const powerFactor = parseFloat(entry.mVariablePowerProductionFactor);
-        meta.generatorInfo.powerProduction = powerFactor;
-        meta.generatorInfo.variablePowerProduction = {
-          cycleTime: parseFloat(entry.mVariablePowerProductionCycleLength),
-          minimum: 0.5 * powerFactor,
-          maximum: 1.5 * powerFactor,
-        };
+        }
       }
     }
+
+    let generator: GeneratorMeta | undefined = undefined;
+    if (native.mPowerProduction && native.mFuel && native.mSupplementalToPowerRatio) {
+      const powerProduction = parseFloat(native.mPowerProduction);
+      const secondaryEnergyRatio = parseFloat(native.mSupplementalToPowerRatio);
+
+      const fuelTypes: Record<string, GeneratorMetaFuelType> = {};
+      native.mFuel.forEach((nativeFuel) => {
+        const itemInfo = items[nativeFuel.mFuelClass];
+        const energyValue = itemInfo?.meta.energyValue;
+        if (!energyValue) {
+          // eslint-disable-next-line no-console
+          console.warn(`WARNING: Buildable <${native.ClassName}> wants to use missing fuel: <${nativeFuel.mFuelClass}>`);
+          return;
+        }
+        fuelTypes[nativeFuel.mFuelClass] = {
+          burnTime: energyValue / powerProduction,
+          secondary: nativeFuel.mSupplementalResourceClass
+            ? {
+                item: "Desc_Water_C",
+                quantity: (energyValue * secondaryEnergyRatio) / 1000,
+              }
+            : undefined,
+          byproduct: nativeFuel.mByproduct
+            ? {
+                item: nativeFuel.mByproduct,
+                quantity: parseInt(nativeFuel.mByproductAmount),
+              }
+            : undefined,
+        };
+      });
+      generator = {
+        powerProduction,
+        fuelTypes,
+      };
+    }
+
+    let pipe: PipeMeta | undefined = undefined;
+    if (native.mFlowLimit) {
+      pipe = {
+        flowLimit: parseFloat(native.mFlowLimit) * 60,
+      };
+    }
+
+    let pump: PumpMeta | undefined = undefined;
+    if (native.mDesignPressure && native.mMaxPressure) {
+      pump = {
+        safeHeadLift: parseFloat(native.mDesignPressure),
+        maxHeadLift: parseFloat(native.mMaxPressure),
+      };
+    }
+
+    let fluidBuffer: FluidBufferMeta | undefined = undefined;
+    if (native.mStorageCapacity) {
+      fluidBuffer = {
+        capacity: parseFloat(native.mStorageCapacity),
+      };
+    }
+
+    // // Extractor
+    // if (entry.mAllowedResourceForms) {
+    //   isResourceExtractor = true;
+    //   const allowedResourceForms = parseCollection(entry.mAllowedResourceForms) as string[];
+
+    //   let allowedResources: string[];
+    //   if (entry.mAllowedResources === "") {
+    //     allowedResources = [];
+    //     for (const [resourceName, resourceInfo] of Object.entries(resources)) {
+    //       if (allowedResourceForms.includes(resourceInfo.form)) {
+    //         allowedResources.push(resourceName);
+    //       }
+    //     }
+    //   }
+    //   else {
+    //     allowedResources = (parseCollection(entry.mAllowedResources) as string[])
+    //       .map((data) => parseBlueprintClassname(data));
+    //   }
+
+    //   let resourceExtractSpeed = 0;
+    //   if (entry.mItemsPerCycle && entry.mExtractCycleTime) {
+    //     let itemsPerCycle = parseInt(entry.mItemsPerCycle, 10);
+    //     const extractCycleTime = parseFloat(entry.mExtractCycleTime);
+    //     if (allowedResourceForms.includes("RF_LIQUID") || allowedResourceForms.includes("RF_GAS")) {
+    //       itemsPerCycle /= 1000;
+    //     }
+    //     resourceExtractSpeed = 60 * itemsPerCycle / extractCycleTime;
+    //   }
+
+    //   meta.extractorInfo = {
+    //     allowedResourceForms,
+    //     allowedResources,
+    //     resourceExtractSpeed,
+    //   };
+    // }
 
     // Other
     if (BUILDABLE_SIZES[descriptorName]) {
       meta.size = BUILDABLE_SIZES[descriptorName];
     }
-    if (entry.mSpeed) {
-      meta.beltSpeed = parseFloat(entry.mSpeed) / 2;
-    }
-    if (entry.mInventorySizeX && entry.mInventorySizeY) {
-      meta.inventorySize = parseInt(entry.mInventorySizeX, 10) * parseInt(entry.mInventorySizeY, 10);
-    }
-    if (entry.mStorageSizeX && entry.mStorageSizeY) {
-      meta.inventorySize = parseInt(entry.mStorageSizeX, 10) * parseInt(entry.mStorageSizeY, 10);
-    }
-    if (entry.mFlowLimit) {
-      meta.flowLimit = parseFloat(entry.mFlowLimit) * 60;
-    }
-    if (entry.mDesignPressure) {
-      if (parseFloat(entry.mDesignPressure) > 0) {
-        meta.headLift = parseFloat(entry.mDesignPressure);
-        meta.headLiftMax = parseFloat(entry.mMaxPressure);
-      }
-    }
-    if (entry.mStorageCapacity) {
-      meta.fluidStorageCapacity = parseFloat(entry.mStorageCapacity);
-    }
-    if (entry.mPowerStoreCapacity) {
-      meta.powerStorageCapacity = parseFloat(entry.mPowerStoreCapacity);
-    }
-    if (entry.ClassName === "Build_RadarTower_C") {
-      meta.radarInfo = {
-        minRevealRadius: parseFloat(entry.mMinRevealRadius),
-        maxRevealRadius: parseFloat(entry.mMaxRevealRadius),
-        expansionSteps: parseInt(entry.mNumRadarExpansionSteps, 10),
-        expansionInterval: parseFloat(entry.mRadarExpansionInterval),
-      };
-    }
 
-    const cleanName = cleanString(entry.mDisplayName);
+    const cleanName = cleanString(native.mDisplayName);
     buildables[descriptorName] = {
-      slug: createBuildableSlug(entry.ClassName, cleanName),
+      className: native.ClassName,
+      slug: createBuildableSlug(native.ClassName, cleanName),
       name: cleanName,
-      description: cleanString(entry.mDescription),
-      categories,
-      buildMenuPriority,
-      isPowered,
-      isOverclockable,
-      isProduction,
-      isResourceExtractor,
-      isGenerator,
-      isVehicle: false,
-      meta,
-      event: ficsmasBuildables.includes(entry.ClassName) ? "FICSMAS" : "NONE",
+      description: cleanString(native.mDescription),
+      iconPath,
+      imgPath,
+      subcategory,
+      menuPriority,
+      allowColoring: parseBoolean(native.mAllowColoring),
+      allowPatterns: parseBoolean(native.mAllowPatterning),
+      allowPowerConnection: parseBoolean(native.mInteractionRegisterPlayerWithCircuit),
+      isProductionBuilding: !!native.mManufacturingSpeed,
+      isResourceExtractor: !!native.mAllowedResourceForms,
+      event: ficsmasBuildables.includes(native.ClassName) ? "FICSMAS" : "NONE",
+
+      powerConsumption,
+      overclock,
+      somersloopAugment,
+      generator,
+      inventory,
+      belt,
+      pipe,
+      pump,
+      fluidBuffer,
+      vehicle,
     };
   });
 
