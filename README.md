@@ -9,7 +9,7 @@ into a format both more human- and script- readable.
 # Usage
 
 Requires deno. Clone the repository and then `deno run start` to use the cli tool. `deno run start --help` will give you
-usage information.
+usage information. `deno run start --docsfile <PATH_TO_DOCS> --parsed single_file` will get you going.
 
 # Whoa
 
