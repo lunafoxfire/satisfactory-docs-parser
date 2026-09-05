@@ -1,0 +1,13 @@
+{
+  "tasks": {
+    "start": "deno run --allow-read --allow-write src/main.ts"
+  },
+  "imports": {
+    "@cliffy/command": "jsr:@cliffy/command@^1.2.1",
+    "@std/assert": "jsr:@std/assert@^1.0.19",
+    "@std/yaml": "jsr:@std/yaml@^1.2.0"
+  },
+  "fmt": {
+    "lineWidth": 120
+  }
+}

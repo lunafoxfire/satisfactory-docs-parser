@@ -1,15 +1,18 @@
-import { ClassInfoMap } from "@/types";
-import { EventType } from "@/native-defs/enums";
-import { CategorizedSubclasses } from "@/class-categorizer/types";
+import { CategoryToClassDataMap, ClassToParsedInfoMap } from "../types/docs-parser.ts";
+import { NativeCustomizerRecipe, NativeRecipe } from "../types/native-class-fields.ts";
+import { EventType, ItemQuantity } from "../types/parsed-fields.ts";
 import {
-  parseClassnameFromPath, parseItemQuantity, parseBuildableQuantity, ItemQuantity,
-  createCustomizerSlug, buildableNameToDescriptorName, createRecipeSlug, createBuildableRecipeSlug,
+  buildableNameToDescriptorName,
   cleanString,
-} from "@/utilities";
-import { parseCollection } from "@/deserialization/collection-parser";
-import { SerializedItemAmount } from "@/deserialization/types";
-import { ItemInfo } from "./parse-items";
-import { BuildableInfo } from "./parse-buildables";
+  createBuildableRecipeSlug,
+  createCustomizerSlug,
+  createRecipeSlug,
+  parseBuildableQuantity,
+  parseClassnameFromPath,
+  parseItemQuantity,
+} from "../utils/data-cleanup.ts";
+import { BuildableInfo, VehicleInfo } from "./parse-buildables.ts";
+import { ItemInfo } from "./parse-items.ts";
 
 export interface ProductionRecipeInfo {
   slug: string;
@@ -43,8 +46,9 @@ export interface CustomizerRecipeInfo {
 }
 
 interface RecipeDependencies {
-  items: ClassInfoMap<ItemInfo>;
-  buildables: ClassInfoMap<BuildableInfo>;
+  items: ClassToParsedInfoMap<ItemInfo>;
+  buildables: ClassToParsedInfoMap<BuildableInfo>;
+  vehicles: ClassToParsedInfoMap<VehicleInfo>;
 }
 
 const ficsmasRecipes: string[] = [
@@ -79,7 +83,7 @@ const excludeRecipes: string[] = [
   "Recipe_SteelWall_8x4_C",
 ];
 
-export function parseRecipes(categorizedDataClasses: CategorizedSubclasses, deps: RecipeDependencies) {
+export function parseRecipes(categorizedDataClasses: CategoryToClassDataMap, deps: RecipeDependencies) {
   const { productionRecipes, buildableRecipes } = getMainRecipes(categorizedDataClasses, deps);
   const customizerRecipes = getCustomizerRecipes(categorizedDataClasses, deps);
 
@@ -90,16 +94,20 @@ export function parseRecipes(categorizedDataClasses: CategorizedSubclasses, deps
   return { productionRecipes, buildableRecipes, customizerRecipes };
 }
 
-function getMainRecipes(categorizedDataClasses: CategorizedSubclasses, { items, buildables }: RecipeDependencies) {
-  const productionRecipes: ClassInfoMap<ProductionRecipeInfo> = {};
-  const buildableRecipes: ClassInfoMap<BuildableRecipeInfo> = {};
+function getMainRecipes(
+  categorizedDataClasses: CategoryToClassDataMap,
+  { items, buildables, vehicles }: RecipeDependencies,
+) {
+  const productionRecipes: ClassToParsedInfoMap<ProductionRecipeInfo> = {};
+  const buildableRecipes: ClassToParsedInfoMap<BuildableRecipeInfo> = {};
 
-  categorizedDataClasses.recipes.forEach(({ data: entry }) => {
-    if (!entry.mProducedIn || excludeRecipes.includes(entry.ClassName)) {
+  categorizedDataClasses.recipes.forEach(({ className, data }) => {
+    const entry = data as unknown as NativeRecipe;
+    if (!entry.mProducedIn || excludeRecipes.includes(className)) {
       return;
     }
 
-    const producedIn = (parseCollection(entry.mProducedIn) as string[])
+    const producedIn = (entry.mProducedIn as string[])
       .map((data) => parseClassnameFromPath(data));
 
     let isBuildRecipe = false;
@@ -110,50 +118,58 @@ function getMainRecipes(categorizedDataClasses: CategorizedSubclasses, { items, 
     for (const producer of producedIn) {
       if (producer === "BP_BuildGun_C" || producer === "FGBuildGun") {
         isBuildRecipe = true;
-      }
-      else if (producer === "BP_WorkshopComponent_C") {
+      } else if (producer === "BP_WorkshopComponent_C") {
         workshopCraftable = true;
-      }
-      else if (producer === "BP_WorkBenchComponent_C" || producer === "FGBuildableAutomatedWorkBench" || producer === "Build_AutomatedWorkBench_C") {
+      } else if (
+        producer === "BP_WorkBenchComponent_C" || producer === "FGBuildableAutomatedWorkBench" ||
+        producer === "Build_AutomatedWorkBench_C"
+      ) {
         handCraftable = true;
-      }
-      else {
+      } else {
         machineCraftable = true;
         machines.push(buildableNameToDescriptorName(producer));
       }
     }
 
     if (machineCraftable && machines.length > 1) {
-      // eslint-disable-next-line no-console
-      console.warn(`WARNING: Recipe <${entry.ClassName}> can be produced in multiple machines, which is not supported! Machines: <${machines.join(", ")}>`);
+      console.warn(
+        `WARNING: Recipe <${className}> can be produced in multiple machines, which is not supported! Machines: <${
+          machines.join(", ")
+        }>`,
+      );
     }
 
-    const ingredients = (parseCollection(entry.mIngredients) as SerializedItemAmount[] | null)
-      ?.map((data) => parseItemQuantity(data, items))
-      ?? [];
+    let ingredients: ItemQuantity[] = [];
+    if (Array.isArray(entry.mIngredients)) {
+      ingredients = entry.mIngredients.map((data) => parseItemQuantity(data, items));
+    }
 
     if (isBuildRecipe) {
-      const product = parseBuildableQuantity((parseCollection(entry.mProduct) as SerializedItemAmount[])[0], buildables);
+      const product = parseBuildableQuantity(entry.mProduct[0]);
+      const buildableInfo = buildables[product] ?? vehicles[product];
+      if (!buildableInfo) {
+        console.warn(`WARNING: Missing buildable info for <${className}>`);
+      }
+
       const cleanName = cleanString(entry.mDisplayName);
-      buildableRecipes[entry.ClassName] = {
-        slug: createBuildableRecipeSlug(entry.ClassName, cleanName),
+      buildableRecipes[className] = {
+        slug: createBuildableRecipeSlug(className, cleanName),
         name: cleanName,
         ingredients,
         product,
-        event: ficsmasRecipes.includes(entry.ClassName) ? "FICSMAS" : "NONE",
+        event: ficsmasRecipes.includes(className) ? "FICSMAS" : "NONE",
       };
-    }
-    else {
-      const isAlternate = entry.mDisplayName.startsWith("Alternate:") || entry.ClassName.startsWith("Recipe_Alternate");
-      const products = (parseCollection(entry.mProduct) as SerializedItemAmount[])
+    } else {
+      const isAlternate = entry.mDisplayName.startsWith("Alternate:") || className.startsWith("Recipe_Alternate");
+      const products = entry.mProduct
         .map((data) => parseItemQuantity(data, items));
 
       const cleanName = cleanString(entry.mDisplayName);
-      productionRecipes[entry.ClassName] = {
-        slug: createRecipeSlug(entry.ClassName, cleanName),
+      productionRecipes[className] = {
+        slug: createRecipeSlug(className, cleanName),
         name: cleanName,
-        craftTime: parseFloat(entry.mManufactoringDuration),
-        manualCraftMultiplier: parseFloat(entry.mManualManufacturingMultiplier),
+        craftTime: entry.mManufactoringDuration,
+        manualCraftMultiplier: entry.mManualManufacturingMultiplier,
         isAlternate,
         handCraftable,
         workshopCraftable,
@@ -161,7 +177,7 @@ function getMainRecipes(categorizedDataClasses: CategorizedSubclasses, { items, 
         ingredients,
         products,
         producedIn: machines.length ? machines[0] : "",
-        event: ficsmasRecipes.includes(entry.ClassName) ? "FICSMAS" : "NONE",
+        event: ficsmasRecipes.includes(className) ? "FICSMAS" : "NONE",
       };
     }
   });
@@ -169,67 +185,68 @@ function getMainRecipes(categorizedDataClasses: CategorizedSubclasses, { items, 
   return { productionRecipes, buildableRecipes };
 }
 
-function getCustomizerRecipes(categorizedDataClasses: CategorizedSubclasses, { items }: RecipeDependencies) {
-  const customizerRecipes: ClassInfoMap<CustomizerRecipeInfo> = {};
+function getCustomizerRecipes(categorizedDataClasses: CategoryToClassDataMap, { items }: RecipeDependencies) {
+  const customizerRecipes: ClassToParsedInfoMap<CustomizerRecipeInfo> = {};
 
-  categorizedDataClasses.customizerRecipes.forEach(({ data: entry }) => {
+  categorizedDataClasses.customizerRecipes.forEach(({ className, data }) => {
+    const entry = data as unknown as NativeCustomizerRecipe;
+
     let ingredients: ItemQuantity[] = [];
     let isSwatch = false;
     let isPatternRemover = false;
 
-    if (entry.mIngerdients) {
-      ingredients = (parseCollection(entry.mIngredients) as SerializedItemAmount[])
+    if (entry.mIngredients) {
+      ingredients = entry.mIngredients
         .map((data) => parseItemQuantity(data, items));
-    }
-    else {
-      if (entry.ClassName.includes("_Swatch")) {
+    } else {
+      if (className.includes("_Swatch")) {
         isSwatch = true;
       }
-      if (entry.ClassName.includes("_Pattern_Remover")) {
+      if (className.includes("_Pattern_Remover")) {
         isPatternRemover = true;
       }
     }
 
-    customizerRecipes[entry.ClassName] = {
-      slug: createCustomizerSlug(entry.ClassName),
+    customizerRecipes[className] = {
+      slug: createCustomizerSlug(className),
       isSwatch,
       isPatternRemover,
       ingredients,
-      event: ficsmasRecipes.includes(entry.ClassName) ? "FICSMAS" : "NONE",
+      event: ficsmasRecipes.includes(className) ? "FICSMAS" : "NONE",
     };
   });
 
   return customizerRecipes;
 }
 
-function validateProductionRecipes(productionRecipes: ClassInfoMap<ProductionRecipeInfo>, { buildables }: RecipeDependencies) {
+function validateProductionRecipes(
+  productionRecipes: ClassToParsedInfoMap<ProductionRecipeInfo>,
+  { buildables }: RecipeDependencies,
+) {
   const slugs: string[] = [];
   Object.entries(productionRecipes).forEach(([name, data]) => {
     if (!data.handCraftable && !data.workshopCraftable && !data.machineCraftable) {
-      // eslint-disable-next-line no-console
       console.warn(`WARNING: Recipe <${name}> cannot be produced anywhere!`);
     }
 
     if (data.producedIn && !buildables[data.producedIn]) {
-      // eslint-disable-next-line no-console
       console.warn(`WARNING: Recipe <${name}> is produced in missing building <${data.producedIn}>`);
     }
 
     if (!data.slug) {
-      // eslint-disable-next-line no-console
       console.warn(`WARNING: Blank slug for recipe: <${name}>`);
-    }
-    else if (slugs.includes(data.slug)) {
-      // eslint-disable-next-line no-console
+    } else if (slugs.includes(data.slug)) {
       console.warn(`WARNING: Duplicate recipe slug: <${data.slug}> of <${name}>`);
-    }
-    else {
+    } else {
       slugs.push(data.slug);
     }
   });
 }
 
-function validateBuildableRecipes(buildableRecipes: ClassInfoMap<BuildableRecipeInfo>, { buildables }: RecipeDependencies) {
+function validateBuildableRecipes(
+  buildableRecipes: ClassToParsedInfoMap<BuildableRecipeInfo>,
+  { buildables }: RecipeDependencies,
+) {
   const slugs: string[] = [];
   Object.keys(buildables).forEach((buildableName) => {
     let hasRecipe = false;
@@ -240,37 +257,28 @@ function validateBuildableRecipes(buildableRecipes: ClassInfoMap<BuildableRecipe
       }
     });
     if (!hasRecipe) {
-      // eslint-disable-next-line no-console
       console.warn(`WARNING: Buildable <${buildableName}> has no recipe!`);
     }
   });
   Object.entries(buildableRecipes).forEach(([name, data]) => {
     if (!data.slug) {
-      // eslint-disable-next-line no-console
       console.warn(`WARNING: Blank slug for recipe: <${name}>`);
-    }
-    else if (slugs.includes(data.slug)) {
-      // eslint-disable-next-line no-console
+    } else if (slugs.includes(data.slug)) {
       console.warn(`WARNING: Duplicate recipe slug: <${data.slug}> of <${name}>`);
-    }
-    else {
+    } else {
       slugs.push(data.slug);
     }
   });
 }
 
-function validateCustomizerRecipes(customizerRecipes: ClassInfoMap<CustomizerRecipeInfo>) {
+function validateCustomizerRecipes(customizerRecipes: ClassToParsedInfoMap<CustomizerRecipeInfo>) {
   const slugs: string[] = [];
   Object.entries(customizerRecipes).forEach(([name, data]) => {
     if (!data.slug) {
-      // eslint-disable-next-line no-console
       console.warn(`WARNING: Blank slug for customizer recipe: <${name}>`);
-    }
-    else if (slugs.includes(data.slug)) {
-      // eslint-disable-next-line no-console
+    } else if (slugs.includes(data.slug)) {
       console.warn(`WARNING: Duplicate customizer recipe slug: <${data.slug}> of <${name}>`);
-    }
-    else {
+    } else {
       slugs.push(data.slug);
     }
   });

@@ -1,7 +1,7 @@
-import { SatisfactoryDocsMapped } from "@/native-defs/types";
-import { SuperclassCategories, CategoryKey, CategorizedSubclasses } from "./types";
+import { CategoryKey, CategoryToClassDataMap, SubcategoryKey } from "../types/docs-parser.ts";
+import { SatisfactoryDocsMapped } from "../types/satisfactory-docs.ts";
 
-export const superclassCategories: SuperclassCategories = {
+export const CATEGORY_ASSIGNMENTS: Record<CategoryKey, string[]> = {
   itemDescriptors: [
     "FGAmmoTypeInstantHit",
     "FGAmmoTypeProjectile",
@@ -32,23 +32,24 @@ export const superclassCategories: SuperclassCategories = {
     "FGSuitBase",
     "FGWeapon",
   ],
-  buildableDescriptors: [
-    "FGBuildingDescriptor",
-    "FGPoleDescriptor",
-  ],
+  buildableDescriptors: ["FGBuildingDescriptor"],
   buildables: [
     "FGBuildable",
     "FGBuildableAttachmentMerger",
     "FGBuildableAttachmentSplitter",
-    "FGBuildableBeamLightweight",
+    "FGBuildableBarrierCorner",
+    "FGBuildableBeam",
     "FGBuildableBlueprintDesigner",
     "FGBuildableCircuitSwitch",
     "FGBuildableConveyorBelt",
     "FGBuildableConveyorLift",
+    "FGBuildableConveyorMonitor",
     "FGBuildableCornerWall",
     "FGBuildableDockingStation",
     "FGBuildableDoor",
     "FGBuildableDroneStation",
+    "FGBuildableElevator",
+    "FGBuildableElevatorFloorStop",
     "FGBuildableFactory",
     "FGBuildableFactoryBuilding",
     "FGBuildableFactorySimpleProducer",
@@ -66,6 +67,7 @@ export const superclassCategories: SuperclassCategories = {
     "FGBuildableMAM",
     "FGBuildableManufacturer",
     "FGBuildableManufacturerVariablePower",
+    "FGBuildableMergerPriority",
     "FGBuildablePassthrough",
     "FGBuildablePillarLightweight",
     "FGBuildablePipeHyper",
@@ -73,8 +75,8 @@ export const superclassCategories: SuperclassCategories = {
     "FGBuildablePipeline",
     "FGBuildablePipelineJunction",
     "FGBuildablePipelinePump",
-    "FGBuildablePipelineSupport",
-    "FGBuildablePoleLightweight",
+    "FGBuildablePoleConveyor",
+    "FGBuildablePolePipe",
     "FGBuildablePowerPole",
     "FGBuildablePowerStorage",
     "FGBuildableRadarTower",
@@ -84,9 +86,12 @@ export const superclassCategories: SuperclassCategories = {
     "FGBuildableResourceExtractor",
     "FGBuildableResourceSink",
     "FGBuildableResourceSinkShop",
+    "FGBuildableSnowCannon",
     "FGBuildableSnowDispenser",
     "FGBuildableSpaceElevator",
     "FGBuildableSplitterSmart",
+    "FGBuildableStair",
+    "FGBuildableStackableShelf",
     "FGBuildableStorage",
     "FGBuildableTradingPost",
     "FGBuildableTrainPlatformCargo",
@@ -98,17 +103,20 @@ export const superclassCategories: SuperclassCategories = {
     "FGBuildableWaterPump",
     "FGBuildableWidgetSign",
     "FGBuildableWire",
-    "FGConveyorPoleStackable",
-    "FGPipeHyperStart",
     "FGBuildableCornerWallLightweight",
     "FGBuildablePassthroughPipeHyper",
+    "FGBuildablePipeHyperJunction",
     "FGBuildablePoleBase",
+    "FGBuildablePoleStackable",
     "FGBuildablePortal",
     "FGBuildablePortalSatellite",
     "FGBuildablePowerBooster",
     "FGBuildablePriorityPowerSwitch",
+    "FGBuildableRailroadAttachment",
     "FGBuildableRampLightweight",
     "FGCentralStorageContainer",
+    "FGPipeHyperStart",
+    "FGVehiclePathSegment",
   ],
   vehicles: ["FGVehicleDescriptor"],
   recipes: ["FGRecipe"],
@@ -116,62 +124,73 @@ export const superclassCategories: SuperclassCategories = {
   schematics: ["FGSchematic"],
 };
 
-// export const superclassSubcategories: SuperclassSubcategories = {
-//   resources: ["FGResourceDescriptor"],
-//   biomass: ["FGItemDescriptorBiomass"],
-//   equipment: ["FGEquipmentDescriptor"],
-//   ammo: [
-//     "FGAmmoTypeInstantHit",
-//     "FGAmmoTypeProjectile",
-//     "FGAmmoTypeSpreadshot",
-//   ],
-//   consumables: ["FGConsumableDescriptor"],
-// };
+export const SUBCATEGORY_ASSIGNMENTS: Record<SubcategoryKey, string[]> = {
+  resources: ["FGResourceDescriptor"],
+  biomass: ["FGItemDescriptorBiomass"],
+  equipment: ["FGEquipmentDescriptor"],
+  ammo: [
+    "FGAmmoTypeInstantHit",
+    "FGAmmoTypeProjectile",
+    "FGAmmoTypeSpreadshot",
+  ],
+  consumables: ["FGConsumableDescriptor"],
+};
 
-export function categorizeClasses(docs: SatisfactoryDocsMapped): CategorizedSubclasses {
-  validateClasses(docs);
+export function assignCategories(rawDocs: SatisfactoryDocsMapped): CategoryToClassDataMap {
+  validateCategories(rawDocs);
 
-  const categorizedSubclasses = {} as CategorizedSubclasses;
-  Object.entries(superclassCategories).forEach(([category, superclassList]) => {
-    categorizedSubclasses[category as CategoryKey] = [];
-    superclassList.forEach((superclass) => {
-      const subclasses = docs[superclass];
-      subclasses.forEach((subclass) => {
-        categorizedSubclasses[category as CategoryKey].push({
-          parentClass: superclass,
-          data: subclass,
-        });
-      });
-    });
-  });
-  return categorizedSubclasses;
+  const classToSubcategoryMap = Object.fromEntries(
+    Object.entries(SUBCATEGORY_ASSIGNMENTS).flatMap(([subcategory, assignedClasses]) =>
+      assignedClasses.map((className) => [className, subcategory])
+    ),
+  );
+
+  return Object.fromEntries(
+    Object.entries(CATEGORY_ASSIGNMENTS).map(([category, assignedClasses]) => [
+      category,
+      assignedClasses.flatMap((parentClass) =>
+        Object.entries(rawDocs[parentClass] ?? {}).map(
+          ([subclass, subclassData]) => ({
+            className: subclass,
+            parentClass: parentClass,
+            subcategory: classToSubcategoryMap[parentClass] ?? null,
+            data: subclassData,
+          }),
+        )
+      ),
+    ]),
+  ) as CategoryToClassDataMap;
 }
 
-function validateClasses(docs: SatisfactoryDocsMapped) {
-  const docsClassList: string[] = Object.keys(docs);
-  const categoryClassList: string[] = Object.values(superclassCategories).flat(1);
-  // const subcategoryClassList: string[] = Object.values(superclassSubcategories).flat(1);
+function validateCategories(rawDocs: SatisfactoryDocsMapped) {
+  const docClasses = new Set(Object.keys(rawDocs));
+  const categorizedClasses = Object.values(CATEGORY_ASSIGNMENTS).flat();
 
-  const classSet = new Set();
-  categoryClassList.forEach((className) => {
-    if (classSet.has(className)) {
-    // eslint-disable-next-line no-console
-      console.warn(`WARNING: <${className}> is assigned to multiple categories!`);
-    }
-    else {
-      classSet.add(className);
+  const classCounts = new Map<string, number>();
+
+  for (const className of categorizedClasses) {
+    classCounts.set(className, (classCounts.get(className) ?? 0) + 1);
+  }
+
+  for (const [className, count] of classCounts) {
+    if (count > 1) {
+      console.warn(
+        `WARNING: <${className}> is assigned to multiple categories!`,
+      );
     }
 
-    if (!docsClassList.includes(className)) {
-      // eslint-disable-next-line no-console
-      console.warn(`WARNING: <${className}> was assigned to a category but does not exist in the docs!`);
+    if (!docClasses.has(className)) {
+      console.warn(
+        `WARNING: <${className}> was assigned to a category but does not exist in the docs!`,
+      );
     }
-  });
+  }
 
-  docsClassList.forEach((className) => {
-    if (!categoryClassList.includes(className)) {
-      // eslint-disable-next-line no-console
-      console.warn(`WARNING: <${className}> is found in the docs, but not assigned to a category!`);
+  for (const className of docClasses) {
+    if (!classCounts.has(className)) {
+      console.warn(
+        `WARNING: <${className}> is found in the docs, but not assigned to a category!`,
+      );
     }
-  });
+  }
 }

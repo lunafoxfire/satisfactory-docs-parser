@@ -1,7 +1,14 @@
-import { ClassInfoMap } from "@/types";
-import { EquipmentSlotType, UnlockType } from "@/parser/enums";
-import { SerializedColor, SerializedItemAmount } from "@/deserialization/types";
-import { BuildableInfo, Color, ItemInfo, ItemQuantity } from "@/parser/types";
+import { ItemInfo } from "../parsing/parse-items.ts";
+import { ClassToParsedInfoMap } from "../types/docs-parser.ts";
+import { NativeColor, NativeItemAmount } from "../types/native-class-fields.ts";
+import { Color, EquipmentSlotType, ItemQuantity, UnlockType } from "../types/parsed-fields.ts";
+
+export function cleanString(desc: string) {
+  return desc
+    .replace(/[ ]/g, "")
+    .replace(/[ ]/g, " ")
+    .replace(/\r\n/g, "\n");
+}
 
 const SLUG_OVERRIDES: Record<string, string> = {
   Recipe_CartridgeChaos_Packaged_C: "packaged-turbo-rifle-ammo-recipe",
@@ -106,8 +113,7 @@ export function createBuildableSlug(className: string, displayName: string) {
   let material = "";
   if (MATERIAL_OVERRIDES[className]) {
     material = MATERIAL_OVERRIDES[className];
-  }
-  else {
+  } else {
     const match = materialRegex.exec(className);
     if (match) {
       material = MATERIAL_SLUGS[match[1]];
@@ -140,13 +146,6 @@ export function createCustomizerSlug(className: string) {
     return SLUG_OVERRIDES[className];
   }
   return "customizer-" + createSlugFromClassname(className);
-}
-
-export function cleanString(desc: string) {
-  return desc
-    .replace(/[ ]/g, "") // eslint-disable-line no-irregular-whitespace
-    .replace(/[ ]/g, " ") // eslint-disable-line no-irregular-whitespace
-    .replace(/\r\n/g, "\n");
 }
 
 const EQUIP_DESC_OVERRIDES: Record<string, string> = {
@@ -213,19 +212,18 @@ export function parseClassnameFromPath(pathStr: string) {
   if (match?.[1]) {
     return match[1];
   }
-  // eslint-disable-next-line no-console
   console.warn(`WARNING: Failed to parse class name from path: <${pathStr}>`);
   return "UNDEFINED";
 }
 
 // What an overengineered nightmare. I love it.
-const blueprintClassRegex = /^(?:"\/Script\/Engine.BlueprintGeneratedClass'([A-Za-z0-9/._-]+)'")|(?:BlueprintGeneratedClass ([A-Za-z0-9/._-]+))$/;
+const blueprintClassRegex =
+  /^(?:"\/Script\/Engine.BlueprintGeneratedClass'([A-Za-z0-9/._-]+)'")|(?:BlueprintGeneratedClass ([A-Za-z0-9/._-]+))$/;
 export function parseBlueprintClassname(classStr: string) {
   const match = blueprintClassRegex.exec(classStr);
   if (match?.[1]) {
     return parseClassnameFromPath(match[1]);
   }
-  // eslint-disable-next-line no-console
   console.warn(`WARNING: Failed to parse blueprint class name: <${classStr}>`);
   return "UNDEFINED";
 }
@@ -245,7 +243,6 @@ export function parseStackSize(data: string) {
     case "SS_FLUID":
       return 50;
     default:
-      // eslint-disable-next-line no-console
       console.warn(`WARNING: Invalid stack size: <${data}>`);
       return NaN;
   }
@@ -264,7 +261,6 @@ export function parseEquipmentSlot(data: string): EquipmentSlotType {
     case "ES_LEGS":
       return "LEGS";
     default:
-      // eslint-disable-next-line no-console
       console.warn(`WARNING: Invalid equipment slot: <${data}>`);
       return "UNDEFINED";
   }
@@ -289,23 +285,18 @@ export function parseUnlockType(data: string): UnlockType {
     case "EST_Customization":
       return "TUTORIAL";
     default:
-      // eslint-disable-next-line no-console
       console.warn(`WARNING: Invalid unlock type: <${data}>`);
       return "UNDEFINED";
   }
 }
 
-export function parseColor(data: SerializedColor, scaleTo255 = false): Color {
+export function parseColor(data: NativeColor, scaleTo255 = false): Color {
   const scaleFactor = scaleTo255 ? 255 : 1;
   return {
     r: Math.round(scaleFactor * data.R),
     g: Math.round(scaleFactor * data.G),
     b: Math.round(scaleFactor * data.B),
   };
-}
-
-export function parseBoolean(data: string): boolean {
-  return data === "True";
 }
 
 const SUPRESS_ITEM_WARNINGS = [
@@ -322,26 +313,22 @@ const SUPRESS_ITEM_WARNINGS = [
   "BP_EquipmentDescriptorCupGold_C",
   "Desc_BoomBox_C",
 ];
-export function parseItemQuantity(data: SerializedItemAmount, itemData: ClassInfoMap<ItemInfo>): ItemQuantity {
+export function parseItemQuantity(
+  data: NativeItemAmount,
+  itemData: ClassToParsedInfoMap<ItemInfo>,
+): ItemQuantity {
   const className = parseBlueprintClassname(data.ItemClass);
   const itemInfo = itemData[className];
   if (!itemInfo && !SUPRESS_ITEM_WARNINGS.includes(className)) {
-    // eslint-disable-next-line no-console
     console.warn(`WARNING: Missing item info for <${className}>`);
   }
   const scaleFactor = itemInfo?.isFluid ? 1000 : 1;
   return {
-    itemClass: className,
+    item: className,
     quantity: data.Amount / scaleFactor,
   };
 }
 
-export function parseBuildableQuantity(data: SerializedItemAmount, buildableData: ClassInfoMap<BuildableInfo>): string {
-  const className = parseBlueprintClassname(data.ItemClass);
-  const buildableInfo = buildableData[className];
-  if (!buildableInfo) {
-    // eslint-disable-next-line no-console
-    console.warn(`WARNING: Missing buildable info for <${className}>`);
-  }
-  return className;
+export function parseBuildableQuantity(data: NativeItemAmount): string {
+  return parseBlueprintClassname(data.ItemClass);
 }

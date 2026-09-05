@@ -1,5 +1,5 @@
 export type EquipmentSlotType =
-  "HEAD"
+  | "HEAD"
   | "BODY"
   | "BACK"
   | "ARMS"
@@ -7,7 +7,7 @@ export type EquipmentSlotType =
   | "UNDEFINED";
 
 export type UnlockType =
-  "TUTORIAL"
+  | "TUTORIAL"
   | "MILESTONE"
   | "MAM"
   | "RESOURCE_SINK"
@@ -18,5 +18,21 @@ export type UnlockType =
   | "UNDEFINED";
 
 export type EventType =
-  "FICSMAS"
+  | "FICSMAS"
   | "NONE";
+
+export interface Color {
+  r: number;
+  g: number;
+  b: number;
+}
+
+export interface ItemQuantity {
+  item: string;
+  quantity: number;
+}
+
+export interface ItemRate {
+  item: string;
+  rate: number;
+}
