@@ -57,9 +57,9 @@ export interface WellCounts {
 
 const RESOURCE_NODE_DATA: Record<string, NodeCounts> = {
   Desc_OreIron_C: { impure: 39, normal: 42, pure: 46 },
-  Desc_OreCopper_C: { impure: 12, normal: 29, pure: 13 },
-  Desc_Stone_C: { impure: 15, normal: 49, pure: 30 },
-  Desc_Coal_C: { impure: 12, normal: 31, pure: 16 },
+  Desc_OreCopper_C: { impure: 13, normal: 29, pure: 13 },
+  Desc_Stone_C: { impure: 15, normal: 50, pure: 29 },
+  Desc_Coal_C: { impure: 15, normal: 31, pure: 16 },
   Desc_OreGold_C: { impure: 0, normal: 9, pure: 8 },
   Desc_RawQuartz_C: { impure: 3, normal: 7, pure: 7 },
   Desc_Sulfur_C: { impure: 6, normal: 5, pure: 5 },
@@ -71,11 +71,13 @@ const RESOURCE_NODE_DATA: Record<string, NodeCounts> = {
 
 const RESOURCE_WELL_DATA: Record<string, WellCounts> = {
   Desc_Water_C: { impure: 7, normal: 12, pure: 36, wells: 8 },
-  Desc_LiquidOil_C: { impure: 6, normal: 3, pure: 3, wells: 2 },
+  Desc_LiquidOil_C: { impure: 8, normal: 6, pure: 4, wells: 2 },
   Desc_NitrogenGas_C: { impure: 2, normal: 7, pure: 36, wells: 6 },
 };
 
 const MAX_OVERCLOCK = 2.5;
+const MAX_BELT_THROUGHPUT = 1200;
+const MAX_PIPE_THROUGHPUT = 600;
 
 const consumableEquipmentDescriptors: string[] = [
   "Desc_Nut_C",
@@ -222,11 +224,11 @@ function getResources(categorizedDataClasses: CategoryToClassDataMap) {
         let maxThroughput = Infinity;
         if (entry.mForm === "RF_SOLID") {
           multiplier = 4;
-          maxThroughput = 780;
+          maxThroughput = MAX_BELT_THROUGHPUT;
         }
         if (className === "Desc_LiquidOil_C") {
           multiplier = 2;
-          maxThroughput = 600;
+          maxThroughput = MAX_PIPE_THROUGHPUT;
         }
         maxExtraction += Math.min(30 * multiplier * MAX_OVERCLOCK, maxThroughput) * nodeData.impure +
           Math.min(60 * multiplier * MAX_OVERCLOCK, maxThroughput) * nodeData.normal +
@@ -234,7 +236,7 @@ function getResources(categorizedDataClasses: CategoryToClassDataMap) {
       }
       if (wellData) {
         const multiplier = 1;
-        const maxThroughput = 600;
+        const maxThroughput = MAX_PIPE_THROUGHPUT;
         maxExtraction += Math.min(30 * multiplier * MAX_OVERCLOCK, maxThroughput) * wellData.impure +
           Math.min(60 * multiplier * MAX_OVERCLOCK, maxThroughput) * wellData.normal +
           Math.min(120 * multiplier * MAX_OVERCLOCK, maxThroughput) * wellData.pure;
