@@ -1,2 +1,1 @@
 - Desc_QuantumEncoder_C power
-- add all missing areas

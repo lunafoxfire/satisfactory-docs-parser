@@ -1,6 +1,7 @@
+import { BuildableSize } from "../parsing/parse-buildables.ts";
 import { ItemInfo } from "../parsing/parse-items.ts";
 import { ClassToParsedInfoMap } from "../types/docs-parser.ts";
-import { NativeColor, NativeItemAmount } from "../types/native-class-fields.ts";
+import { NativeClearanceData, NativeColor, NativeItemAmount, NativeVector3 } from "../types/native-class-fields.ts";
 import { Color, EquipmentSlotType, ItemQuantity, UnlockType } from "../types/parsed-fields.ts";
 
 export function cleanString(desc: string) {
@@ -331,4 +332,47 @@ export function parseItemQuantity(
 
 export function parseBuildableQuantity(data: NativeItemAmount): string {
   return parseBlueprintClassname(data.ItemClass);
+}
+
+export function getBuildableSize(clearanceData: NativeClearanceData[]): BuildableSize | null {
+  const min: NativeVector3 = {
+    X: Infinity,
+    Y: Infinity,
+    Z: Infinity,
+  };
+
+  const max: NativeVector3 = {
+    X: -Infinity,
+    Y: -Infinity,
+    Z: -Infinity,
+  };
+
+  for (const entry of clearanceData) {
+    const box = entry.ClearanceBox;
+
+    const translation = entry.RelativeTransform?.Translation ?? {
+      X: 0,
+      Y: 0,
+      Z: 0,
+    };
+
+    min.X = Math.min(min.X, box.Min.X + translation.X);
+    min.Y = Math.min(min.Y, box.Min.Y + translation.Y);
+    min.Z = Math.min(min.Z, box.Min.Z + translation.Z);
+
+    max.X = Math.max(max.X, box.Max.X + translation.X);
+    max.Y = Math.max(max.Y, box.Max.Y + translation.Y);
+    max.Z = Math.max(max.Z, box.Max.Z + translation.Z);
+  }
+
+  const size: BuildableSize = {
+    x: (max.X - min.X) / 100,
+    y: (max.Y - min.Y) / 100,
+    z: (max.Z - min.Z) / 100,
+  };
+
+  if (!Number.isFinite(size.x) || !Number.isFinite(size.y) || !Number.isFinite(size.z)) {
+    return null;
+  }
+  return size;
 }

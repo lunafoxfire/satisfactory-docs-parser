@@ -15,6 +15,24 @@ export interface NativeItemAmount {
   Amount: number;
 }
 
+export type NativeVector3 = {
+  X: number;
+  Y: number;
+  Z: number;
+};
+
+export type NativeClearanceBox = {
+  Min: NativeVector3;
+  Max: NativeVector3;
+};
+
+export type NativeClearanceData = {
+  ClearanceBox: NativeClearanceBox;
+  RelativeTransform?: {
+    Translation?: NativeVector3;
+  };
+};
+
 export interface NativeItemDescriptor {
   mDisplayName: string;
   mDescription: string;
@@ -85,7 +103,7 @@ export interface NativeBuildable {
   mAllowColoring: boolean;
   mAllowPatterning: boolean;
   mInteractionRegisterPlayerWithCircuit: boolean; // allows power connections
-  // mClearanceData: ???; // TODO: might be parsable to find building sizes
+  mClearanceData: NativeClearanceData[];
   mSpeed?: number; // belt speed
   mStorageSizeX?: number; // station storage only
   mStorageSizeY?: number;
