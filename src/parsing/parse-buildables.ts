@@ -214,7 +214,7 @@ function getBuildables(
           value: value,
         };
       }
-    } else if (entry.mEstimatedMininumPowerConsumption && entry.mEstimatedMaximumPowerConsumption) {
+    } else if (entry.mEstimatedMininumPowerConsumption != null && entry.mEstimatedMaximumPowerConsumption) {
       const min = entry.mEstimatedMininumPowerConsumption;
       const max = entry.mEstimatedMaximumPowerConsumption;
       powerConsumption = {
